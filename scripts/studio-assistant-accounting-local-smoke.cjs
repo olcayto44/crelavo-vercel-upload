@@ -7,7 +7,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  const query=(s,args=[])=>db.query(s,args);
  try{
  await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create table public.production_requests(id uuid primary key,user_id uuid,production_type text);create table public.credit_balances(user_id uuid primary key,balance integer,reserved integer);grant select on public.production_requests,public.credit_balances to service_role;");
- await db.exec(fs.readFileSync("docs/studio-assistant-accounting-isolated.sql","utf8"));
+ for(const file of ["studio-assistant-accounting-isolated.sql","studio-assistant-accounting-hardening-isolated.sql"])await db.exec(fs.readFileSync("docs/"+file,"utf8"));
  await query("insert into auth.users values($1),($2)",[owner,other]);await query("insert into credit_balances values($1,500,20)",[owner]);
  assert.deepEqual(await call("studio_agent_readiness"),{version:"b3-isolated-cost",database:true,accounting:false});
  const create=(user,category="website")=>call("studio_agent_create_project",user,category,"Offline project",null,{},"[]");
@@ -32,7 +32,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  const receipt={model:policy.model,policyVersion:policy.version,providerRequestId:"chatcmpl-offline-1",finishReason:"stop",cachedInputTokens:0,reasoningTokens:0};
  const record=(n,r=result,usage=result.usage,units=2,proof=receipt)=>call("studio_agent_budget_record",owner,key(n),JSON.stringify(r),JSON.stringify(usage),units,JSON.stringify(proof));
  await assert.rejects(record(1,result,{inputTokens:1001,outputTokens:100}),/provider_usage_unverifiable/);
- await assert.rejects(record(1,{...result,project:{...responseProject,userId:other}}),/invalid_result/);
+ await assert.rejects(record(1,{...result,project:{...responseProject,userId:other}}),/invalid_result/);await assert.rejects(record(1,{...result,chargedCredits:3}),/invalid_result/);
  await record(1);await record(1);assert.equal((await reserve(1)).state,"result_ready");
  const settled=await call("studio_agent_budget_settle",owner,key(1),"real");assert.equal(settled.chargedAccount,"assistant");assert.equal(settled.chargedCredits,2);assert.deepEqual(settled.websiteRevisionProposal,proposal);assert.deepEqual(await call("studio_agent_budget_settle",owner,key(1),"real"),settled);assert.deepEqual((await reserve(1)).response,settled);
  assert.deepEqual(settled.wallets.assistant,{balance:98,reserved:0,available:98});assert.deepEqual(settled.wallets.production,{balance:500,reserved:20,available:480});
