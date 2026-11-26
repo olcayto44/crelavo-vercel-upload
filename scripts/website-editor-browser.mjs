@@ -157,20 +157,21 @@ try{
  const actor="11111111-1111-4111-8111-111111111111",siteId="22222222-2222-4222-8222-222222222222";
  const fixtureUser={id:actor,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid",email_confirmed_at:"2026-01-01T00:00:00Z",app_metadata:{provider:"email",providers:["email"]},user_metadata:{},created_at:"2026-01-01T00:00:00Z"};
  const b64=v=>Buffer.from(JSON.stringify(v)).toString("base64url"),expires=Math.floor(Date.now()/1000)+3600;
- const accessToken=b64({alg:"HS256",typ:"JWT"})+"."+b64({sub:actor,aud:"authenticated",role:"authenticated",exp:expires})+".offline";
+ const accessToken=b64({alg:"HS256",typ:"JWT"})+"."+b64({sub:actor,aud:"authenticated",role:"authenticated",exp:expires,iat:expires-3600,iss:isolated+"/auth/v1",session_id:actor})+"."+Buffer.alloc(32,1).toString("base64url");
  const fixtureSession={access_token:accessToken,refresh_token:"offline-fixture-refresh",token_type:"bearer",expires_in:3600,expires_at:expires,user:fixtureUser};
  let savedVersion=1,loginCount=0,submitCount=0,recoveryCount=0,saveCount=0,pendingId="";
  let savedDesign={version:2,brand:"Customer browser fixture",language:"en",layout:"editorial",palette:"sand",pages:[{slug:"home",nav:"Home",title:"Fixture home",description:"Unique fixture home description.",headline:"Original customer headline",lead:"A private fixture for browser acceptance.",sections:[{heading:"Overview",body:"Fixture body text."}],faq:[]},{slug:"contact",nav:"Contact",title:"Fixture contact",description:"Unique fixture contact description.",headline:"Contact our studio",lead:"Contact details are supplied by the owner.",sections:[{heading:"Contact",body:"Private fixture contact."}],faq:[]}]};
  const changed=()=>({...structuredClone(savedDesign),pages:savedDesign.pages.map((p,i)=>i?{...p}:{...p,headline:"Revised customer headline"})});
- const customerErrors=[];customer.on("pageerror",e=>customerErrors.push(e.message));customer.on("dialog",d=>d.accept());
+ const customerErrors=[],fixtureRequests=[];customer.on("pageerror",e=>customerErrors.push(e.message));customer.on("requestfailed",r=>{const u=new URL(r.url());if(u.origin===isolated)console.log("Fixture request failed",u.pathname,r.failure()?.errorText);});customer.on("dialog",d=>d.accept());
  await customer.route("**/*",async route=>{
  const req=route.request(),u=new URL(req.url()),method=req.method();
- const json=(value,status=200)=>route.fulfill({status,contentType:"application/json",headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"},body:JSON.stringify(value)});
+ const json=(value,status=200)=>route.fulfill({status,contentType:"application/json",headers:{"access-control-allow-origin":"*","access-control-allow-headers":"authorization,apikey,content-type,x-client-info,x-supabase-api-version,accept,prefer,accept-profile,content-profile,range,range-unit","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"},body:JSON.stringify(value)});
  if(u.origin===isolated){
-  if(method==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"}});
+  fixtureRequests.push(method+" "+u.pathname);
+  if(method==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"authorization,apikey,content-type,x-client-info,x-supabase-api-version,accept,prefer,accept-profile,content-profile,range,range-unit","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"}});
   if(u.pathname==="/auth/v1/token"){loginCount++;return json(fixtureSession);}
   if(u.pathname==="/auth/v1/user")return json(fixtureUser);
-  if(u.pathname==="/auth/v1/logout")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*"}});
+  if(u.pathname==="/auth/v1/logout")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"authorization,apikey,content-type,x-client-info,x-supabase-api-version"}});
   if(u.pathname.startsWith("/rest/v1/")){
    const table=u.pathname.slice("/rest/v1/".length);
    if(table==="website_cms_sites")return json([{id:siteId,name:savedDesign.brand,locale:"en"}]);
@@ -198,7 +199,7 @@ try{
  await customer.goto(origin+"/website-cms-test",{waitUntil:"domcontentloaded"});
  await customer.getByLabel("E-posta",{exact:true}).fill("fixture@example.invalid");await customer.getByLabel("Şifre",{exact:true}).fill("offline-fixture-password");
  await customer.getByRole("button",{name:"Giriş yap",exact:true}).click();
- await customer.getByRole("heading",{name:savedDesign.brand,exact:true}).waitFor({timeout:60000});
+ try{await customer.getByRole("heading",{name:savedDesign.brand,exact:true}).waitFor({timeout:60000});}catch(e){console.log("Customer fixture login diagnostic",JSON.stringify({loginCount,fixtureRequests,errors:customerErrors,status:await customer.locator("main").innerText()}));throw e;}
  await customer.frameLocator("iframe[title$='website preview']").getByRole("heading",{name:"Original customer headline",exact:true}).waitFor({timeout:60000});
  const requestBox=customer.getByLabel("Düzenleme isteğiniz",{exact:true});
  await requestBox.fill("Revise the headline.");await customer.getByRole("button",{name:"AI ile düzenle",exact:true}).click();
