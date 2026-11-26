@@ -7,6 +7,8 @@ const assert=require("node:assert/strict");const sharp=require("sharp");const {l
  for(const invalid of [{...media,width:100},{...media,image_data:Buffer.from("this is not a valid webp image").toString("base64")},{...media,alt:"<script>"},{...media,provenance:"generated"}])await assert.rejects(verifyWebsiteHeroMedia([invalid]));
  await assert.rejects(verifyWebsiteHeroMedia([media,media]));
  const design={version:2,brand:"Media fixture",language:"en",layout:"service",palette:"sand",pages:[{slug:"home",nav:"Home",title:"Media fixture home",description:"Private design preview.",headline:"Media fixture",lead:"Test only.",sections:[{heading:"Section",body:"Synthetic content."}],faq:[]}]};
+ const {buildWebsiteMediaPlan}=load("src/lib/website-media-art-direction.ts"),{websiteSectorIds}=load("src/lib/website-industry-scope.ts");
+ for(const sector of websiteSectorIds){const plan=buildWebsiteMediaPlan({...design,industryScope:{sector,extraModules:[]}});assert.equal(plan.length,1);assert.equal(plan[0].pageSlug,"home");assert.equal(plan[0].aspect,"16:9");assert.equal(plan[0].requiresReview,true);assert(plan[0].prompt.includes("No words, logos"));assert(plan[0].prompt.length<=1500);}
  const result=renderWebsiteDesignCandidate(design,validated),home=result.files.find(f=>f.path==="index.html").content;
  assert(home.includes("data:image/webp;base64,"+media.image_data));assert(home.includes('alt="A blue synthetic fixture"'));assert(home.includes("noindex,nofollow"));assert.equal(result.manifest.media.length,1);assert.equal(result.manifest.capabilities.generatedImages,false);
  assert.equal(renderWebsiteDesignCandidate(design,[{...media,page_slug:"detached"}]).manifest.media.length,0);
