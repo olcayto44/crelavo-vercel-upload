@@ -5,6 +5,7 @@ import {getCategory} from "@/lib/crelavo/categoryCatalog";
 import {generateWebsiteArtifact} from "../website-engine";
 import {generateWebsiteAICopy,WebsiteAICopySchema,prepareWebsiteAICopy} from "./website-ai-copy";
 import {prepareEditableWebsiteBrief,buildEditableWebsiteFromCopy} from "./website-editable-artifact";
+import {requireWebsiteArtifact} from "../website-artifact-acceptance";
 import {renderWebsiteDesignCandidate} from "../website-design-candidate";
 import type {readCostPolicy} from "./cost-policy";
 const hash=z.string().regex(/^[a-f0-9]{64}$/);
@@ -36,7 +37,8 @@ export async function runIsolatedWebsiteAI(raw:unknown,actor:string,d:D){
  const artifact=await generateWebsiteArtifact(websiteEngineInput(brief),a.productionId,{mode:"validated_copy",copy});
  const editableDesign=buildEditableWebsiteFromCopy(websiteEngineInput(brief),copy);
  const editableCandidate=renderWebsiteDesignCandidate(editableDesign);
- const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest,editableDesign,editableDesignHash:editableCandidate.manifest.designHash,artDirection:copy.artDirection??null,aiSecondaryPages:copy.secondaryPages?.map(p=>p.pageTitle)??[]}});
+ const editableAcceptance=requireWebsiteArtifact(editableCandidate.files.map(f=>({name:f.path,content:f.content})),{root:"",requiredPages:editableCandidate.manifest.pages.map(p=>p.path),language:editableDesign.language});
+ const saved=await call("website_ai_record",{...identity,p_receipt:generated.receipt,p_artifact:{files:artifact.files,websiteContent:artifact.websiteContent,pageManifest:artifact.pageManifest,editableDesign,editableDesignHash:editableCandidate.manifest.designHash,editableAcceptance,artDirection:copy.artDirection??null,aiSecondaryPages:copy.secondaryPages?.map(p=>p.pageTitle)??[]}});
  if(saved!==true)throw Error("record_uncertain");
  return result("artifact_cost_pending");
  }catch{
