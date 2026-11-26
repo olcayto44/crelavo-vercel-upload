@@ -7,6 +7,8 @@ on:
       - 'docs/studio-admin-wallet-atomic-candidate.sql'
       - 'scripts/studio-admin-wallet-atomic-candidate-smoke.cjs'
       - 'src/app/api/studio/**'
+      - 'src/app/api/webhooks/whop/**'
+      - 'src/app/api/whop/**'
       - 'src/lib/studio-agent/**'
       - 'scripts/studio-mp4-*.mjs'
       - 'scripts/studio-*-smoke.cjs'
@@ -68,6 +70,7 @@ jobs:
       - name: Track 1 - Whop and assistant accounting (fixtures)
         run: |
           node scripts/studio-whop-recovery-adapter-smoke.cjs
+          node scripts/studio-whop-atomic-purchase-smoke.cjs
           node scripts/studio-assistant-accounting-local-smoke.cjs
       - name: Track 2 - Website AI, revision, CMS and independent ZIP (fixtures)
         run: |
