@@ -74,12 +74,13 @@ export function applyCompletion(input: ProviderInput, raw: unknown):Applied {
   return {project, reply, blockedTools, nextQuestion: next ? {fieldId:next.fieldId,question} : null};
 }
 export async function runConversation(input: {
-  userId:string;projectId:string;categoryId:string;requestId:string;message:string;uiLanguage:ProviderInput["uiLanguage"];acceptedDefaults:string[];websiteRevisionContext?:WebsiteRevisionContext;
+  userId:string;projectId:string;categoryId:string;requestId:string;message:string;uiLanguage:ProviderInput["uiLanguage"];acceptedDefaults:string[];websiteRevisionContext?:WebsiteRevisionContext;approvedMaxCredits?:number;expectedProjectRevision?:number;
 }, deps: {store:ConversationStore;provider:ConversationProvider;tariff:AssistantTariff;mode:"real"|"mock"}) {
   assertCreditAccount("conversation", "assistant");
   const project = await deps.store.load(input.userId,input.projectId,input.categoryId);
   if (project.userId !== input.userId || project.categoryId !== input.categoryId) throw new ConversationError("project_not_found",404);
   if(input.websiteRevisionContext&&(input.categoryId!=="website"||input.acceptedDefaults.length!==0))throw new ConversationError("website_revision_context_invalid",400);
+  if(input.expectedProjectRevision!==undefined&&project.snapshot.revision!==input.expectedProjectRevision)throw new ConversationError("project_changed_reload",409);
   const contract = getCategoryContract(input.categoryId);
   for (const key of input.acceptedDefaults) if (!Object.prototype.hasOwnProperty.call(contract.defaults,key)) throw new ConversationError("unknown_default",400);
   deps.provider.preflight();
@@ -89,6 +90,7 @@ export async function runConversation(input: {
   const cost=deps.mode==="real"?readCostPolicy():null;
    if(cost)maximumMicroUSD(prepared.inputUpperBound,cost.outputLimit,cost);
    const reserved = creditUnits(prepared.inputUpperBound,cost?.outputLimit||1200,deps.tariff);
+  if(input.approvedMaxCredits!==undefined&&input.approvedMaxCredits!==reserved)throw new ConversationError("quote_changed_reload",409);
   const reservation = await deps.store.reserve({userId:input.userId,project,requestId:input.requestId,
     payloadHash:conversationPayloadHash(input),reserveCredits:reserved,tariffVersion:deps.tariff.version,message:input.message,cost:cost?{policy:cost,inputBound:prepared.inputUpperBound,outputBound:cost.outputLimit}:undefined});
   if (reservation.state === "settled" && reservation.response) return reservation.response;
