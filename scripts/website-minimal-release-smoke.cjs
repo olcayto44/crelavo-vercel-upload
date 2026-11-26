@@ -50,8 +50,10 @@ function load(path){
  assert.match(studio,/website_render_request_too_large/);
  assert.match(studio,/website-paid-render:/);
  const legacyGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
- assert.ok(legacyGenerator.includes('CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED'), 'legacy free generation must be gated when paid');
- assert.ok(legacyGenerator.includes('website_paid_studio_required'), 'legacy generator must not bypass paid Studio flow');
+ assert.ok(legacyGenerator.includes('websitePaidProductionEnabled()'), 'direct generation must be paid-gated');
+ assert.ok(legacyGenerator.includes('explicit_production_confirmation_required') && legacyGenerator.includes('executePaidWebsiteProduction({productionId,planHash}'), 'direct generator must use the paid Studio coordinator');
+ assert.ok(legacyGenerator.includes('productionCreditCheck') && legacyGenerator.includes('quote_required'));
+ assert.ok(!legacyGenerator.includes('generateWebsiteArtifact('), 'no zero-credit direct generator remains');
  const contentApi=fs.readFileSync('src/app/api/website-content/[id]/route.ts','utf8');
  assert.ok(contentApi.includes('websiteCreditDeliveryProof(record, data)'), 'content API must verify independently settled credits');
  assert.equal(contentApi.split('const billingBlock = await atomicWebsiteContentAccess(data)').length-1,2,'GET and edit paths must both be guarded');
@@ -62,7 +64,7 @@ function load(path){
  assert.ok(contentApi.includes('const hasAtomicClaim = Boolean(data)'), 'content/revision must inspect pre-marker reservations');
  assert.ok(contentApi.includes('website_credit_proof_unavailable'), 'content/revision must fail closed on ledger outage');
  const directGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
- assert.ok(directGenerator.includes('const storedFiles = generated.files;'), 'direct builder must deliver stored private HTML source');
+ assert.ok(directGenerator.includes('executePaidWebsiteProduction') && !directGenerator.includes('estimated_credits: 0'), 'direct builder uses the same private artifact coordinator');
  assert.ok(!directGenerator.includes('uploadProviderAsset'), 'private website HTML must not be uploaded to public provider assets bucket');
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});
