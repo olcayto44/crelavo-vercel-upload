@@ -23,7 +23,7 @@ assert.equal(original.height,1080);
 assert.match(source,/canvas\.current/);
 assert.match(source,/ctx\.drawImage\(image/);
 assert.match(source,/ctx\.filter=/);
-assert.match(source,/output\.toBlob/);
+assert.match(source,/exportCanvas\.toBlob/);assert.match(source,/exportCanvas=format==="jpeg"/);
 assert.match(source,/URL\.revokeObjectURL/);
 const styles=fs.readFileSync('src/app/dashboard/studio-tools.css','utf8');
 assert.match(source,/ref=\{picker\}/,'image upload picker must be callable from controls panel');
