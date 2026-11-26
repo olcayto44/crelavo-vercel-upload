@@ -7,7 +7,7 @@ import {preparePaidWebsiteAI} from "@/lib/assistant-work/website-paid-ai";
 import {normalizeAssistantWebsiteBrief,missingWebsiteBrief,unsupportedWebsiteScope,websitePlanHash,websiteEngineInput} from "@/lib/assistant-work/website-brief";
 import {paidWebsiteScopeAllowed} from "@/lib/website-paid-scope";
 import {websitePageManifest} from "@/lib/website-engine";
-import {executePaidWebsiteProduction,websitePaidProductionEnabled,websitePaidCanaryAllowed} from "@/lib/assistant-work/website-paid-production";
+import {executePaidWebsiteProduction,websitePaidProductionEnabled,websitePaidLiveAccountAllowed} from "@/lib/assistant-work/website-paid-production";
 import {productionCreditCheck} from "@/lib/studio-agent/production-credit-policy";
 import {readBoundedWebsiteJson} from "@/lib/website-production-draft";
 export const runtime="nodejs";export const dynamic="force-dynamic";export const maxDuration=120;
@@ -20,7 +20,7 @@ export async function POST(request:Request){
  const userId=uuid.parse(body.user_id);
  const verified=await requireVerifiedRequestUser(request,userId);if(!verified.ok)return verified.response;
  const limit=rateLimit({key:"website-builder:"+userId+":"+clientIpFromRequest(request),limit:12,windowMs:15*60000});if(!limit.allowed)return rateLimitResponse(limit.resetAt);
- if(!websitePaidProductionEnabled()||!websitePaidCanaryAllowed(userId))return reply({ok:false,code:"website_production_not_enabled"},503);
+ if(!websitePaidProductionEnabled()||!(await websitePaidLiveAccountAllowed(userId)))return reply({ok:false,code:"website_production_not_enabled"},503);
  const db=supabaseAdmin();
  if(body.action==="generate"){
   const productionId=uuid.parse(body.productionId),planHash=hash.parse(body.planHash);

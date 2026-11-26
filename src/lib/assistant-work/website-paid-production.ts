@@ -30,6 +30,15 @@ export function websitePaidCanaryAllowed(userId: string, env: NodeJS.ProcessEnv 
   return entries.includes(userId.toLowerCase());
 }
 
+// Live acceptance: the configured owner can test using their own verified customer
+// account. Never trust an email sent in a request body or grant a credit exemption.
+export async function websitePaidLiveAccountAllowed(userId:string){
+  if(websitePaidCanaryAllowed(userId))return true;
+  const owner=String(process.env.ADMIN_EMAIL??"").trim().toLowerCase();
+  if(!owner||!websitePaidProductionEnabled()||!z.string().uuid().safeParse(userId).success)return false;
+  const {data,error}=await supabaseAdmin().auth.admin.getUserById(userId);
+  return !error&&Boolean(data.user?.email_confirmed_at||data.user?.confirmed_at)&&data.user?.email?.trim().toLowerCase()===owner;
+}
 const inputSchema = z.strictObject({
   productionId: z.string().uuid(),
   planHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -45,7 +54,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   }
   const parsed = inputSchema.safeParse(raw);
   if (!parsed.success) return reply({ ok: false, code: "website_render_invalid_request" }, 400);
-  if (!websitePaidCanaryAllowed(user.id))
+  if (!(await websitePaidLiveAccountAllowed(user.id)))
     return reply({ ok: false, code: "website_paid_canary_account_not_enabled" }, 403);
   const { productionId, planHash } = parsed.data;
   const db = supabaseAdmin();
