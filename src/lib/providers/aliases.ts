@@ -1,6 +1,7 @@
 export const providerEnvAliases = {
   openai: ["OPENAI_API_KEY"],
-  runway: ["RUNWAY_API_KEY"],
+  runway: ["RUNWAY_API_KEY", "RUNWAYML_API_SECRET"],
+  gemini: ["GEMINI_API_KEY", "GOOGLE_GEMINI_API_KEY", "GOOGLE_AI_API_KEY"],
   fal: ["FAL_KEY", "FAL_API_KEY"],
   replicate: ["REPLICATE_API_TOKEN", "REPLICATE_API_KEY"],
   kling: ["KLING_API_KEY", "KLING_AI_API_KEY", "KLINGAI_API_KEY", "KLING_ACCESS_KEY", "KLING_SECRET_KEY"],

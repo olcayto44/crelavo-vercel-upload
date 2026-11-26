@@ -1,3 +1,5 @@
+import {generateGeminiAcceptance,generateRunwayAcceptance} from "./stage-new-provider-acceptance";
+import {optionalProviderEnv} from "../providers/env";
 import {createHash} from "node:crypto";
 import {generateSingleMinimaxImage,generateStageStabilityImage} from "./image-provider";
 import {buildStageBrandBundle} from "./stage-brand-bundle";
@@ -25,6 +27,21 @@ export async function runStageProviderProbe(e:StageEnvironment){
    const bytes=Buffer.from(String(prev.data.artifact_base64),"base64");if(prev.data.receipt?.deliverySha256!==createHash("sha256").update(bytes).digest("hex"))throw Error("reference_integrity");
    const ref=await sharp(bytes).resize(512,512,{fit:"inside"}).jpeg({quality:65}).toBuffer();
    result=await generateSingleMinimaxImage({prompt:"Same fictional adult fashion model, olive green jacket, different pose in a sunlit modern studio, preserve facial appearance.",aspect:"1:1"},e.key,fetch,ref);
+  }else if(p.kind==="gemini_generate"||p.kind==="gemini_model"||p.kind==="gemini_character"||p.kind==="gemini_brand"||p.kind==="gemini_product"){
+   const key=optionalProviderEnv("gemini");
+   let ref:Buffer|undefined;
+   if(p.kind==="gemini_character"||p.kind==="gemini_product"){
+    const prev=await e.db.from("studio_provider_probes").select("artifact_base64,receipt").eq("suite",PROBE_SUITE).eq("kind",p.kind==="gemini_character"?"gemini_model":"gemini_generate").eq("state","ready").maybeSingle();
+    if(prev.error||!prev.data?.artifact_base64)throw Error("reference_probe_not_ready");
+    const bytes=Buffer.from(String(prev.data.artifact_base64),"base64");if(prev.data.receipt?.deliverySha256!==createHash("sha256").update(bytes).digest("hex"))throw Error("reference_integrity");
+    ref=await sharp(bytes).resize(512,512,{fit:"inside"}).jpeg({quality:65}).toBuffer();
+   }
+   const prompts:Record<string,string>={gemini_generate:"Original studio product photograph of a cobalt blue ceramic mug, ivory background",gemini_model:"Fictional adult fashion model, short brown hair, olive green jacket, natural editorial portrait",gemini_character:"Use the same fictional adult model in the reference image, preserve facial appearance and jacket, different pose outdoors",gemini_product:"Preserve the exact shape and color of the reference mug, place it on a wood table in warm sunlight",gemini_brand:"Original premium brand identity moodboard for fictional Aurora Ceramic Studio, cobalt blue and ivory, no text"};
+   result=await generateGeminiAcceptance(prompts[p.kind],key,ref);
+  }else if(p.kind==="runway_generate"){
+   result=await generateRunwayAcceptance("Original studio product photograph of a cobalt blue ceramic mug, ivory background",optionalProviderEnv("runway"),async taskId=>{
+    const saved=await e.db.from("studio_provider_probes").update({receipt:{provider:"runway",providerRequestId:taskId,model:"gen4_image_turbo"}}).eq("id",p.id).eq("state","claimed").select("id").maybeSingle();if(saved.error||!saved.data)throw Error("task_record_unconfirmed");
+   });
   }else if((p.kind==="stability_generate"||p.kind==="stability_brand"||p.kind==="stability_model")&&e.editKey){
    const prompt=p.kind==="stability_brand"?"Original premium abstract brand identity moodboard for fictional Aurora Ceramic Studio, blue and ivory, no text":p.kind==="stability_model"?"Fictional adult virtual fashion model in an olive green jacket, editorial portrait, studio lighting":"Single cobalt blue ceramic mug on a clean ivory studio background, original product photograph";
    result=await generateStageStabilityImage({prompt,aspect:"1:1"},e.editKey);
@@ -39,7 +56,7 @@ export async function runStageProviderProbe(e:StageEnvironment){
    const bytes=await sharp(result.bytes,{limitInputPixels:16777216}).webp({quality:85}).toBuffer();
    if(!bytes.length||bytes.length>2100000)throw Error("probe_artifact_size");
    receipt={...result.receipt,deliverySha256:createHash("sha256").update(bytes).digest("hex"),deliveryBytes:bytes.length};
-   if(p.kind==="minimax_brand"||p.kind==="stability_brand"){
+   if(p.kind==="minimax_brand"||p.kind==="stability_brand"||p.kind==="gemini_brand"){
     const zip=await buildStageBrandBundle("Aurora Ceramic Studio",[{bytes,sha256:String(receipt.deliverySha256)}]);
     receipt.brandZipBytes=zip.length;receipt.brandZipSha256=createHash("sha256").update(zip).digest("hex");
    }
