@@ -36,6 +36,13 @@ const disabledReply: Record<string,string> = {
 };
 type Applied=Pick<TurnResponse,"project"|"reply"|"blockedTools"|"nextQuestion"|"websiteRevisionProposal">;
 export function applyCompletion(input: ProviderInput, raw: unknown):Applied {
+  // Revision transport has a compact dedicated response. Convert only exact, validated shape to the existing envelope; the full command and saved-version checks still run below.
+  if(input.websiteRevisionContext&&raw&&typeof raw==="object"&&!Array.isArray(raw)){
+    const v=raw as Record<string,unknown>;
+    if(Object.keys(v).length===2&&Object.hasOwn(v,"expectedRevision")&&Object.hasOwn(v,"commands")&&Array.isArray(v.commands)&&v.expectedRevision===input.websiteRevisionContext.version){
+      raw={categoryId:"website",intent:"edit_content",briefPatch:{},evidence:{},toolCalls:[],reply:"Website revision",question:null,...(v.commands.length?{websiteRevision:v}:{})};
+    }
+  }
   const proposal = completionSchema(input.project.categoryId).parse(raw);
   if(proposal.websiteRevision||input.websiteRevisionContext){
     if(!input.websiteRevisionContext||input.project.categoryId!=="website"||proposal.intent!=="edit_content"||Object.keys(proposal.briefPatch).length||Object.keys(proposal.evidence).length||proposal.toolCalls.length||proposal.proposedCategory||proposal.question)throw new ConversationError("website_revision_context_invalid",502);
