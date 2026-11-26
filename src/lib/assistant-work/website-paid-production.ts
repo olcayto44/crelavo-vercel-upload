@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {websitePageManifest} from "../website-engine";
 import {productionCreditCheck} from "../studio-agent/production-credit-policy";
 import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
@@ -75,6 +76,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
       missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
+  if(state.packId==="landing_page"&&websitePageManifest(brief.pages).length!==1)return reply({ok:false,code:"website_package_page_limit"},422);
   try{preparePaidWebsiteAI(websiteEngineInput(brief));}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
   const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
   if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
