@@ -38,6 +38,39 @@ const {load}=require('./studio-agent-test-loader.cjs');
    try{return{data:(await db.query('select public.'+name+'('+params.map((_,i)=>'$'+(i+1)).join(',')+') as value',params)).rows[0].value,error:null};}
    catch(error){return{data:null,error:{message:String(error.message)}};}
   };
+  // Exercise isolated handoff SQL with the real production schema and the relevant assistant contract.
+  await db.exec(fs.readFileSync('docs/studio-assistant-accounting-isolated.sql','utf8'));
+  await db.exec("create table public.studio_agent_website_bindings(project_id uuid primary key references public.studio_agent_projects(id));");
+  await db.exec(fs.readFileSync('docs/website-ai-plan-handoff-isolated.sql','utf8'));
+  const {prepareWebsiteHandoff,handleWebsiteHandoff}=load("src/lib/studio-agent/website-plan-handoff.ts");
+  const sourceFields={business_name:"Fixture handoff",brief:"A local professional business explaining its services and approach to prospective clients.",audience:"Business owners",site_type:"corporate_website",design_style:"clean_and_minimal",language:"english",pages:"Home, Contact",features_and_integrations:"Service information"};
+  const assistantId=(await db.query("insert into studio_agent_projects(user_id,category_id,title,brief,revision) values($1,'website','Fixture handoff',$2::jsonb,1) returning id",[owner,JSON.stringify(sourceFields)])).rows[0].id;
+  const getHandoff=async(id,user)=>(await db.query("select id,user_id,category_id,revision,production_id,brief from studio_agent_projects where id=$1 and user_id=$2",[id,user])).rows[0]??null;
+  const source=await getHandoff(assistantId,owner),q=prepareWebsiteHandoff(source,owner);assert.equal(q.credits,1500);
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,language:"turkish"}},owner));
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,reference_url:"https://example.test"}},owner));
+  assert.throws(()=>prepareWebsiteHandoff({...source,brief:{...sourceFields,features_and_integrations:"payment processing"}},owner));
+  const handoffArgs={p_user:owner,p_project:assistantId,p_revision:1,p_snapshot:sourceFields,p_brief:q.brief,p_hash:q.planHash,p_pack:q.packId,p_credits:q.credits};
+  const rpcHandoff=async(args)=>rpc("website_ai_handoff_approved_plan",args);
+  assert.equal((await rpcHandoff({...handoffArgs,p_revision:2})).data.state,"stale_or_missing");
+  assert.equal((await rpcHandoff({...handoffArgs,p_credits:1})).data.state,"denied");
+  assert.equal((await rpcHandoff({...handoffArgs,p_snapshot:{...sourceFields,brief:"Altered"}})).data.state,"stale_or_missing");
+  const beforeWallet=(await db.query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0];
+  const invokeHandoff=async(body,userId=owner)=>handleWebsiteHandoff(new Request("https://local.test",{method:"POST",body:JSON.stringify(body)}),{userId,canaryId:owner,load:getHandoff,list:async()=>[],rpc:rpcHandoff});
+  const quoteResponse=await invokeHandoff({action:"quote",projectId:assistantId});assert.equal(quoteResponse.status,200);const handoffQuote=await quoteResponse.json();assert.equal(handoffQuote.quoteHash,q.quoteHash);assert.equal(handoffQuote.chargedCredits,0);
+  assert.equal((await invokeHandoff({action:"approve",projectId:assistantId,revision:1,quoteHash:"0".repeat(64),confirmPlan:true})).status,409);
+  assert.equal((await invokeHandoff({action:"quote",projectId:assistantId},"22222222-2222-4222-8222-222222222222")).status,403);
+  const approveBody={action:"approve",projectId:assistantId,revision:1,quoteHash:q.quoteHash,confirmPlan:true};
+  const accepted=await invokeHandoff(approveBody);assert.equal(accepted.status,200);const result=await accepted.json();assert.equal(result.state,"approved");assert.equal(result.productionStarted,false);assert.equal(result.chargedCredits,0);
+  const replay=await (await invokeHandoff(approveBody)).json();assert.equal(replay.state,"already_bound");assert.equal(replay.productionId,result.productionId);
+  const created=(await db.query("select user_id,status,reserved_credits,estimated_credits,output_json from production_requests where id=$1",[result.productionId])).rows[0];assert.equal(created.user_id,owner);assert.equal(created.status,"pending");assert.equal(created.reserved_credits,0);assert.equal(created.estimated_credits,1500);assert.equal(created.output_json.websiteAssistant.approvedHash,q.planHash);
+  assert.deepEqual((await db.query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0],beforeWallet);
+  assert.equal((await db.query("select has_function_privilege('authenticated','public.website_ai_handoff_approved_plan(uuid,uuid,integer,jsonb,jsonb,text,text,integer)','EXECUTE') as allowed")).rows[0].allowed,false);
+  await db.query("update studio_agent_projects set revision=2 where id=$1",[assistantId]);assert.equal((await invokeHandoff(approveBody)).status,409);
+  console.log("website assistant handoff: exact saved brief, explicit version approval, atomic owner binding, no credit hold, stale and duplicate protection");
+  // Isolate this added fixture from existing production list/ledger assertions.
+  await db.query("delete from studio_agent_projects where id=$1",[assistantId]);
+  await db.query("delete from production_requests where id=$1",[result.productionId]);
   const {runIsolatedWebsiteAI,websiteAIPolicyDigest}=load('src/lib/studio-agent/website-ai-orchestrator.ts');
   const policy={version:'offline-v1',model:'gpt-6.1-terra',inputLimit:16000,outputLimit:1200,requestMicroUSD:50000,totalMicroUSD:1000000,userRPM:2,systemRPM:5,inputRate:3000000,outputRate:5000000};
   const approval={userId:owner,productionId,planHash,packId,credits,policyVersion:policy.version,policyHash:websiteAIPolicyDigest(policy),maximumMicroUSD:policy.requestMicroUSD,source:'persisted_explicit_user_approval',brief:hashBrief};
