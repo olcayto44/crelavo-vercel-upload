@@ -3,10 +3,12 @@ import {z} from "zod";
 import sharp from "sharp";
 import {WebsiteHeroMedia} from "../website-hero-media";
 const Id=z.string().uuid();
-const Source=z.object({request_id:Id,user_id:Id,state:z.literal("settled"),plan:z.object({categoryId:z.literal("image"),operation:z.literal("image_generate"),provider:z.literal("minimax"),model:z.literal("image-01")}),receipt:z.object({provider:z.literal("minimax"),model:z.literal("image-01"),sha256:z.string().regex(/^[a-f0-9]{64}$/),mime:z.literal("image/png"),width:z.number().int().positive(),height:z.number().int().positive()}),actual_micro_usd:z.number().int().nonnegative(),max_micro_usd:z.number().int().positive(),artifact:z.string().regex(/^\\x[0-9a-f]+$/i).max(25165826)});
-export async function optimizeSettledImageForWebsite(raw:unknown,userId:string,requestId:string,pageSlug:string,alt:string){
+const Source=z.object({request_id:Id,user_id:Id,state:z.literal("settled"),plan:z.object({categoryId:z.literal("image"),operation:z.literal("image_generate"),provider:z.literal("minimax"),model:z.literal("image-01")}),receipt:z.object({provider:z.literal("minimax"),model:z.literal("image-01"),sha256:z.string().regex(/^[a-f0-9]{64}$/),mime:z.literal("image/png"),width:z.number().int().positive(),height:z.number().int().positive(),providerRequestId:z.string().optional()}),actual_micro_usd:z.number().int().nonnegative().nullable(),max_micro_usd:z.number().int().positive(),artifact:z.string().regex(/^\\x[0-9a-f]+$/i).max(25165826)});
+const Estimate=z.object({request_id:Id,provider_request_id:z.string(),estimated_micro_usd:z.literal(3500),policy_version:z.literal("website-image-01-pilot-v1"),invoice_pending:z.literal(true)});
+export async function optimizeSettledImageForWebsite(raw:unknown,userId:string,requestId:string,pageSlug:string,alt:string,estimate?:unknown){
  const s=Source.parse(raw);
- if(s.user_id!==userId||s.request_id!==requestId||s.actual_micro_usd>s.max_micro_usd)throw Error("image_not_settled_for_owner");
+ const e=Estimate.safeParse(estimate),cost=s.actual_micro_usd??(e.success&&e.data.request_id===s.request_id&&e.data.provider_request_id===s.receipt.providerRequestId?e.data.estimated_micro_usd:null);
+ if(s.user_id!==userId||s.request_id!==requestId||cost===null||cost>s.max_micro_usd)throw Error("image_not_settled_for_owner");
  const bytes=Buffer.from(s.artifact.slice(2),"hex");
  if(bytes.length<16||bytes.length>12*1024*1024||createHash("sha256").update(bytes).digest("hex")!==s.receipt.sha256)throw Error("image_integrity_invalid");
  const image=sharp(bytes,{limitInputPixels:4194304,failOn:"error"}),meta=await image.metadata();
@@ -25,6 +27,6 @@ const Metadata=Source.omit({artifact:true}).extend({updated_at:z.string().dateti
 /** Only narrow metadata for eligible owner-scoped settled productions. No prompts or image bytes. */
 export function listSettledWebsiteImages(raw:unknown,actor:string){
  if(!Id.safeParse(actor).success||!Array.isArray(raw)||raw.length>30)throw Error("invalid_image_list");
- return raw.flatMap(item=>{const p=Metadata.safeParse(item);if(!p.success)return [];const s=p.data;if(s.user_id!==actor||s.actual_micro_usd>s.max_micro_usd||s.receipt.width*s.receipt.height>4194304)return [];
+ return raw.flatMap(item=>{const p=Metadata.safeParse(item);if(!p.success)return [];const s=p.data;if(s.user_id!==actor||s.actual_micro_usd===null||s.actual_micro_usd>s.max_micro_usd||s.receipt.width*s.receipt.height>4194304)return [];
  return [{requestId:s.request_id,width:s.receipt.width,height:s.receipt.height,updatedAt:s.updated_at,model:s.receipt.model}];});
 }
