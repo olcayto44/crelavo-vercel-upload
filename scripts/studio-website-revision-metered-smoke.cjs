@@ -4,6 +4,8 @@ const {runConversation,applyCompletion,conversationPayloadHash}=load("src/lib/st
 const {createExistingProviderAdapter}=load("src/lib/studio-agent/provider-adapter.ts");
 const {MemoryConversationStore}=load("src/lib/studio-agent/mock-conversation.ts");
 const {ConversationRequestSchema}=load("src/lib/studio-agent/conversation-contract.ts");
+const {websiteRevisionQuote,issueWebsiteRevisionQuote,verifyWebsiteRevisionQuote,WebsiteRevisionRequest}=load("src/lib/studio-agent/website-revision-quote.ts");
+const {readCostPolicy}=load("src/lib/studio-agent/cost-policy.ts");
 const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
 (async()=>{
  const actor="11111111-1111-4111-8111-111111111111",siteId="22222222-2222-4222-8222-222222222222",requestId="33333333-3333-4333-8333-333333333333";
@@ -28,7 +30,17 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  };
  const deps={store,provider:createExistingProviderAdapter(),tariff:{version:"offline",inputPer1K:1,outputPer1K:1},mode:"real"};
  process.env.STUDIO_AGENT_REAL_AI_ENABLED="false";await assert.rejects(runConversation(input,deps));assert.equal(calls,0);process.env.STUDIO_AGENT_REAL_AI_ENABLED="true";
- const result=await runConversation(input,deps);assert.equal(calls,1);assert.deepEqual(store.events,["reserve","claim","record","settle"]);assert.equal(result.chargedAccount,"assistant");assert.equal(result.chargedCredits,2);assert.equal(result.websiteRevisionProposal.proposalOnly,true);assert.equal(result.websiteRevisionProposal.baseHash,context.baseHash);assert.equal(result.websiteRevisionProposal.siteId,siteId);assert.equal(result.project.snapshot.revision,1);assert.deepEqual(result.project.snapshot.fields,{});
+ const policy=readCostPolicy(),quoteInput={userId:actor,requestId,message:input.message,project,context,provider:deps.provider,tariff:deps.tariff,policy};
+ const quote=websiteRevisionQuote(quoteInput),secret="offline-test-signing-secret-only-not-for-production",now=Date.now(),signed=issueWebsiteRevisionQuote(quote.fingerprint,secret,now);
+ verifyWebsiteRevisionQuote(signed,quote.fingerprint,secret,now);
+ assert.throws(()=>verifyWebsiteRevisionQuote(signed,quote.fingerprint,secret,now+300001));assert.throws(()=>verifyWebsiteRevisionQuote(signed,quote.fingerprint,"another-test-signing-key-not-for-production",now));
+ for(const change of [{message:"Other message"},{requestId:siteId},{context:prepareWebsiteRevisionContext({siteId,version:4,design})},{tariff:{...deps.tariff,inputPer1K:2}},{project:{...project,snapshot:{...project.snapshot,revision:1}}}])assert.throws(()=>verifyWebsiteRevisionQuote(signed,websiteRevisionQuote({...quoteInput,...change}).fingerprint,secret,now));
+ assert(!WebsiteRevisionRequest.safeParse({action:"submit",siteId,version:3,requestId,message:input.message,quote:signed,approvedMaxCredits:quote.maxCredits,projectId:project.id}).success);
+ await assert.rejects(runConversation({...input,approvedMaxCredits:quote.maxCredits-1,expectedProjectRevision:0},deps),/quote_changed_reload/);
+ await assert.rejects(runConversation({...input,approvedMaxCredits:quote.maxCredits,expectedProjectRevision:2},deps),/project_changed_reload/);
+ assert.equal(calls,0);assert.deepEqual(store.events,[]);
+ console.log("website signed quote acceptance: message, site revision, request, tariff, project revision and expiry binding; under-approved credits denied before reservation");
+ const result=await runConversation({...input,approvedMaxCredits:quote.maxCredits,expectedProjectRevision:0},deps);assert.equal(calls,1);assert.deepEqual(store.events,["reserve","claim","record","settle"]);assert.equal(result.chargedAccount,"assistant");assert.equal(result.chargedCredits,2);assert.equal(result.websiteRevisionProposal.proposalOnly,true);assert.equal(result.websiteRevisionProposal.baseHash,context.baseHash);assert.equal(result.websiteRevisionProposal.siteId,siteId);assert.equal(result.project.snapshot.revision,1);assert.deepEqual(result.project.snapshot.fields,{});
  assert.equal(design.palette,"sand");assert.equal(design.pages[0].headline,"Original headline");
  const applied=applyWebsiteRevision(design,3,{expectedRevision:result.websiteRevisionProposal.expectedRevision,commands:result.websiteRevisionProposal.commands});assert.equal(applied.design.palette,"ink");assert.equal(applied.design.pages[0].headline,"Yeni koleksiyon");assert.equal(applied.design.pages[0].sections[0].heading,"Second");assert.equal(applied.design.pages[0].title,"Yeni SEO başlığı");
  const again=await runConversation(input,deps);assert.deepEqual(again,result);assert.equal(calls,1);assert.equal(store.wallets.production.balance,0);
