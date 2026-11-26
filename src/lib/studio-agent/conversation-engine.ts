@@ -1,3 +1,4 @@
+import {validateWebsiteAIRevision,type WebsiteRevisionContext} from "./website-revision-context";
 import { advanceMockConversation } from "./assistant-core";
 import {readCostPolicy,maximumMicroUSD} from "./cost-policy";
 import { createHash } from "node:crypto";
@@ -15,8 +16,8 @@ export function readAssistantTariff(): AssistantTariff {
   if (!version || !/^[a-zA-Z0-9._-]{1,64}$/.test(version) || ![inputPer1K, outputPer1K].every(value => Number.isSafeInteger(value) && value > 0 && value <= 1000)) throw new ConversationError("assistant_tariff_not_configured");
   return { version, inputPer1K, outputPer1K };
 }
-export function conversationPayloadHash(input: { projectId: string; categoryId: string; message: string; uiLanguage: string; acceptedDefaults: string[] }) {
-  return createHash("sha256").update(JSON.stringify([input.projectId,input.categoryId,input.message,input.uiLanguage,[...input.acceptedDefaults].sort()])).digest("hex");
+export function conversationPayloadHash(input: { projectId: string; categoryId: string; message: string; uiLanguage: string; acceptedDefaults: string[];websiteRevisionContext?:WebsiteRevisionContext }) {
+  return createHash("sha256").update(JSON.stringify([input.projectId,input.categoryId,input.message,input.uiLanguage,[...input.acceptedDefaults].sort(),...(input.websiteRevisionContext?[[input.websiteRevisionContext.siteId,input.websiteRevisionContext.version,input.websiteRevisionContext.baseHash]]:[])])).digest("hex");
 }
 const creditUnits = (input: number, output: number, tariff: AssistantTariff) => Math.ceil(input / 1000) * tariff.inputPer1K + Math.ceil(output / 1000) * tariff.outputPer1K;
 const requiredDetail: Record<string,string> = {
@@ -35,6 +36,12 @@ const disabledReply: Record<string,string> = {
 };
 export function applyCompletion(input: ProviderInput, raw: unknown) {
   const proposal = completionSchema(input.project.categoryId).parse(raw);
+  if(proposal.websiteRevision||input.websiteRevisionContext){
+    if(!input.websiteRevisionContext||input.project.categoryId!=="website"||proposal.intent!=="edit_content"||Object.keys(proposal.briefPatch).length||Object.keys(proposal.evidence).length||proposal.toolCalls.length||proposal.proposedCategory||proposal.question)throw new ConversationError("website_revision_context_invalid",502);
+    const websiteRevisionProposal=proposal.websiteRevision?validateWebsiteAIRevision(input.websiteRevisionContext,proposal.websiteRevision):undefined;
+    const reply=websiteRevisionProposal?(input.uiLanguage==="tr"?"Düzenleme önerisi hazır. İnceleyip onaylayabilirsiniz; henüz uygulanmadı.":"Revision proposal ready for review; no changes applied."):(input.uiLanguage==="tr"?"Bu düzenleme mevcut araçlarla önerilemedi. Tasarım değişmedi.":"This edit is not supported by the current revision tools. The design is unchanged.");
+    return {project:{...input.project,snapshot:{...input.project.snapshot,revision:input.project.snapshot.revision+1},messages:[...input.project.messages,{role:"user" as const,content:input.message},{role:"assistant" as const,content:reply}].slice(-50)},reply,blockedTools:[],nextQuestion:null,websiteRevisionProposal};
+  }
   for (const [key, value] of Object.entries(proposal.briefPatch)) {
     if (JSON.stringify(value) === JSON.stringify(input.project.snapshot.fields[key])) continue;
     const evidence = proposal.evidence[key];
@@ -66,7 +73,7 @@ export function applyCompletion(input: ProviderInput, raw: unknown) {
   return {project, reply, blockedTools, nextQuestion: next ? {fieldId:next.fieldId,question} : null};
 }
 export async function runConversation(input: {
-  userId:string;projectId:string;categoryId:string;requestId:string;message:string;uiLanguage:ProviderInput["uiLanguage"];acceptedDefaults:string[];
+  userId:string;projectId:string;categoryId:string;requestId:string;message:string;uiLanguage:ProviderInput["uiLanguage"];acceptedDefaults:string[];websiteRevisionContext?:WebsiteRevisionContext;
 }, deps: {store:ConversationStore;provider:ConversationProvider;tariff:AssistantTariff;mode:"real"|"mock"}) {
   assertCreditAccount("conversation", "assistant");
   const project = await deps.store.load(input.userId,input.projectId,input.categoryId);
@@ -74,7 +81,7 @@ export async function runConversation(input: {
   const contract = getCategoryContract(input.categoryId);
   for (const key of input.acceptedDefaults) if (!Object.prototype.hasOwnProperty.call(contract.defaults,key)) throw new ConversationError("unknown_default",400);
   deps.provider.preflight();
-  const providerInput: ProviderInput = {project,message:input.message,uiLanguage:input.uiLanguage,acceptedDefaults:input.acceptedDefaults};
+  const providerInput: ProviderInput = {project,message:input.message,uiLanguage:input.uiLanguage,acceptedDefaults:input.acceptedDefaults,websiteRevisionContext:input.websiteRevisionContext};
   const prepared = deps.provider.prepare(providerInput);
   if (prepared.inputUpperBound > 96000 || !Number.isSafeInteger(prepared.inputUpperBound) || prepared.inputUpperBound < 1) throw new ConversationError("conversation_context_too_large",413);
   const cost=deps.mode==="real"?readCostPolicy():null;
@@ -107,7 +114,7 @@ export async function runConversation(input: {
   }
   if(cost&&(!completed.receipt||completed.receipt.model!==cost.model||completed.receipt.policyVersion!==cost.version)){await deps.store.uncertain(input.userId,input.requestId).catch(()=>{});throw new ConversationError("provider_receipt_unverifiable",503,"uncertain");}
    let applied;
-  try { if(completed.receipt&&completed.receipt.finishReason!=="stop")throw new Error("incomplete_response");applied = applyCompletion(providerInput,completed.output); if(deps.mode==="mock")applied=advanceMockConversation(providerInput,applied); }
+  try { if(completed.receipt&&completed.receipt.finishReason!=="stop")throw new Error("incomplete_response");applied = applyCompletion(providerInput,completed.output); if(deps.mode==="mock"&&!input.websiteRevisionContext)applied=advanceMockConversation(providerInput,applied); }
   catch {
     // Known provider usage still incurs Assistant cost; reject unsafe output without changing the brief or executing tools.
     const reply = invalidReply[input.uiLanguage];
