@@ -5,6 +5,7 @@ import {rateLimit} from "@/lib/security";
 import {isolatedDatabaseTarget} from "@/lib/studio-agent/environment-policy";
 import {handleImageLaunch} from "@/lib/studio-agent/image-launch";
 import {generateSingleMinimaxImage} from "@/lib/studio-agent/image-provider";
+import {websiteImagePilotConnection} from "@/lib/studio-agent/website-pilot-provider";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 export const maxDuration=120;
@@ -17,7 +18,7 @@ export async function POST(request:Request){
  try{
  const db=createClient("https://bwzxdxqgrgbsvndinmrv.supabase.co",key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
  const {data,error}=await db.auth.getUser(token);if(error||!data.user||!(data.user.email_confirmed_at||data.user.confirmed_at))return fail(401,"sign_in");
- const userId=data.user.id,canaryId=process.env.STUDIO_IMAGE_TEST_USER_ID||"",apiKey=process.env.STUDIO_IMAGE_TEST_PROVIDER_KEY||"";
+ const userId=data.user.id,{canaryId,apiKey}=websiteImagePilotConnection();
  if(userId!==canaryId)return fail(403,"image_canary_required");
  if(!rateLimit({key:"studio-image-launch:"+userId,limit:10,windowMs:60000}).allowed)return fail(429,"rate_limit");
  return await handleImageLaunch(request,{userId,canaryId,

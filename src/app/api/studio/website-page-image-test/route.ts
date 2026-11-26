@@ -3,7 +3,7 @@ import {z} from "zod";
 import {websiteDesignPilotEnabled} from "@/lib/website-design-pilot-gate";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {isolatedDatabaseTarget} from "@/lib/studio-agent/environment-policy";
-import {websitePilotCanary} from "@/lib/studio-agent/website-pilot-provider";
+import {websitePilotCanary,websiteImagePilotConnection} from "@/lib/studio-agent/website-pilot-provider";
 import {rateLimit} from "@/lib/security";
 import {buildWebsiteMediaPlan} from "@/lib/website-media-art-direction";
 import {handleImageLaunch} from "@/lib/studio-agent/image-launch";
@@ -38,7 +38,7 @@ export async function POST(request:Request){
  const draft=await db.from("website_cms_design_drafts").select("design,version").eq("site_id",v.siteId).maybeSingle();
  if(draft.error||draft.data?.version!==v.version)return fail(409,"project_changed_reload");
  const plan=buildWebsiteMediaPlan(draft.data.design).find(p=>p.pageSlug===v.pageSlug);if(!plan)return fail(404,"page_not_found");
- const canaryId=process.env.STUDIO_IMAGE_TEST_USER_ID||"",apiKey=process.env.STUDIO_IMAGE_TEST_PROVIDER_KEY||"";
+ const {canaryId,apiKey}=websiteImagePilotConnection();
  const enabled=()=>userId===canaryId&&!!apiKey.trim()&&process.env.STUDIO_IMAGE_LAUNCH_ENABLED==="true"&&process.env.STUDIO_IMAGE_PROVIDER_VERIFIED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true";
  const loadTariff=async()=>{const a=await db.from("studio_image_activation").select("enabled,tariff_version").eq("singleton",true).maybeSingle();if(a.error||!a.data?.enabled)return null;const t=await db.from("studio_image_tariffs").select("version,credits,max_micro_usd,enabled").eq("version",a.data.tariff_version).eq("enabled",true).maybeSingle();if(t.error)throw Error("tariff");return t.data;};
  const loadTarget=async()=>{const t=await db.from("studio_website_image_targets").select("request_id,project_id,prompt,placed_media_version").eq("user_id",userId).eq("site_id",v.siteId).eq("design_version",v.version).eq("page_slug",v.pageSlug).maybeSingle();if(t.error)throw Error("target");return t.data;};
