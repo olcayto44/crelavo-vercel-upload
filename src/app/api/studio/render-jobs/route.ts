@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       // Concurrent duplicate requests may race; return the originally queued job.
       if (insertError.code === "23505") {
         const { data: duplicate } = await db.from("studio_render_jobs")
-          .select("id,status,created_at").eq("user_id", user.id).eq("request_id", body.requestId).maybeSingle();
+          .select("id,status,created_at,project_id,timeline_version_id").eq("user_id", user.id).eq("request_id", body.requestId).maybeSingle();
         if (duplicate && (duplicate.project_id !== body.projectId || duplicate.timeline_version_id !== body.timelineVersionId)) return error("Render request ID conflict.", 409);
         if (duplicate) return NextResponse.json({ ok: true, reused: true, job: duplicate, creditsReserved: false }, { headers: noCache });
       }
