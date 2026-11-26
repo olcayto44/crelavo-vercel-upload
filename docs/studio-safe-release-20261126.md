@@ -1,0 +1,2 @@
+# Scoped release based on current production main
+Public category SEO release #15 remains intact. This package adds the previously tested local video editor, local image editor, local Elements library, and honest Website delivery scope in five languages. Video WebM is default. Cloud synchronization and MP4 are explicitly disabled in the page; no new database migrations, payment settings, live AI enablement, or provider calls. Website paid/CMS production and admin/central dispatch changes are excluded pending separate production schema and security acceptance.
