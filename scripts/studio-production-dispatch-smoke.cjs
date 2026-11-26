@@ -29,7 +29,7 @@ const run=(body=input,d=deps)=>handleProductionDispatch(new Request("https://exa
  ]){const r=await run(body,d);assert.equal(r.status,status);assert.equal((await r.json()).ok,false);}
  assert.equal(calls,0);
  const estimate=await run({categoryId:"website",projectId,planHash,action:"quote"},{...deps,adapter:{...deps.adapter,enabled:()=>false}});
- assert.equal(estimate.status,200);const priced=await estimate.json();assert.equal(priced.credits,500);assert.equal(priced.quoteHash,quote.quoteHash);assert.equal(priced.dispatchEnabled,false);assert.equal(priced.route.realAI,false);assert.equal(priced.platformOperatingCostMicroUSD,null);assert.equal(calls,0);
+ assert.equal(estimate.status,200);const priced=await estimate.json();assert.equal(priced.credits,500);assert.equal(priced.quoteHash,quote.quoteHash);assert.equal(priced.dispatchEnabled,false);assert.equal(priced.route.realAI,true);assert.equal(priced.platformOperatingCostMicroUSD,null);assert.equal(calls,0);
  assert.equal(selectProductionRoute("video","image_generate"),null);assert.equal(selectProductionRoute("image","image_generate").remoteProviderCostMicroUSD,null);
  assert.throws(()=>websiteProductionQuote({userId,projectId,productionId,planHash,packId:"website_basic_admin",storedCredits:3500,estimatedCredits:3500}));
  const ready=await run();assert.equal(ready.status,200);assert.equal((await ready.json()).chargedCredits,500);assert.equal(calls,1);
