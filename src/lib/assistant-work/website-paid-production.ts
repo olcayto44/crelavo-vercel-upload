@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {productionCreditCheck} from "../studio-agent/production-credit-policy";
 import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
@@ -78,7 +79,8 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
   if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
   const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
-  if(available<credits)return reply({ok:false,code:"insufficient_credits",required:credits,balance:available},402);
+  const check=productionCreditCheck(credits,available);
+  if(!check.ok)return reply(check,check.status);
   const ledger = createWebsiteCreditLedger(async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     return { data, error };
