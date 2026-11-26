@@ -1,0 +1,16 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),{load}=require("./studio-agent-test-loader.cjs");
+const {WebsiteDraftSave,productionWebsiteDraftScope,readBoundedWebsiteJson}=load("src/lib/website-production-draft.ts");
+const {buildWebsiteSectorDraft}=load("src/lib/website-sector-draft.ts");
+const {renderWebsiteDesignCandidate}=load("src/lib/website-design-candidate.ts");
+(async()=>{const design={version:2,brand:"Example Studio",language:"en",layout:"service",palette:"sand",...buildWebsiteSectorDraft("agency")};
+ assert(WebsiteDraftSave.safeParse({version:0,design}).success);
+ assert(!WebsiteDraftSave.safeParse({version:0,design,userId:"forged"}).success);
+ assert(!WebsiteDraftSave.safeParse({version:-1,design}).success);
+ const env={VERCEL_ENV:"production",NEXT_PUBLIC_SUPABASE_URL:"https://yahegfagwxvixjnybkaw.supabase.co",SUPABASE_SERVICE_ROLE_KEY:"fixture"};
+ assert(productionWebsiteDraftScope(env));assert(!productionWebsiteDraftScope({...env,VERCEL_ENV:"preview"}));assert(!productionWebsiteDraftScope({...env,NEXT_PUBLIC_SUPABASE_URL:"https://bwzxdxqgrgbsvndinmrv.supabase.co"}));
+ assert((await readBoundedWebsiteJson(new Request("https://test.invalid",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"ok":true}'}))).ok);
+ await assert.rejects(readBoundedWebsiteJson(new Request("https://test.invalid",{method:"POST",headers:{"Content-Type":"application/json"},body:'{"long":"too large"}'}),5),/body_too_large/);
+ assert(renderWebsiteDesignCandidate(design).files.some(x=>x.path==="index.html"));
+ const route=fs.readFileSync("src/app/api/studio/website-draft/route.ts","utf8");assert(route.includes("auth.getUser(token)"));assert(route.includes('.eq("user_id",a.actor).eq("version",version)'));assert(route.includes("paid_delivery_required"));
+ console.log("website production draft: schema, owner-scoped storage, compare-and-swap, preview and paid export fence");
+})().catch(e=>{console.error(e);process.exitCode=1;});
