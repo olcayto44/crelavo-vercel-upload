@@ -229,6 +229,61 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
  assert.equal(recoveryDb.prepare("SELECT auth_version FROM members WHERE id=?").get(memberId).auth_version,account.auth_version+1);
  assert(!(await (await get("/member",preResetCookie)).text()).includes("Updated member"));
  }finally{recoveryDb.close();}
+ // Exact extracted sandbox module; synthetic transport and no actual checkout.
+ assert.equal((await post("/admin/payment-test-create",{csrf:memberOwnerCsrf,kind:"cart",ref:q3,confirm:"sandbox"})).status,403);
+ assert.equal((await post("/admin/payment-test-create",{csrf:memberOwnerCsrf,kind:"cart",ref:q3,confirm:"sandbox"},memberOwner)).status,503);
+ const paymentDb=new (require("node:sqlite").DatabaseSync)(path.join(currentDataDir,"site.sqlite"));
+ paymentDb.exec("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000");
+ const createPayments=require(path.join(dir,"payments.cjs")),payCrypto=require("node:crypto");
+ let payCalls=[],sessions=new Map(),scenario="normal";const testPrice="price_offline123456789",testSubscription="sub_offline123456789";
+ const payEnv={SITE_PAYMENT_TEST:"1",SITE_STRIPE_TEST_KEY:"sk_test_synthetic123456789",SITE_STRIPE_TEST_MONTHLY_PRICE:testPrice};
+ const paymentDeps={db:paymentDb,config:{language:"tr",modules:["catalog","orders","accounts"]},origin:new URL("https://customer.example.test"),local:false,esc:String,hidden:()=>"",page:(title,body)=>body,send:(res,status,body)=>{res.status=status;res.body=body;},redirect:()=>{},value:(f,k,max)=>{const v=f.get(k);if(!v||v.length>max||f.getAll(k).length!==1)throw Error("field");return v;},token:()=>payCrypto.randomBytes(32).toString("hex"),crypto:payCrypto,env:payEnv,transport:async(url,init)=>{
+ const u=new URL(url);assert.equal(u.origin,"https://api.stripe.com");assert.equal(init.redirect,"error");assert.equal(init.headers.Authorization,"Bearer "+payEnv.SITE_STRIPE_TEST_KEY);payCalls.push(u.pathname);
+ if(u.pathname==="/v1/prices/"+testPrice)return Response.json({id:testPrice,object:"price",livemode:false,active:true,type:"recurring",billing_scheme:"per_unit",unit_amount:2500,currency:"usd",recurring:{interval:"month",interval_count:1,usage_type:"licensed"}});
+ if(u.pathname==="/v1/checkout/sessions"){
+  assert.equal(init.method,"POST");const f=new URLSearchParams(init.body),id=f.get("client_reference_id"),kind=f.get("mode");
+  assert.equal(init.headers["Idempotency-Key"],"crelavo-sandbox-"+id);assert.equal(f.get("metadata[crelavo_test_run]"),id);assert(!init.body.includes("Cart+buyer"));assert(!init.body.includes("example.test%40"));assert.equal(f.get("success_url"),"https://customer.example.test/admin");
+  const sid="cs_test_"+id.slice(0,32),s={id:sid,object:"checkout.session",livemode:scenario==="live",client_reference_id:id,metadata:{crelavo_test_run:id},mode:kind,currency:kind==="payment"?"try":"usd",amount_total:kind==="payment"?16000:2500,amount_subtotal:kind==="payment"?16000:2500,total_details:{amount_discount:0,amount_shipping:0,amount_tax:0},status:"open",payment_status:"unpaid",url:"https://checkout.stripe.com/c/pay/"+sid};
+  if(kind==="payment"){assert.equal(f.get("line_items[0][price_data][unit_amount]"),"16000");assert.equal(f.get("line_items[0][price_data][currency]"),"try");}else{assert.equal(f.get("line_items[0][price]"),testPrice);assert.equal(f.get("subscription_data[metadata][crelavo_test_run]"),id);}
+  sessions.set(sid,s);return Response.json(s);
+ }
+ if(u.pathname.startsWith("/v1/checkout/sessions/")){
+  assert.equal(init.method,"GET");const s=sessions.get(u.pathname.split("/").pop());assert(s);
+  return Response.json({...s,status:"complete",payment_status:"paid",payment_intent:"pi_offline123456789",subscription:s.mode==="subscription"?testSubscription:null,amount_total:scenario==="wrong_amount"?1:s.amount_total});
+ }
+ if(u.pathname==="/v1/subscriptions/"+testSubscription){
+  const s=[...sessions.values()].find(x=>x.mode==="subscription");return Response.json({object:"subscription",id:testSubscription,livemode:false,metadata:{crelavo_test_run:s.client_reference_id},currency:"usd",status:"active",items:{has_more:false,data:[{quantity:1,price:{id:scenario==="wrong_subscription"?"price_wrong":testPrice,unit_amount:2500}}]}});
+ }
+ throw Error("unexpected provider path");
+ }};
+ const invokePayment=async(mod,action,body)=>{const res={};assert.equal(await mod.adminPost("/admin/payment-test-"+action,new URLSearchParams(body),res),true);return res;};
+ try{
+ const cartBefore=paymentDb.prepare("SELECT * FROM cart_orders WHERE id=?").get(q3),memberBefore=paymentDb.prepare("SELECT * FROM members WHERE id=?").get(memberId);
+ const order={kind:"cart",ref:q3,confirm:"sandbox"};
+ assert.equal((await invokePayment(createPayments({...paymentDeps,local:true}),"create",order)).status,503);
+ assert.equal((await invokePayment(createPayments({...paymentDeps,env:{...payEnv,SITE_STRIPE_TEST_KEY:"sk_live_synthetic123456789"}}),"create",order)).status,503);assert.equal(payCalls.length,0);
+ const payments=createPayments(paymentDeps);
+ assert.equal((await invokePayment(payments,"create",{...order,confirm:"no"})).status,400);assert.equal(payCalls.length,0);
+ assert.equal((await invokePayment(payments,"create",order)).status,200);assert.equal(payCalls.length,1);
+ assert.equal((await invokePayment(payments,"create",order)).status,409);assert.equal(payCalls.length,1);
+ const payRun=paymentDb.prepare("SELECT * FROM payment_test_runs WHERE kind='cart' AND ref=?").get(q3);assert.equal(payRun.state,"open");
+ scenario="wrong_amount";assert.equal((await invokePayment(payments,"check",{id:payRun.id})).status,503);
+ assert.equal(paymentDb.prepare("SELECT state FROM payment_test_runs WHERE id=?").get(payRun.id).state,"open");
+ paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(payRun.id);scenario="normal";
+ assert.equal((await invokePayment(payments,"check",{id:payRun.id})).status,200);
+ assert.equal(paymentDb.prepare("SELECT state FROM payment_test_runs WHERE id=?").get(payRun.id).state,"test_paid");
+ const subOrder={kind:"membership",ref:memberId,confirm:"sandbox"};
+ assert.equal((await invokePayment(payments,"create",subOrder)).status,200);
+ const subRun=paymentDb.prepare("SELECT * FROM payment_test_runs WHERE kind='membership' AND ref=?").get(memberId);assert.equal(subRun.state,"open");
+ scenario="wrong_subscription";assert.equal((await invokePayment(payments,"check",{id:subRun.id})).status,503);
+ paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(subRun.id);scenario="normal";
+ assert.equal((await invokePayment(payments,"check",{id:subRun.id})).status,200);
+ assert.equal(paymentDb.prepare("SELECT subscription_status FROM payment_test_runs WHERE id=?").get(subRun.id).subscription_status,"active");
+ assert.deepEqual(paymentDb.prepare("SELECT * FROM cart_orders WHERE id=?").get(q3),cartBefore);
+ assert.deepEqual(paymentDb.prepare("SELECT * FROM members WHERE id=?").get(memberId),memberBefore);
+ assert.equal((await invokePayment(payments,"create",subOrder)).status,409);
+ }finally{paymentDb.close();}
+ console.log("independent payment sandbox: test keys only, exact server totals, one-shot checkout, read-only payment and subscription proof, no stock or entitlement changes (synthetic transport)");
  console.log("independent account recovery: disabled by default, authenticated verification, hashed code, verified recipient only, expiry, replay and rate limit, generic response and revoked sessions (synthetic transport)");
  console.log("independent customer accounts: one-use invite, private credentials, isolated member/admin sessions, CSRF, escaped profile, immediate suspension and revocation");
  const oldCookie=memberOwner,otherAdmin=await (await get("/admin",oldCookie)).text(),otherCsrf=otherAdmin.match(/name="csrf" value="([a-f0-9]+)"/)[1];
