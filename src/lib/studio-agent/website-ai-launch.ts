@@ -45,10 +45,7 @@ export async function handleWebsiteAILaunch(request:Request,d:Deps){
  // owner-approved production. Interruption after reserve requires explicit review.
  if(!d.enabled()||!await d.policyMatches())return reply({ok:true,productionId:p.id,state:"queued",safeToRetryAutomatically:false});
  const result=await runWebsiteAIWorkerOnce({...d,testUserId:d.userId,loadNext:async()=>d.loadJob(d.userId,p.id)});
- if(result.state==="artifact_cost_pending"&&d.autoMeteredSettlement){
- const settled=await d.rpc("website_ai_finalize_metered",{p_user:d.userId,p_production:p.id,p_hash:a.planHash});
- if(!settled.error&&(settled.data==="settled"||settled.data==="already_settled"))return reply({ok:true,productionId:p.id,state:"settled",costBasis:"metered_policy_estimate",invoicePending:true,safeToRetryAutomatically:false});
- }
- return reply({ok:result.state==="artifact_cost_pending",productionId:p.id,...result},result.state==="artifact_cost_pending"?200:409);
+ const ok=result.state==="artifact_cost_pending"||result.state==="settled";
+ return reply({ok,productionId:p.id,...result},ok?200:409);
  }catch{return fail(503,"website_ai_outcome_unconfirmed");}
 }
