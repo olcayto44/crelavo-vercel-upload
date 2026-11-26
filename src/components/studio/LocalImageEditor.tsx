@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import {supabaseBrowser} from "@/lib/supabase";
 
 type ImageRatio = "original" | "1:1" | "16:9" | "9:16" | "4:5";
+type ImageLayer={id:string;name:string;x:number;y:number;size:number;opacity:number;visible:boolean};
 const maxSourceBytes = 25_000_000;
 const ratioValues: Record<Exclude<ImageRatio,"original">,number> = {"1:1":1,"16:9":16/9,"9:16":9/16,"4:5":4/5};
 
@@ -36,14 +37,24 @@ export default function LocalImageEditor(){
  const [dragOver,setDragOver]=useState(false);
  const [ready,setReady]=useState(false);
  const [sourceVersion,setSourceVersion]=useState(0),[format,setFormat]=useState<"png"|"jpeg"|"webp">("png"),[resolution,setResolution]=useState(2048),[overlay,setOverlay]=useState(""),[overlayColor,setOverlayColor]=useState("#ffffff"),[overlaySize,setOverlaySize]=useState(5);
- useEffect(()=>()=>{bitmap.current?.close()},[]);
+ const layerImages=useRef(new Map<string,ImageBitmap>()),layerHistory=useRef<ImageLayer[][]>([]),layerFuture=useRef<ImageLayer[][]>([]);
+ const [layers,setLayers]=useState<ImageLayer[]>([]),[background,setBackground]=useState("transparent"),[layerHistoryTick,setLayerHistoryTick]=useState(0);
+ useEffect(()=>()=>{bitmap.current?.close();for(const image of layerImages.current.values())image.close();layerImages.current.clear();},[]);
+ function clearLayers(){for(const image of layerImages.current.values())image.close();layerImages.current.clear();layerHistory.current=[];layerFuture.current=[];setLayers([]);setLayerHistoryTick(v=>v+1);}
+ function updateLayers(next:ImageLayer[]){layerHistory.current.push(layers.map(l=>({...l})));if(layerHistory.current.length>30)layerHistory.current.shift();layerFuture.current=[];setLayers(next);setLayerHistoryTick(v=>v+1);}
+ function undoLayer(){const previous=layerHistory.current.pop();if(!previous)return;layerFuture.current.push(layers.map(l=>({...l})));setLayers(previous);setLayerHistoryTick(v=>v+1);}
+ function redoLayer(){const next=layerFuture.current.pop();if(!next)return;layerHistory.current.push(layers.map(l=>({...l})));setLayers(next);setLayerHistoryTick(v=>v+1);}
+ function updateLayer(id:string,patch:Partial<ImageLayer>){updateLayers(layers.map(l=>l.id===id?{...l,...patch}:l));}
+ function moveLayer(id:string,delta:number){const i=layers.findIndex(l=>l.id===id),next=i+delta;if(i<0||next<0||next>=layers.length)return;const copy=[...layers];[copy[i],copy[next]]=[copy[next],copy[i]];updateLayers(copy);}
+ async function addLayer(file:File|null){if(!file||!ready||layers.length>=8||layerImages.current.size>=30)return;if(!file.type.startsWith("image/")||file.size>maxSourceBytes){setStatus("Choose an image under 25 MB.");return;}try{const img=await createImageBitmap(file);if(img.width*img.height>16000000){img.close();throw Error("large layer");}const id=crypto.randomUUID();layerImages.current.set(id,img);updateLayers([...layers,{id,name:file.name.slice(0,80),x:50,y:50,size:40,opacity:100,visible:true}]);setStatus("Image layer added.");}catch{setStatus("Layer could not be loaded.");}}
+
  async function loadFile(file:File|null){
   if(!file)return;
   if(!file.type.startsWith("image/")||file.size>maxSourceBytes){setStatus("Use an image file smaller than 25 MB.");return;}
   try{
    const image=await createImageBitmap(file);
    if(image.width*image.height>70_000_000){image.close();setStatus("Image dimensions are too large.");return;}
-   bitmap.current?.close();bitmap.current=image;
+   bitmap.current?.close();bitmap.current=image;clearLayers();setBackground("transparent");
    setFilename(file.name.slice(0,120));setSourceVersion(v=>v+1);setOverlay("");
    setRotation(0);setFlipped(false);setBrightness(100);setContrast(100);setSaturation(100);setRatio("original");setCompare(false);setReady(true);
    setStatus("Image loaded. All edits are local and do not spend AI credits.");
@@ -60,20 +71,22 @@ export default function LocalImageEditor(){
   const width=Math.max(1,Math.round(intendedWidth*scale));
   const height=Math.max(1,Math.round(intendedHeight*scale));
   output.width=width;output.height=height;
-  const ctx=output.getContext("2d",{alpha:false});if(!ctx)return;
-  ctx.fillStyle="#090810";ctx.fillRect(0,0,width,height);
+  const ctx=output.getContext("2d",{alpha:true});if(!ctx)return;
+  ctx.clearRect(0,0,width,height);if(background!=="transparent"&&!compare){ctx.fillStyle=background;ctx.fillRect(0,0,width,height);}
   ctx.save();ctx.translate(width/2,height/2);ctx.rotate((compare?0:rotation)*Math.PI/180);
   ctx.scale(!compare&&flipped?-1:1,1);
   ctx.filter=compare?"none":`brightness(${brightness}%) contrast(${contrast}%) saturate(${saturation}%)`;
   const drawW=crop.width*scale,drawH=crop.height*scale;
   ctx.drawImage(image,crop.x,crop.y,crop.width,crop.height,-drawW/2,-drawH/2,drawW,drawH);
   ctx.restore();
+  if(!compare){for(const layer of layers){const asset=layerImages.current.get(layer.id);if(!asset||!layer.visible)continue;const w=width*layer.size/100,h=w*asset.height/asset.width;ctx.save();ctx.globalAlpha=layer.opacity/100;ctx.filter="none";ctx.drawImage(asset,width*layer.x/100-w/2,height*layer.y/100-h/2,w,h);ctx.restore();}}
   if(!compare&&overlay.trim()){ctx.save();ctx.filter="none";ctx.fillStyle=overlayColor;ctx.font="600 "+Math.max(12,Math.round(width*overlaySize/100))+"px Arial";ctx.textAlign="center";ctx.textBaseline="bottom";ctx.shadowColor="rgba(0,0,0,.6)";ctx.shadowBlur=5;ctx.fillText(overlay.trim(),width/2,height*.94,width*.92);ctx.restore();}
- },[rotation,flipped,brightness,contrast,saturation,ratio,compare,ready,sourceVersion,resolution,overlay,overlayColor,overlaySize]);
+ },[rotation,flipped,brightness,contrast,saturation,ratio,compare,ready,sourceVersion,resolution,overlay,overlayColor,overlaySize,layers,background]);
  useEffect(()=>{const params=new URLSearchParams(location.search),job=params.get("stageJob"),step=params.get("stageStep");if(!job||!step)return;let active=true;const sb=supabaseBrowser();void sb.auth.getSession().then(async({data})=>{if(!active||!data.session)return;const res=await fetch("/api/studio/stage-jobs?jobId="+encodeURIComponent(job)+"&download="+encodeURIComponent(step),{headers:{Authorization:"Bearer "+data.session.access_token},cache:"no-store"});if(!res.ok)throw Error("Stage artifact not ready");const blob=await res.blob();if(active)await loadFile(new File([blob],"crelavo-stage-"+step+".webp",{type:"image/webp"}));}).catch(()=>{if(active)setStatus("The saved production could not be loaded.");});return()=>{active=false;};},[]);
  function exportImage(){
   const output=canvas.current;if(!output||!ready)return;
-  output.toBlob(blob=>{
+  const exportCanvas=format==="jpeg"?document.createElement("canvas"):output;if(format==="jpeg"){exportCanvas.width=output.width;exportCanvas.height=output.height;const ctx=exportCanvas.getContext("2d");if(!ctx)return;ctx.fillStyle="#fff";ctx.fillRect(0,0,exportCanvas.width,exportCanvas.height);ctx.drawImage(output,0,0);}
+  exportCanvas.toBlob(blob=>{
    if(!blob){setStatus("Could not export this image.");return;}
    const url=URL.createObjectURL(blob);
    const link=document.createElement("a");link.href=url;
@@ -84,7 +97,7 @@ export default function LocalImageEditor(){
   },"image/"+format,.95);
  }
  const reset=()=>{
-  setRotation(0);setFlipped(false);setBrightness(100);setContrast(100);setSaturation(100);setRatio("original");setCompare(false);setOverlay("");setOverlayColor("#ffffff");setOverlaySize(5);setResolution(2048);
+  setRotation(0);setFlipped(false);setBrightness(100);setContrast(100);setSaturation(100);setRatio("original");setCompare(false);setOverlay("");setOverlayColor("#ffffff");setOverlaySize(5);setResolution(2048);setBackground("transparent");updateLayers([]);
  };
  return <section className="studio-compact-image-editor" style={{minHeight:"100%",background:"#120e1b",color:"#f4eefe",padding:"12px 16px",maxWidth:1250,margin:"0 auto",fontFamily:"Inter,system-ui,sans-serif"}}>
 
@@ -119,6 +132,10 @@ export default function LocalImageEditor(){
      <button type="button" disabled={!ready} onPointerDown={e=>{e.currentTarget.setPointerCapture(e.pointerId);setCompare(true)}} onPointerUp={()=>setCompare(false)} onPointerCancel={()=>setCompare(false)} onPointerLeave={()=>setCompare(false)}>Hold to compare</button>
      <button type="button" disabled={!ready} onClick={reset}>Reset</button>
     </div>
+    <label>Background<select disabled={!ready} value={background} onChange={e=>setBackground(e.target.value)}><option value="transparent">Transparent</option><option value="#ffffff">White</option><option value="#111827">Dark</option><option value="#64748b">Gray</option></select></label>
+    <strong>Image layers</strong><label>Add layer<input type="file" accept="image/png,image/jpeg,image/webp" disabled={!ready||layers.length>=8} onChange={e=>{void addLayer(e.target.files?.[0]??null);e.currentTarget.value="";}}/></label>
+    <div style={{display:"flex",gap:8}} data-history={layerHistoryTick}><button type="button" disabled={!ready||!layerHistory.current.length} onClick={undoLayer}>Undo layer edit</button><button type="button" disabled={!ready||!layerFuture.current.length} onClick={redoLayer}>Redo layer edit</button></div>
+    {layers.map((layer,i)=><div key={layer.id} style={{border:"1px solid #594568",padding:8,borderRadius:8,display:"grid",gap:5}}><strong>{layer.name}</strong><label><input type="checkbox" checked={layer.visible} onChange={e=>updateLayer(layer.id,{visible:e.target.checked})}/> Visible</label>{(["x","y","size","opacity"] as const).map(k=><label key={k}>{k} {layer[k]}%<input type="range" min={k==="size"?5:0} max={100} value={layer[k]} onChange={e=>updateLayer(layer.id,{[k]:Number(e.target.value)})}/></label>)}<div style={{display:"flex",gap:5}}><button type="button" disabled={i===0} onClick={()=>moveLayer(layer.id,-1)}>Back</button><button type="button" disabled={i===layers.length-1} onClick={()=>moveLayer(layer.id,1)}>Front</button><button type="button" onClick={()=>updateLayers(layers.filter(l=>l.id!==layer.id))}>Remove</button></div></div>)}
     <label>Text overlay<input disabled={!ready} maxLength={100} value={overlay} onChange={e=>setOverlay(e.target.value)}/></label>
     <label>Text color <input type="color" disabled={!ready} value={overlayColor} onChange={e=>setOverlayColor(e.target.value)}/></label>
     <label>Text size <input type="range" min={2} max={12} value={overlaySize} disabled={!ready} onChange={e=>setOverlaySize(Number(e.target.value))}/></label>
