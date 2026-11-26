@@ -112,8 +112,8 @@ export async function runConversation(input: {
     await deps.store.uncertain(input.userId,input.requestId).catch(() => {});
     throw new ConversationError("provider_usage_unverifiable",503,"uncertain");
   }
-  if(cost&&(!completed.receipt||completed.receipt.model!==cost.model||completed.receipt.policyVersion!==cost.version)){await deps.store.uncertain(input.userId,input.requestId).catch(()=>{});throw new ConversationError("provider_receipt_unverifiable",503,"uncertain");}
-   let applied;
+  if(cost&&(usage.data.outputTokens>cost.outputLimit||!completed.receipt||completed.receipt.model!==cost.model||completed.receipt.policyVersion!==cost.version)){await deps.store.uncertain(input.userId,input.requestId).catch(()=>{});throw new ConversationError("provider_receipt_unverifiable",503,"uncertain");}
+   let applied:ReturnType<typeof applyCompletion>;
   try { if(completed.receipt&&completed.receipt.finishReason!=="stop")throw new Error("incomplete_response");applied = applyCompletion(providerInput,completed.output); if(deps.mode==="mock"&&!input.websiteRevisionContext)applied=advanceMockConversation(providerInput,applied); }
   catch {
     // Known provider usage still incurs Assistant cost; reject unsafe output without changing the brief or executing tools.
