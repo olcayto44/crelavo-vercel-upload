@@ -6,6 +6,13 @@ on:
       - '.github/workflows/commercial-five-track-acceptance.yml'
       - 'docs/studio-admin-wallet-atomic-candidate.sql'
       - 'scripts/studio-admin-wallet-atomic-candidate-smoke.cjs'
+      - 'src/app/api/studio/**'
+      - 'src/lib/studio-agent/**'
+      - 'scripts/studio-mp4-*.mjs'
+      - 'scripts/studio-ffmpeg-compose.mjs'
+      - 'Dockerfile.studio-worker'
+      - 'worker-deps/**'
+      - 'supabase/migrations/**'
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,6 +38,11 @@ jobs:
           node scripts/website-production-draft-smoke.cjs
           node scripts/studio-reconciliation-monitor-smoke.cjs
           npm run smoke:studio-v2-wiring
+      - name: Integrated MP4 worker runtime (release branch)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
+          node scripts/studio-mp4-runtime-test.mjs
   isolated-reference:
     name: Existing isolated development evidence
     runs-on: ubuntu-24.04
