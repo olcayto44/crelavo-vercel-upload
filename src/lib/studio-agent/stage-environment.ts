@@ -19,9 +19,10 @@ export function stageTariff(){
  const p=StageTariff.safeParse({version:process.env.CRELAVO_STAGE_TARIFF_VERSION,credits:Number(process.env.CRELAVO_STAGE_IMAGE_CREDITS),maxMicroUSD:Number(process.env.CRELAVO_STAGE_IMAGE_MAX_MICRO_USD),...(process.env.CRELAVO_STAGE_EDIT_CREDITS?{editCredits:Number(process.env.CRELAVO_STAGE_EDIT_CREDITS),editMaxMicroUSD:Number(process.env.CRELAVO_STAGE_EDIT_MAX_MICRO_USD)}:{})});
  return p.success?p.data:null;
 }
+export function stageSelectedImageProvider():"minimax"|"stability"{return process.env.CRELAVO_STAGE_IMAGE_PROVIDER==="stability"?"stability":"minimax";}
 export function stageEnabled(e:StageEnvironment,user:string){
  const tariff=stageTariff();
- return Boolean(tariff&&stageCommercialReview(tariff).imageReady&&process.env.CRELAVO_STAGE_IMAGE_ENABLED==="true"&&process.env.CRELAVO_STAGE_IMAGE_PROVIDER_VERIFIED==="true"&&process.env.CRELAVO_STAGE_SHARED_WALLET_VERIFIED==="true"&&stageTariff()&&e.key&&e.canary===user);
+ return Boolean(tariff&&stageCommercialReview(tariff,stageSelectedImageProvider()).imageReady&&process.env.CRELAVO_STAGE_IMAGE_ENABLED==="true"&&process.env.CRELAVO_STAGE_IMAGE_PROVIDER_VERIFIED==="true"&&process.env.CRELAVO_STAGE_SHARED_WALLET_VERIFIED==="true"&&stageTariff()&&(stageSelectedImageProvider()==="stability"?e.editKey:e.key)&&e.canary===user);
 }
 
 export function stageEditEnabled(e:StageEnvironment,user:string){const t=stageTariff();return Boolean(stageEnabled(e,user)&&process.env.CRELAVO_STAGE_EDIT_PROVIDER_VERIFIED==="true"&&e.editKey&&t?.editCredits&&t.editMaxMicroUSD&&stageCommercialReview(t).editReady);}

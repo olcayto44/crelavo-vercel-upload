@@ -1,0 +1,2 @@
+alter table public.studio_provider_probes drop constraint if exists studio_provider_probes_kind_check;
+alter table public.studio_provider_probes add constraint studio_provider_probes_kind_check check(kind in ('minimax_image','minimax_brand','minimax_model','minimax_character','stability_remove_background','stability_erase_object','stability_inpaint','stability_outpaint','stability_replace_object','stability_replace_background','stability_upscale','stability_product_reference','stability_generate','stability_brand','stability_model'));

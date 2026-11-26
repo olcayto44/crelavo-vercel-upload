@@ -1,13 +1,13 @@
 import {createHash} from "node:crypto";
 import {z} from "zod";
 import {StageImageInput,StageCategory} from "./stage-plan";
-import {generateSingleMinimaxImage,type ImageProviderResult} from "./image-provider";
+import {generateSingleMinimaxImage,generateStageStabilityImage,type ImageProviderResult} from "./image-provider";
 import {EditInput,prepareEditForm,editReceiptModel,type EditResult} from "./stage-image-edit";
 const sharp:typeof import("sharp").default=require("sharp");
 const Claim=z.object({claimed:z.boolean(),state:z.string(),ordinal:z.number().int().nonnegative().optional(),token:z.string().uuid().optional(),operation:z.string().optional(),input:z.unknown().optional(),credits:z.number().int().positive().optional()});
 export type StageJob={id:string;user_id:string;category:string;plan_hash:string;tariff_version:string;state:string;auto_resume:boolean};
 type RPC=(name:string,args:Record<string,unknown>)=>Promise<{data:unknown;error:unknown}>;
-type Dependencies={rpc:RPC,enabled:()=>boolean,tariffVersion:string,credits:number,loadFirstArtifact:(job:StageJob)=>Promise<string>,generate:(input:StageImageInput,reference?:Buffer)=>Promise<ImageProviderResult>;editEnabled?:()=>boolean;editCredits?:number;loadEditSource?:(source:NonNullable<EditInput["source"]>)=>Promise<Buffer>;generateEdit?:(input:EditInput,source:Buffer)=>Promise<EditResult>};
+type Dependencies={rpc:RPC,enabled:()=>boolean,tariffVersion:string,credits:number,loadFirstArtifact:(job:StageJob)=>Promise<string>,generate:(input:StageImageInput,reference?:Buffer)=>Promise<ImageProviderResult>;imageProvider?:"minimax"|"stability";editEnabled?:()=>boolean;editCredits?:number;loadEditSource?:(source:NonNullable<EditInput["source"]>)=>Promise<Buffer>;generateEdit?:(input:EditInput,source:Buffer)=>Promise<EditResult>};
 export async function stageReferenceJpeg(encoded:string,maxSize=1000000){
  const raw=Buffer.from(encoded,"base64");
  if(!raw.length||raw.toString("base64")!==encoded||raw.length>2100000)throw Error("reference_invalid");
@@ -37,6 +37,8 @@ export async function executeStage(job:StageJob,d:Dependencies){
   }else{
   if(claim.operation!=="image_generate"||claim.credits!==d.credits||!d.enabled())throw Error("adapter_or_tariff_unavailable");
   input=StageImageInput.parse(claim.input);
+  if((input.imageProvider??"minimax")!==(d.imageProvider??"minimax"))throw Error("approved_provider_changed");
+  if(input.imageProvider==="stability"&&(input.referenceJpeg||input.referenceFromFirst||job.category==="visual_clone"))throw Error("unsupported_reference");
   if(job.category==="visual_clone"&&!input.referenceJpeg)throw Error("authorized_reference_required");
   if(input.referenceFromFirst&&claim.ordinal===0)throw Error("reference_stage_invalid");
   if(input.referenceFromFirst)reference=await stageReferenceJpeg(await d.loadFirstArtifact(job));
@@ -50,12 +52,12 @@ export async function executeStage(job:StageJob,d:Dependencies){
    return {result:await finish(rejected?"rejected_no_output":"uncertain",null,null,result.code),dispatched:true};
   }
   const receipt=result.receipt;
-  if((edit?(receipt.provider!=="stability"||receipt.model!==editReceiptModel(edit.operation)):(receipt.provider!=="minimax"||receipt.model!=="image-01"))||createHash("sha256").update(result.bytes).digest("hex")!==receipt.sha256)throw Error("provider_receipt_mismatch");
+  if((edit?(receipt.provider!=="stability"||receipt.model!==editReceiptModel(edit.operation)):(input?.imageProvider==="stability"?(receipt.provider!=="stability"||receipt.model!=="core"):(receipt.provider!=="minimax"||receipt.model!=="image-01")))||createHash("sha256").update(result.bytes).digest("hex")!==receipt.sha256)throw Error("provider_receipt_mismatch");
   const img=sharp(result.bytes,{limitInputPixels:edit?16777216:4194304,failOn:"warning"});
   const metadata=await img.metadata();if(metadata.format!=="png"||metadata.width!==receipt.width||metadata.height!==receipt.height)throw Error("artifact_invalid");
   let bytes=await img.webp({quality:90}).toBuffer();if(bytes.length>2100000)bytes=await img.webp({quality:75}).toBuffer();
   if(bytes.length>2100000||bytes.length<16)throw Error("delivery_artifact_size");
-  const estimatedProviderMicroUSD=edit?(edit.operation==="upscale"?20000:edit.operation==="outpaint"?40000:50000):3500;
+  const estimatedProviderMicroUSD=edit?(edit.operation==="upscale"?20000:edit.operation==="outpaint"?40000:50000):input?.imageProvider==="stability"?30000:3500;
   const outputReceipt={...receipt,estimatedProviderMicroUSD,tariffVersion:job.tariff_version,costState:"pending_reconciliation",deliveryMime:"image/webp",deliverySha256:createHash("sha256").update(bytes).digest("hex"),deliveryBytes:bytes.length};
   return {result:await finish("ready",outputReceipt,bytes.toString("base64"),null),dispatched:true};
  }catch{try{await finish("uncertain",null,null,"provider_or_settlement_unconfirmed");}catch{/* durable claim stays held; never replay a provider call */}return {state:"reconcile_required",dispatched:true};}

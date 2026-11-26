@@ -1,5 +1,5 @@
 import {createHash} from "node:crypto";
-import {generateSingleMinimaxImage} from "./image-provider";
+import {generateSingleMinimaxImage,generateStageStabilityImage} from "./image-provider";
 import {buildStageBrandBundle} from "./stage-brand-bundle";
 import {generateStageEdit,EditOperation,type EditInput} from "./stage-image-edit";
 import type {StageEnvironment} from "./stage-environment";
@@ -25,6 +25,9 @@ export async function runStageProviderProbe(e:StageEnvironment){
    const bytes=Buffer.from(String(prev.data.artifact_base64),"base64");if(prev.data.receipt?.deliverySha256!==createHash("sha256").update(bytes).digest("hex"))throw Error("reference_integrity");
    const ref=await sharp(bytes).resize(512,512,{fit:"inside"}).jpeg({quality:65}).toBuffer();
    result=await generateSingleMinimaxImage({prompt:"Same fictional adult fashion model, olive green jacket, different pose in a sunlit modern studio, preserve facial appearance.",aspect:"1:1"},e.key,fetch,ref);
+  }else if((p.kind==="stability_generate"||p.kind==="stability_brand"||p.kind==="stability_model")&&e.editKey){
+   const prompt=p.kind==="stability_brand"?"Original premium abstract brand identity moodboard for fictional Aurora Ceramic Studio, blue and ivory, no text":p.kind==="stability_model"?"Fictional adult virtual fashion model in an olive green jacket, editorial portrait, studio lighting":"Single cobalt blue ceramic mug on a clean ivory studio background, original product photograph";
+   result=await generateStageStabilityImage({prompt,aspect:"1:1"},e.editKey);
   }else if(p.kind.startsWith("stability_")&&e.editKey){
    const operation=EditOperation.parse(p.kind.slice("stability_".length));
    const mask=await sharp(Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><rect width="512" height="512" fill="black"/><rect x="20" y="385" width="85" height="85" fill="white"/></svg>')).png().toBuffer();
@@ -36,7 +39,7 @@ export async function runStageProviderProbe(e:StageEnvironment){
    const bytes=await sharp(result.bytes,{limitInputPixels:16777216}).webp({quality:85}).toBuffer();
    if(!bytes.length||bytes.length>2100000)throw Error("probe_artifact_size");
    receipt={...result.receipt,deliverySha256:createHash("sha256").update(bytes).digest("hex"),deliveryBytes:bytes.length};
-   if(p.kind==="minimax_brand"){
+   if(p.kind==="minimax_brand"||p.kind==="stability_brand"){
     const zip=await buildStageBrandBundle("Aurora Ceramic Studio",[{bytes,sha256:String(receipt.deliverySha256)}]);
     receipt.brandZipBytes=zip.length;receipt.brandZipSha256=createHash("sha256").update(zip).digest("hex");
    }

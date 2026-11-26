@@ -126,3 +126,19 @@ export async function generateAlternativeWebsiteImage(provider:AlternativeProvid
  return normalizeAlternative(await externalImage(body.output[0],provider,transport),provider,id);
  }catch{return uncertain("image_provider_outcome_unconfirmed",id);}
 }
+
+// Explicit pre-approved Stability Core alternative. No fallback after dispatch.
+export async function generateStageStabilityImage(raw:unknown,key:string,transport:typeof fetch=fetch):Promise<ImageProviderResult>{
+ const input=ImageRequestSchema.parse(raw);if(!key.trim())throw Error("stability_key_missing");let id:string|undefined;
+ try{
+  const form=new FormData();form.set("prompt",input.prompt);form.set("aspect_ratio",input.aspect);form.set("output_format","png");
+  const res=await transport("https://api.stability.ai/v2beta/stable-image/generate/core",{method:"POST",redirect:"error",signal:AbortSignal.timeout(90000),headers:{Authorization:"Bearer "+key,Accept:"image/*"},body:form});
+  const p=receiptId.safeParse(res.headers.get("x-request-id")??res.headers.get("request-id")??res.headers.get("x-stability-request-id"));if(p.success)id=p.data;
+  if(!res.ok)return uncertain("stability_http_"+res.status,id);
+  if(!id||res.headers.get("finish-reason")!=="SUCCESS"||!res.headers.get("content-type")?.startsWith("image/"))return uncertain("image_provider_receipt_unverified",id);
+  const image=sharp(await limitedBytes(res),{limitInputPixels:4194304,failOn:"warning"}),m=await image.metadata(),[width,height]=dimensions[input.aspect];
+  if(!["png","jpeg","webp"].includes(m.format??"")||!m.width||!m.height||m.width<512||m.height<512||Math.abs((m.width/m.height)/(width/height)-1)>.06||(m.pages??1)!==1)return uncertain("image_dimensions_or_format_invalid",id);
+  const bytes=await image.resize(width,height,{fit:"cover",position:"centre"}).png().toBuffer();if(bytes.length<16||bytes.length>12*1024*1024)return uncertain("image_output_invalid",id);
+  return {state:"artifact_validated",bytes,receipt:{provider:"stability",model:"core",providerRequestId:id,imageCount:1,sha256:createHash("sha256").update(bytes).digest("hex"),width,height,mime:"image/png",costState:"pending_reconciliation"}};
+ }catch{return uncertain("image_provider_outcome_unconfirmed",id);}
+}

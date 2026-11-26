@@ -3,7 +3,7 @@
 // https://platform.stability.ai/pricing
 import {packages,topUpPackages} from "../data";
 import type {StageTariff} from "./stage-plan";
-export const imageCosts={minimax:3500,stabilityEdit:50000,stabilityFastUpscale:20000} as const;
+export const imageCosts={minimax:3500,stabilityCore:30000,stabilityEdit:50000,stabilityFastUpscale:20000} as const;
 export function minimumPublishedCreditMicroUSD(){
  const rates:number[]=[];
  for(const p of [...packages,...topUpPackages]){
@@ -12,10 +12,10 @@ export function minimumPublishedCreditMicroUSD(){
  }
  return rates.length?Math.min(...rates):0;
 }
-export function stageCommercialReview(t:StageTariff){
+export function stageCommercialReview(t:StageTariff,provider:"minimax"|"stability"="minimax"){
  const unit=minimumPublishedCreditMicroUSD(),imageRevenue=unit*t.credits,editRevenue=unit*(t.editCredits??0);
  // Candidate contribution margin: reserve 50% for other costs. No free/promotional-credit revenue assumed.
- const imageReady=t.maxMicroUSD>=imageCosts.minimax&&imageRevenue>=2*t.maxMicroUSD;
+ const imageReady=t.maxMicroUSD>=(provider==="stability"?imageCosts.stabilityCore:imageCosts.minimax)&&imageRevenue>=2*t.maxMicroUSD;
  const editReady=!!t.editCredits&&!!t.editMaxMicroUSD&&t.editMaxMicroUSD>=imageCosts.stabilityEdit&&editRevenue>=2*t.editMaxMicroUSD;
  return {minimumPublishedCreditMicroUSD:unit,imageRevenueMicroUSD:imageRevenue,editRevenueMicroUSD:editRevenue,imageReady,editReady,estimateOnly:true};
 }

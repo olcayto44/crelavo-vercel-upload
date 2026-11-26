@@ -11,7 +11,7 @@ const editChoices={remove_background:"AI arka plan sil",erase_object:"Maskeli ne
 type EditKind=keyof typeof editChoices;
 type Source={jobId:string;ordinal:number};
 type Draft={operation?:EditKind;source?:Source;mask?:string;search?:string;expand?:number;jobId:string;category:Category;title:string;brief:string;aspect:string;count:number;autoResume:boolean;referenceJpeg?:string;referenceConsent?:true};
-type Quote={planHash:string;totalCredits:number;stepCredits:number;stepCount:number;scope:string;draft:Draft};
+type Quote={provider?:string;model?:string;planHash:string;totalCredits:number;stepCredits:number;stepCount:number;scope:string;draft:Draft};
 const statuses:Record<string,string>={queued:"Sırada",running:"Üretimde",paused_credits:"Kredi bekliyor",ready:"Teslime hazır",reconcile_required:"İşlem kontrolü gerekiyor",failed:"Üretim başarısız — kullanılmayan kredi serbest",cancelled:"İptal",pending:"Bekliyor",claimed:"İşleniyor"};
 const label=(s:string)=>statuses[s]??s;
 const endpoint="/api/studio/stage-jobs";
@@ -90,7 +90,7 @@ export default function StageProductionWorkspace(){
     {["inpaint","erase_object"].includes(operation)&&(sourcePreview||reference)&&<StageMaskBrush source={sourcePreview||"data:image/jpeg;base64,"+reference} onMask={setMask}/>}
     <label><input type="checkbox" checked={autoResume} onChange={e=>setAutoResume(e.target.checked)}/> Kredi yenilendiğinde onaylanan kalan aşamalara otomatik devam et.</label>
     <button className="btn" type="button" disabled={!canQuote} onClick={prepare}>Üretim planını ve krediyi hesapla</button>
-    {quote&&<div style={{border:"1px solid #777",borderRadius:10,padding:12}}><h3>Üretim onayı</h3><p>{quote.scope}</p><p>{quote.stepCount} aşama × {quote.stepCredits} kredi = <strong>{quote.totalCredits} kredi</strong></p><p>Yalnızca doğrulanan ve tamamlanan aşamalar ücretlendirilir. Kredi biterse duraklar.</p><button disabled={busy} className="btn" onClick={start}>Onayla ve üretime başla</button><button onClick={()=>setQuote(null)}>Vazgeç</button></div>}
+    {quote&&<div style={{border:"1px solid #777",borderRadius:10,padding:12}}><h3>Üretim onayı</h3><p>{quote.scope}</p><p>Sağlayıcı: {quote.provider} / {quote.model}</p><p>{quote.stepCount} aşama × {quote.stepCredits} kredi = <strong>{quote.totalCredits} kredi</strong></p><p>Yalnızca doğrulanan ve tamamlanan aşamalar ücretlendirilir. Kredi biterse duraklar.</p><button disabled={busy} className="btn" onClick={start}>Onayla ve üretime başla</button><button onClick={()=>setQuote(null)}>Vazgeç</button></div>}
    </section>
    <section className="card" style={{padding:16,display:"grid",gap:10,alignContent:"start"}}><h2>Üretimlerim</h2><button disabled={!token||busy} onClick={()=>void refreshList().catch(e=>setMessage(String(e)))}>Listeyi yenile</button>
     {jobs.length===0&&<p>Henüz kayıtlı aşamalı üretim yok.</p>}{jobs.map(j=><button key={j.id} className="btn secondary" style={{justifyContent:"space-between",textAlign:"left"}} onClick={()=>void openJob(j.id).catch(e=>setMessage(String(e)))}>{j.title} · {label(j.state)} · {j.spent_credits}/{j.total_credits} kredi</button>)}
