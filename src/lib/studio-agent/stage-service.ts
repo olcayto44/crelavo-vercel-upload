@@ -25,8 +25,9 @@ export async function listStageJobs(e:StageEnvironment,user:string){
 export async function workerStageTick(e:StageEnvironment){
  // Only the explicitly authorized canary may generate until wallet/provider acceptance.
  if(!e.canary||!stageEnabled(e,e.canary))return {processed:0,reason:"disabled"};
- const {data,error}=await e.db.from("studio_stage_jobs").select("id,user_id,state").eq("user_id",e.canary).eq("auto_resume",true).in("state",["queued","paused_credits"]).order("updated_at",{ascending:true}).limit(20);
+ const stale=await e.db.rpc("studio_stage_mark_stale",{p_user:e.canary});if(stale.error)throw Error("stage_recovery_unavailable");
+ const {data,error}=await e.db.rpc("studio_stage_funded_queue",{p_user:e.canary,p_limit:20});
  if(error)throw Error("stage_queue_unavailable");
- for(const row of data??[]){const view=await stageView(e,e.canary,String(row.id));if(!view||view.notice.nextCost<=0||view.notice.available<view.notice.nextCost)continue;return {processed:1,result:await runNextStage(e,e.canary,String(row.id))};}
- return {processed:0};
+ for(const row of data??[]){const view=await stageView(e,e.canary,String(row.id));if(!view||view.notice.nextCost<=0||view.notice.available<view.notice.nextCost)continue;const result=await runNextStage(e,e.canary,String(row.id));return {processed:1,result};}
+ return {processed:0,stale:stale.data??0};
 }

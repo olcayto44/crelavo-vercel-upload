@@ -10,9 +10,9 @@ export default async function StudioCapabilitiesPage(){
  if(!verifyAdminSessionToken(session))return <AdminLoginPanel/>;
  const categories=listProductionCapabilities();
  const evidenceLabels={catalog_only:"Katalog / doğrulanmadı",existing_api_unbound:"Mevcut API / merkezi bağlantı yok",local_editor_implemented:"Yerel editör kodu mevcut",provider_adapter_coded:"Sağlayıcı adaptörü kodlandı / canlı test bekliyor",planned:"Planlanan"};
- return <AdminShell title="Studio Production Engine" description="37 kategorinin kaynak sözleşmeleri, yerel araçları ve merkezi üretim engelleri.">
+ return <AdminShell title="Studio Production Engine" description="28 kategorinin kaynak sözleşmeleri, yerel araçları ve merkezi üretim engelleri.">
   <section className="card admin-wide-card">
-   <div className="admin-info-grid"><div><span>Kategori kapsamı</span><strong>{categories.length}/37</strong></div><div><span>Merkezi üretim hazır</span><strong>0/37</strong></div><div><span>Mod</span><strong>Salt okunur</strong></div></div>
+   <div className="admin-info-grid"><div><span>Kategori kapsamı</span><strong>{categories.length}/28</strong></div><div><span>Merkezi üretim hazır</span><strong>0/28</strong></div><div><span>Mod</span><strong>Salt okunur</strong></div></div>
    <p>Bu ekran kaynak kodu sözleşmelerini gösterir; sağlayıcı testi, gerçek ücret, hesap bakiyesi veya başarılı üretim kanıtı değildir. Buradan üretim başlatılamaz.</p>
   </section>
   {categories.map((category,index)=><details className="card admin-wide-card" key={category.id}>
@@ -23,7 +23,7 @@ export default async function StudioCapabilitiesPage(){
    <h3>Yetenek durumu</h3><ul>{category.operations.map(op=><li key={op.id}>{op.label??op.id} — {evidenceLabels[op.evidence]}</li>)}</ul>
    <h3>Planlanan teslimatlar</h3><ul>{category.proposedOutputs.map(output=><li key={output}>{output}</li>)}</ul>
    <h3>Kalite kontrolleri</h3><ul>{category.qualityChecks.map(check=><li key={check}>{check}</li>)}</ul>
-   <h3>Üretim önkoşulları</h3><ul>{category.releaseGates.map(gate=><li key={gate}>{gate}</li>)}</ul>
+   <h3>Aşamalı üretim</h3><p>{category.stagedProduction.implementation} · Kredi duraklatma ve kontrol noktası sözleşmesi mevcut. Canlı aktivasyon ayrı doğrulanır.</p><h3>Üretim önkoşulları</h3><ul>{category.releaseGates.map(gate=><li key={gate}>{gate}</li>)}</ul>
   </details>)}
  </AdminShell>;
 }

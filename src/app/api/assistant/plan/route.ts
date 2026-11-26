@@ -592,12 +592,20 @@ const selectedPlatforms = isImageProduction ? detectPlatforms(message, productio
       const { error } = await supabase.from("assistant_credit_balances").upsert({ user_id: userId, balance: nextAssistantBalance, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       if (error) throw error;
     } else {
+      if(process.env.CRELAVO_ATOMIC_IMMEDIATE_SPEND_ENABLED==="true"){
+        const debit=await supabase.rpc("studio_wallet_spend",{p_user:userId,p_amount:requiredCredits,p_key:"assistant-plan:"+crypto.randomUUID(),p_note:`Assistant Brain ${mode} plan (production credits)`});
+        if(debit.error||debit.data?.state!=="spent")return Response.json({error:"Production credit debit not confirmed.",code:debit.data?.state??"wallet_unconfirmed"},{status:debit.data?.state==="insufficient"?402:409});
+        nextBalance=Number(debit.data.available)+Number(debit.data.reserved);
+      }else{
       const { error } = await supabase.from("credit_balances").upsert({ user_id: userId, balance: nextBalance, reserved, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
       if (error) throw error;
+      }
     }
 
-    const { error: eventError } = await supabase.from("credit_events").insert({ user_id: userId, type: "spend", amount: requiredCredits, note: chargeSource === "assistant_trial" ? `Assistant Brain ${mode} plan (trial credits)` : `Assistant Brain ${mode} plan (production credits)` });
-    if (eventError) throw eventError;
+    if(chargeSource==="assistant_trial"||process.env.CRELAVO_ATOMIC_IMMEDIATE_SPEND_ENABLED!=="true"){
+      const {error:eventError}=await supabase.from("credit_events").insert({user_id:userId,type:"spend",amount:requiredCredits,note:chargeSource==="assistant_trial"?`Assistant Brain ${mode} plan (trial credits)`:`Assistant Brain ${mode} plan (production credits)`});
+      if(eventError)throw eventError;
+    }
 
     return Response.json({
       plan,

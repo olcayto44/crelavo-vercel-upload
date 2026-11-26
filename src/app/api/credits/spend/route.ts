@@ -212,6 +212,18 @@ export async function POST(req: Request) {
     return NextResponse.json(payload(snap, { spent: 0, skipped: true }));
   }
 
+  // New atomic debit path can be enabled only after the migration and shared wallet audit.
+  // Never fall back after an uncertain RPC response.
+  if(process.env.CRELAVO_ATOMIC_IMMEDIATE_SPEND_ENABLED==="true"){
+    if(!sbAdmin)return NextResponse.json({error:"wallet_service_unavailable"},{status:503});
+    if(!session||session.length>160)return NextResponse.json({error:"stable_session_required"},{status:400});
+    const rpc=await sbAdmin.rpc("studio_wallet_spend",{p_user:auth.user.id,p_amount:amount,p_key:ledgerKey(session),p_note:"assistant_download:"+type.slice(0,100)});
+    if(rpc.error||!rpc.data)return NextResponse.json({error:"wallet_spend_unconfirmed"},{status:503});
+    const row=rpc.data;
+    if(row.state==="insufficient")return NextResponse.json({ok:false,error:"Not enough credits.",available:row.available,reserved:row.reserved,needed:amount},{status:402});
+    if(row.state!=="spent"&&row.state!=="already_spent")return NextResponse.json({error:"wallet_reconciliation_required"},{status:409});
+    return NextResponse.json(payload({available:Number(row.available),reserved:Number(row.reserved),raw:{}},{spent:row.state==="spent"?amount:0,idempotent:row.state==="already_spent",session,type}));
+  }
   const prior =
     (await alreadySpent(sbUser, auth.user.id, session)) ||
     (sbAdmin ? await alreadySpent(sbAdmin, auth.user.id, session) : false);
