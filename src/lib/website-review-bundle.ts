@@ -1,3 +1,4 @@
+import {requireWebsiteArtifact} from "./website-artifact-acceptance";
 import {z} from "zod";
 import {renderWebsiteDesignCandidate} from "./website-design-candidate";
 import {WebsiteHeroMediaList} from "./website-hero-media";
@@ -40,8 +41,10 @@ export function buildWebsiteReviewBundle(raw:unknown){
   articles.forEach((a,i)=>files.push(page(paths[i],a.title,a.description,'<article><h1>'+esc(a.title)+'</h1><p>'+esc(a.description)+'</p><div style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.body)+'</div></article><p><a href="./'+articleIndex+'">'+esc(aLabels[2])+'</a></p>')));
   const home=files.find(f=>f.path==="index.html")!;home.content=home.content.replace("</main>",()=>'<p><a href="./'+articleIndex+'">'+esc(aLabels[0])+'</a></p></main>');
  }
- const review={format:"crelavo-private-site-review-v1",designRevision:v.revision,designHash:result.manifest.designHash,publicationReady:false,domainVerified:false,publicSitemap:false,previewRobots:"noindex,nofollow",catalogRecords:catalog.length,reviewedArticles:articles.length,uploadedHeroMedia:result.manifest.media.length,requestedModules:modules,requires:["Real AI design and media approval","Customer-facing functionality","Verified translations","Email and analytics integration","Domain and SSL verification","Security and recovery tests","Verified billing and commercial acceptance"]};
+ const review={format:"crelavo-private-site-review-v1",designRevision:v.revision,designHash:result.manifest.designHash,publicationReady:false,domainVerified:false,publicSitemap:false,previewRobots:"noindex,nofollow",catalogRecords:catalog.length,reviewedArticles:articles.length,uploadedHeroMedia:result.manifest.media.length,requestedModules:modules,requires:["Real AI design and media approval","Customer-facing functionality","Verified translations","Email and analytics integration","Customer-managed domain and HTTPS configuration","Security and recovery tests","Verified billing and commercial acceptance"]};
  const entries=files.map(f=>({name:"source/"+f.path,content:f.content}));
+ const acceptance=requireWebsiteArtifact(entries,{root:"source/",requiredPages:result.manifest.pages.map(p=>p.path),language:design.language});
+ entries.push({name:"structural-acceptance.json",content:JSON.stringify(acceptance,null,2)});
  entries.push({name:"review-report.json",content:JSON.stringify(review,null,2)},{name:"README.txt",content:"PRIVATE WEBSITE REVIEW\nOpen source/index.html after extracting. The catalog contains only selected visible records at snapshot time, not live stock or a checkout. Only reviewed articles and page-matched private uploaded images are included. All pages remain noindex. This archive is not a publication, paid delivery, or complete backup.\n"});
  return {review,entries,zip:buildDeliveryZip(entries)};
 }
