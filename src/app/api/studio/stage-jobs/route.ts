@@ -1,5 +1,6 @@
 import {z} from "zod";
 import {createHash} from "node:crypto";
+import {buildStageBrandBundle} from "@/lib/studio-agent/stage-brand-bundle";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {rateLimit,rateLimitResponse,rejectSuspiciousText} from "@/lib/security";
 import {validateProductionSafety} from "@/lib/content-safety";
@@ -24,6 +25,13 @@ export async function GET(request:Request){
  const {e,user}=a,url=new URL(request.url),id=url.searchParams.get("jobId");
  if(!id)return out({ok:true,enabled:stageEnabled(e,user),editEnabled:stageEditEnabled(e,user),jobs:await listStageJobs(e,user)});
  if(!uuid.safeParse(id).success)return out({ok:false,code:"invalid_job"},400);
+ if(url.searchParams.get("bundle")==="brand"){
+  const j=await stageJob(e,user,id);if(!j||j.category!=="brand_kit"||j.state!=="ready")return out({ok:false,code:"brand_not_ready"},404);
+  const r=await e.db.from("studio_stage_steps").select("ordinal,artifact_base64,receipt,state").eq("job_id",id).order("ordinal");if(r.error||!r.data?.length||r.data.some(s=>s.state!=="ready"||!s.artifact_base64))return out({ok:false,code:"brand_not_ready"},404);
+  const entries=r.data.map(s=>({bytes:Buffer.from(String(s.artifact_base64),"base64"),sha256:String((s.receipt as {deliverySha256?:string}|null)?.deliverySha256??"")}));
+  const zip=await buildStageBrandBundle(String(j.title),entries);
+  return new Response(new Uint8Array(zip),{headers:{"Content-Type":"application/zip","Content-Disposition":'attachment; filename="crelavo-brand-'+id+'.zip"',"Cache-Control":"private,no-store","X-Content-Type-Options":"nosniff"}});
+ }
  if(url.searchParams.has("download")){
   const ordinal=Number(url.searchParams.get("download"));if(!Number.isInteger(ordinal)||ordinal<0||ordinal>99)return out({ok:false,code:"invalid_step"},400);
   if(!await stageJob(e,user,id))return out({ok:false,code:"not_found"},404);

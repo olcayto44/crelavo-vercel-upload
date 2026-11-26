@@ -12,7 +12,7 @@ const localImageOperations = ["image_import", "image_center_crop", "image_rotate
 const plannedImageOperations = ["image_background_remove", "image_background_replace", "image_object_remove", "image_object_add_replace", "image_inpaint", "image_outpaint", "image_generate", "image_to_image", "image_character_consistency", "image_product_consistency", "image_upscale", "image_layers_masks_brush", "image_text_logo_effects", "image_undo_redo", "image_project_persistence", "image_jpeg_webp_export", "image_assistant_edit"];
 const imageOperations: OperationCapability[] = [
  ...localImageOperations.map(id => ({id, evidence:"local_editor_implemented" as const, executionReady:false as const, customerAvailableInSeparateEditor:true})),
- ...plannedImageOperations.map(id => ({id, evidence:id==="image_generate"?"provider_adapter_coded" as const:"planned" as const, executionReady:false as const, customerAvailableInSeparateEditor:false})),
+ ...plannedImageOperations.map(id => ({id, evidence:["image_generate","image_background_remove","image_background_replace","image_object_remove","image_object_add_replace","image_inpaint","image_outpaint","image_product_consistency","image_upscale"].includes(id)?"provider_adapter_coded" as const:"planned" as const, executionReady:false as const, customerAvailableInSeparateEditor:false})),
 ];
 export function getProductionCapability(categoryId: string) {
  const contract = getCategoryContract(categoryId);

@@ -987,7 +987,7 @@ export function buildPreviewHtml(production: ProductionLike, page = "index.html"
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${manifest.title}</title><style>body{font-family:Inter,Arial,sans-serif;background:radial-gradient(circle at 10% 10%,#22d3ee38,transparent 28rem),radial-gradient(circle at 90% 0,#7c5cff42,transparent 28rem),linear-gradient(135deg,#081226,#10172f 55%,#0b1020);color:#f8fbff;margin:0}main{width:min(1120px,calc(100% - 32px));margin:auto;padding:32px 0 56px}.top{display:flex;justify-content:space-between;gap:16px;align-items:center}.hero{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr);gap:20px;margin-top:28px}.mobile-preview .hero{grid-template-columns:minmax(0,1fr) minmax(280px,380px)}.mobile-preview .panel{border-radius:42px;min-height:520px;background:linear-gradient(180deg,#111827,#020617);border:10px solid #030712}.panel,.hero>div,article{border:1px solid #ffffff24;background:#0f172ab8;border-radius:28px;padding:26px;box-shadow:0 28px 80px #0007}.eyebrow{color:#22d3ee;text-transform:uppercase;letter-spacing:.14em;font-size:12px;font-weight:900}h1{font-size:clamp(42px,7vw,78px);line-height:.95;margin:18px 0;letter-spacing:-.06em}p{color:#cbd5e1;line-height:1.7}.btn{display:inline-flex;margin-top:18px;border-radius:999px;padding:13px 18px;font-weight:900;background:linear-gradient(135deg,#22d3ee,#7c5cff)}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-top:18px}.poster{height:120px;border-radius:18px;background:linear-gradient(135deg,#22d3ee55,#7c5cff77)}section{margin-top:24px}@media(max-width:820px){.hero{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}</style></head><body><main class="${mobileClass.trim()}"><div class="top"><strong>${manifest.title}</strong><span class="eyebrow">${featureSet.vertical}</span></div><section class="hero"><div><span class="eyebrow">Customer preview</span><h1>${manifest.title}</h1><p>${value(production.prompt, manifest.user_promise)}</p><span class="btn">${featureSet.heroCta}</span></div><div class="panel"><span class="eyebrow">Delivered source</span><h2>${manifest.delivery_standard}</h2><p>${manifest.project.technical_stack}</p></div></section><section><span class="eyebrow">Included modules</span><div class="grid">${modules}</div></section><section><span class="eyebrow">Sample content</span><div class="grid">${cards}</div></section></main></body></html>`;
 }
 
-type ZipEntry = { name: string; content: string };
+type ZipEntry = { name: string; content: string | Uint8Array };
 
 function crc32(input: Uint8Array) {
   let crc = ~0;
@@ -1029,7 +1029,7 @@ export function buildDeliveryZip(entries: ZipEntry[]) {
 
   for (const entry of entries) {
     const name = encoder.encode(entry.name);
-    const data = encoder.encode(entry.content);
+    const data = typeof entry.content==="string"?encoder.encode(entry.content):entry.content;
     const crc = crc32(data);
     const local = concat([
       u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), name, data

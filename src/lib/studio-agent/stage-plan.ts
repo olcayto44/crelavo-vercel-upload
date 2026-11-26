@@ -13,7 +13,7 @@ export const StageImageInput=ImageRequestSchema.extend({referenceJpeg:z.string()
 export type StageImageInput=z.infer<typeof StageImageInput>;
 export const StageTariff=z.strictObject({version:z.string().regex(/^[A-Za-z0-9._-]{1,64}$/),credits:z.number().int().min(1).max(10000),maxMicroUSD:z.number().int().min(1).max(1000000),editCredits:z.number().int().min(1).max(10000).optional(),editMaxMicroUSD:z.number().int().min(1).max(1000000).optional()});
 export type StageTariff=z.infer<typeof StageTariff>;
-export const stageLabels={image:"AI image variations",brand_kit:"Raster logo and visual identity concepts",visual_clone:"Authorized character-reference variations",virtual_model_studio:"Virtual model photo concepts"} as const;
+export const stageLabels={image:"AI image variations",brand_kit:"AI visual identity concepts + editable wordmark, palette, card and social templates",visual_clone:"Authorized character-reference variations",virtual_model_studio:"Virtual model photo concepts"} as const;
 const directions=["Primary composition","Alternative composition and camera angle","Alternative lighting and environment","Final editorial variation"];
 export function buildImageStagePlan(raw:unknown,tariff:StageTariff){
  const v=StageDraft.parse(raw),t=StageTariff.parse(tariff);if(!getCategory(v.category))throw Error("category_unavailable");
