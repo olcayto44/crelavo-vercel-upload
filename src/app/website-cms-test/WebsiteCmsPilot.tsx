@@ -13,7 +13,7 @@ type Page={id:string;site_id:string;slug:string;title:string;description:string;
 type Revision={version:number;created_at:string};
 // Strict Mode renders twice in development. Reuse the same tab-scoped auth client,
 // but never cache a browser client in a server process or across different origins.
-let browserClient:{origin:string;key:string;db:ReturnType<typeof createClient>}|undefined;
+let browserClient:{origin:string;key:string;db:ReturnType<typeof createClient<any>>}|undefined;
 function isolatedCmsClient(origin:string,publishableKey:string){
  if(typeof window!=="undefined"&&browserClient?.origin===origin&&browserClient.key===publishableKey)return browserClient.db;
  const db=createClient(origin,publishableKey,{auth:{storageKey:"crelavo-isolated-cms-session-v2",persistSession:true,storage:{
