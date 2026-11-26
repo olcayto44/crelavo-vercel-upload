@@ -1,3 +1,4 @@
+import {websitePilotCanary} from "./website-pilot-provider";
 import { createHash } from "node:crypto";
 import { CategoryIdSchema } from "./requirements";
 import { executeB1Tool } from "./tool-registry";
@@ -68,6 +69,7 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
       const project:ConversationProject={...result.project,messages};
       return json({...result,project,memory:"signed_browser_demo",mockState:signPreviewState({...state,project,wallets:result.wallets,last:{requestId:body.requestId,hash,reply:result.reply,chargedCredits:result.chargedCredits}})});
     }
+    if(body.categoryId!=="website"||!websitePilotCanary(userId))throw new ConversationError("website_pilot_only",403);
     if(body.action==="plan")throw new ConversationError("advanced_planning_mock_only",403);
     // No implicit mock fallback. New server flags are off unless explicitly configured AFTER offline migration review.
     const readiness=await studioReadiness(db);if(!readiness.ready)throw new ConversationError("studio_not_ready"); const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();

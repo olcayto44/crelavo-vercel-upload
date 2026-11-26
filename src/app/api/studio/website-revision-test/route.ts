@@ -1,3 +1,4 @@
+import {websitePilotCanary} from "@/lib/studio-agent/website-pilot-provider";
 import {createClient} from "@supabase/supabase-js";
 import {websiteDesignPilotEnabled} from "@/lib/website-design-pilot-gate";
 import {bearerTokenFromRequest} from "@/lib/supabase";
@@ -15,7 +16,8 @@ export async function POST(request:Request){
   if(!key||process.env.STUDIO_AGENT_TEST_DATABASE_URL!==url||process.env.STUDIO_AGENT_TEST_DATABASE_ORIGIN!==url)throw new ConversationError("isolated_database_unavailable");
   const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
   const {data,error}=await db.auth.getUser(token);
-  if(error||!data.user)throw new ConversationError("sign_in",401);
+  if(error||!data.user||!(data.user.email_confirmed_at||data.user.confirmed_at))throw new ConversationError("sign_in",401);
+  if(!websitePilotCanary(data.user.id))throw new ConversationError("website_pilot_only",403);
   if(!rateLimit({key:"website-revision:"+data.user.id,limit:30,windowMs:60000}).allowed)throw new ConversationError("rate_limit",429);
   return {userId:data.user.id,db};
  }});
