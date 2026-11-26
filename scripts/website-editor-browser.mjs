@@ -5,7 +5,7 @@ import {mkdirSync,writeFileSync} from "node:fs";
 const origin="http://127.0.0.1:3127";
 const isolated="https://bwzxdxqgrgbsvndinmrv.supabase.co";
 // No customer data, provider keys, database access or paid calls. Browser network is restricted to loopback.
-const server=spawn(process.execPath,["node_modules/next/dist/bin/next","dev","--hostname","127.0.0.1","--port","3127"],{env:{PATH:process.env.PATH,HOME:process.env.HOME,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",VERCEL_GIT_COMMIT_REF:"feat/central-production-dispatch-20261125",STUDIO_WEBSITE_TEST_CONNECTION_ENABLED:"true",STUDIO_AGENT_TEST_DATABASE_URL:isolated,STUDIO_AGENT_TEST_DATABASE_ORIGIN:isolated},stdio:"inherit"});
+const server=spawn(process.execPath,["node_modules/next/dist/bin/next","dev","--hostname","127.0.0.1","--port","3127"],{env:{PATH:process.env.PATH,HOME:process.env.HOME,NEXT_TELEMETRY_DISABLED:"1",VERCEL_ENV:"preview",VERCEL_GIT_COMMIT_REF:"feat/central-production-dispatch-20261125",STUDIO_WEBSITE_TEST_CONNECTION_ENABLED:"true",STUDIO_AGENT_TEST_DATABASE_URL:isolated,STUDIO_AGENT_TEST_DATABASE_ORIGIN:isolated,STUDIO_AGENT_TEST_PUBLISHABLE_KEY:"sb_publishable_offline_browser_fixture"},stdio:"inherit"});
 let browser;
 async function waitServer(){for(let i=0;i<120;i++){if(server.exitCode!==null)throw Error("Next dev exited");try{const r=await fetch(origin+"/website-design-test",{signal:AbortSignal.timeout(5000)});if(r.ok)return;}catch{}await new Promise(r=>setTimeout(r,1000));}throw Error("Editor local server did not become ready");}
 try{
@@ -150,6 +150,81 @@ try{
  await demo.getByRole("button",{name:"Dosya teslimatı",exact:true}).click();const demoDownload=demo.waitForEvent("download",{timeout:60000});await demo.getByRole("button",{name:"Örnek bağımsız site ZIP indir",exact:true}).click();const file=await demoDownload;assert.equal(file.suggestedFilename(),"crelavo-demo-independent-website.zip");const stream=await file.createReadStream();const parts=[];for await(const part of stream)parts.push(part);const archive=Buffer.concat(parts);assert.equal(archive.readUInt32LE(0),0x04034b50);for(const term of ["server.cjs","business.cjs","editorial.cjs","maintenance.cjs","Örnek güncellenmiş yazı","Asistan revizyon testi"])assert(archive.includes(Buffer.from(term)),term);
  await demo.getByRole("button",{name:"Genel bakış",exact:true}).click();await demo.screenshot({path:"website-design-results/cms-demo.png",fullPage:true});assert.deepEqual(demoErrors,[]);await demo.close();
  console.log("CMS demo browser: no login, local product and editorial edits, real independent ZIP download");
+
+ // Real customer React workspace, with all Auth, database and metered provider responses replaced
+ // by synthetic, loopback-only fixtures. Never reach a real Supabase project or spend credits.
+ const customer=await browser.newPage({viewport:{width:1440,height:900},acceptDownloads:true});
+ const actor="11111111-1111-4111-8111-111111111111",siteId="22222222-2222-4222-8222-222222222222";
+ const fixtureUser={id:actor,aud:"authenticated",role:"authenticated",email:"fixture@example.invalid",email_confirmed_at:"2026-01-01T00:00:00Z",app_metadata:{provider:"email",providers:["email"]},user_metadata:{},created_at:"2026-01-01T00:00:00Z"};
+ const b64=v=>Buffer.from(JSON.stringify(v)).toString("base64url"),expires=Math.floor(Date.now()/1000)+3600;
+ const accessToken=b64({alg:"HS256",typ:"JWT"})+"."+b64({sub:actor,aud:"authenticated",role:"authenticated",exp:expires})+".offline";
+ const fixtureSession={access_token:accessToken,refresh_token:"offline-fixture-refresh",token_type:"bearer",expires_in:3600,expires_at:expires,user:fixtureUser};
+ let savedVersion=1,loginCount=0,submitCount=0,recoveryCount=0,saveCount=0,pendingId="";
+ let savedDesign={version:2,brand:"Customer browser fixture",language:"en",layout:"editorial",palette:"sand",pages:[{slug:"home",nav:"Home",title:"Fixture home",description:"Unique fixture home description.",headline:"Original customer headline",lead:"A private fixture for browser acceptance.",sections:[{heading:"Overview",body:"Fixture body text."}],faq:[]},{slug:"contact",nav:"Contact",title:"Fixture contact",description:"Unique fixture contact description.",headline:"Contact our studio",lead:"Contact details are supplied by the owner.",sections:[{heading:"Contact",body:"Private fixture contact."}],faq:[]}]};
+ const changed=()=>({...structuredClone(savedDesign),pages:savedDesign.pages.map((p,i)=>i?{...p}:{...p,headline:"Revised customer headline"})});
+ const customerErrors=[];customer.on("pageerror",e=>customerErrors.push(e.message));customer.on("dialog",d=>d.accept());
+ await customer.route("**/*",async route=>{
+ const req=route.request(),u=new URL(req.url()),method=req.method();
+ const json=(value,status=200)=>route.fulfill({status,contentType:"application/json",headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"},body:JSON.stringify(value)});
+ if(u.origin===isolated){
+  if(method==="OPTIONS")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*","access-control-allow-headers":"*","access-control-allow-methods":"GET,POST,OPTIONS,DELETE,PATCH"}});
+  if(u.pathname==="/auth/v1/token"){loginCount++;return json(fixtureSession);}
+  if(u.pathname==="/auth/v1/user")return json(fixtureUser);
+  if(u.pathname==="/auth/v1/logout")return route.fulfill({status:204,headers:{"access-control-allow-origin":"*"}});
+  if(u.pathname.startsWith("/rest/v1/")){
+   const table=u.pathname.slice("/rest/v1/".length);
+   if(table==="website_cms_sites")return json([{id:siteId,name:savedDesign.brand,locale:"en"}]);
+   if(table==="website_cms_members")return json([{site_id:siteId,role:"owner"}]);
+   if(table==="website_cms_design_drafts")return json([{design:savedDesign,version:savedVersion}]);
+   if(table==="website_cms_design_revisions")return json([{version:savedVersion,created_at:"2026-01-01T00:00:00Z"}]);
+   if(table==="rpc/website_cms_save_design"){const body=req.postDataJSON();assert.equal(body.p_site,siteId);assert.equal(body.p_version,savedVersion);assert.equal(body.p_design.pages[0].headline,"Revised customer headline");savedDesign=body.p_design;saveCount++;return json(++savedVersion);}
+   return json([]);
+  }
+  return json({message:"Unrecognized fixture endpoint"},404);
+ }
+ if(u.origin!==origin)return route.abort();
+ if(u.pathname==="/api/studio/conversation")return json({ok:true,projects:[],wallets:{assistant:{available:96},production:{available:500}}});
+ if(u.pathname==="/api/studio/website-revision-test"){
+  const body=req.postDataJSON();assert.equal(body.siteId,siteId);assert.equal(body.version,savedVersion);
+  assert.equal(req.headers().authorization,"Bearer "+accessToken);
+  if(body.action==="status")return json({ok:true,connected:true,ready:true,baseVersion:savedVersion,blockers:[]});
+  if(body.action==="quote")return json({ok:true,quote:"offline-quote",maxCredits:9,expiresInSeconds:300,baseVersion:savedVersion});
+  if(body.action==="submit"){submitCount++;assert.equal(body.approvedMaxCredits,9);if(submitCount===1){pendingId=body.requestId;return json({ok:false,code:"provider_outcome_uncertain"},503);}return json({ok:true,state:"settled",chargedCredits:3,baseVersion:savedVersion,proposalOnly:true,design:changed()});}
+  if(body.action==="result"){assert.equal(body.requestId,pendingId);recoveryCount++;return json({ok:true,state:"settled",chargedCredits:0,refundedCredits:3,design:null});}
+  return json({ok:false},400);
+ }
+ return route.continue();
+ });
+ await customer.goto(origin+"/website-cms-test",{waitUntil:"domcontentloaded"});
+ await customer.getByLabel("E-posta",{exact:true}).fill("fixture@example.invalid");await customer.getByLabel("Şifre",{exact:true}).fill("offline-fixture-password");
+ await customer.getByRole("button",{name:"Giriş yap",exact:true}).click();
+ await customer.getByRole("heading",{name:savedDesign.brand,exact:true}).waitFor({timeout:60000});
+ await customer.frameLocator("iframe[title$='website preview']").getByRole("heading",{name:"Original customer headline",exact:true}).waitFor({timeout:60000});
+ const requestBox=customer.getByLabel("Düzenleme isteğiniz",{exact:true});
+ await requestBox.fill("Revise the headline.");await customer.getByRole("button",{name:"AI ile düzenle",exact:true}).click();
+ await customer.getByText("En fazla 9 asistan kredisi",{exact:true}).waitFor();assert.equal(submitCount,0);
+ await customer.getByRole("button",{name:"Onayla ve düzenle",exact:true}).click();
+ await customer.getByText(/İşlem tamamlanamadı/).waitFor();
+ await customer.reload({waitUntil:"domcontentloaded"});await customer.getByRole("heading",{name:savedDesign.brand,exact:true}).waitFor({timeout:60000});
+ assert.equal(loginCount,1,"Same-tab reload must not require another login");
+ await customer.getByRole("button",{name:"Mevcut isteğin sonucunu kontrol et",exact:true}).click();
+ await customer.getByText(/3 kredi iade edildi/).waitFor();assert.equal(recoveryCount,1);assert.equal(submitCount,1);assert.equal(saveCount,0);
+ await customer.getByLabel("Düzenleme isteğiniz",{exact:true}).fill("Revise the headline again.");await customer.getByRole("button",{name:"AI ile düzenle",exact:true}).click();
+ await customer.getByRole("button",{name:"Onayla ve düzenle",exact:true}).click();
+ await customer.getByRole("button",{name:"Öneriyi önizle",exact:true}).click();
+ await customer.frameLocator("iframe[title$='website preview']").getByRole("heading",{name:"Revised customer headline",exact:true}).waitFor({timeout:60000});assert.equal(saveCount,0);
+ await customer.getByRole("button",{name:"Taslağı kaydet",exact:true}).click();
+ await customer.getByText(/Kayıtlı sürüm 2/).waitFor();assert.equal(saveCount,1);
+ const customerDownload=customer.waitForEvent("download",{timeout:60000});await customer.getByRole("button",{name:"ZIP indir",exact:true}).click();const customerZip=await customerDownload;assert.equal(customerZip.suggestedFilename(),"crelavo-private-design-draft.zip");
+ const customerParts=[];for await(const part of await customerZip.createReadStream())customerParts.push(part);const customerBytes=Buffer.concat(customerParts);assert.equal(customerBytes.readUInt32LE(0),0x04034b50);assert(customerBytes.includes(Buffer.from("Revised customer headline")));
+ await customer.getByRole("button",{name:"İşletme yönetimi",exact:true}).click();assert.equal(await customer.getByRole("heading",{name:"Sitenizde neyi değiştirelim?",exact:true}).isVisible(),false);
+ await customer.getByRole("button",{name:"Sitelerim",exact:true}).click();await customer.getByRole("heading",{name:"Sitenizde neyi değiştirelim?",exact:true}).waitFor();
+ assert.deepEqual(customerErrors,[]);await customer.screenshot({path:"website-design-results/customer-workspace.png",fullPage:true});
+ await customer.getByRole("button",{name:"Oturumu kapat",exact:true}).click();await customer.getByLabel("E-posta",{exact:true}).waitFor();
+ await customer.reload({waitUntil:"domcontentloaded"});await customer.getByLabel("E-posta",{exact:true}).waitFor();assert.equal(loginCount,1);
+ await customer.close();
+ console.log("Customer browser fixture: login, same-tab restore, pending recovery, credit refund feedback, approved revision, preview, save, ZIP, business tabs and logout; no live provider/database use");
+
  writeFileSync("website-design-results/editor-report.json",JSON.stringify(results,null,2));
  console.log("Website editor browser checks passed",results.length);
 }finally{if(browser)await browser.close();server.kill("SIGTERM");}
