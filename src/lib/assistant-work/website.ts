@@ -45,6 +45,10 @@ export async function handleWebsiteAssistant(body: Json, user: { id: string; ema
     }
     let output = json(row!.output_json); let state = json(output.websiteAssistant);
     if (body.action === 'website_open') return { status: 200, payload: payload() };
+    // A paid or held project is immutable through the brief endpoints. All
+    // later content revisions use the owner-scoped structured project editor.
+    if(output.websiteBillingMode==="atomic_v1"||Number(row!.reserved_credits??0)>0||state.phase==="reserved"||output.websiteBillingPending===true)
+      return fail(409,"website_paid_project_use_editor_or_status");
     if (body.action === "website_retry") {
       if (state.phase !== "generating" || Date.now() - Date.parse(String(state.generationStartedAt || row!.updated_at)) < 180000) return fail(409, "website_generation_not_stale_refresh_project");
       await save({ status: "failed", generation_status: "failed", output_json: { ...output, websiteAssistant: { ...state, phase: "generation_failed", error: "interrupted_generation_recovered" } } }, "generating");
