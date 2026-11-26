@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "@/lib/retired-categories";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { buildAssistantRoutingRules } from "@/lib/assistant-knowledge";
 import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib/assistant-user-context";
@@ -430,6 +431,7 @@ export async function POST(request: Request) {
   if (!verified.ok) return verified.response;
   if (!message) return Response.json({ error: "Write your production idea first." }, { status: 400 });
 
+  if([body.category,body.production_type,body.type,detectProductionType(message)].some(isRetiredCategory))return Response.json({ok:false,error:"category_retired",productionStarted:false},{status:410});
   const safety = validateProductionSafety([message]);
   if (!safety.ok) return Response.json({ error: safety.message }, { status: 400 });
 
@@ -473,6 +475,7 @@ export async function POST(request: Request) {
     const assistantBrain = openAiDraft ? "openai" : geminiDraft ? "gemini" : "local_rules";
     const localDetectedType = detectProductionType(message);
     const productionType = localDetectedType === "image" ? "image" : safeProductionType(message, aiDraft?.production_type?.trim() || localDetectedType);
+if(isRetiredCategory(productionType))return Response.json({ok:false,error:"category_retired",productionStarted:false},{status:410});
 const isImageProduction = productionType === "image";
 const selectedQuality = isImageProduction ? "Image" : aiDraft?.selected_quality?.trim() || detectQuality(message);
 const selectedDuration = isImageProduction ? "Static" : aiDraft?.selected_duration?.trim() || detectDuration(message, productionType);

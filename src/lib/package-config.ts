@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "./retired-categories.ts";
 import { dronePurchasePackages, packages, specialPurchaseProducts, topUpPackages } from "./data.ts";
 import { productionPackages, type ProductionPackage } from "./production.ts";
 
@@ -70,7 +71,7 @@ function normalizeProductionPackage(item: unknown): ProductionPackage | null {
   const id = String(record.id ?? "").trim();
   const productionType = String(record.productionType ?? "").trim();
   const name = String(record.name ?? "").trim();
-  if (!id || !productionType || !name) return null;
+  if (!id || !productionType || !name || isRetiredCategory(productionType)) return null;
   return {
     id,
     productionType: productionType as ProductionPackage["productionType"],

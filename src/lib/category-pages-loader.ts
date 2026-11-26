@@ -1,3 +1,4 @@
+import {isRetiredCategory,isRetiredCategoryPath,activeCategoryHref} from "./retired-categories";
 import { defaultCategoryPages, type CategoryPage } from "@/lib/category-pages";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -99,7 +100,7 @@ export function normalizeCategoryPagesConfig(payload: CategoryPagesPayload): Cat
       faqItems: [],
       internalLinks: []
     }));
-  return [...defaults, ...customPages];
+  return [...defaults, ...customPages].filter(p=>!isRetiredCategory(p.slug)&&!isRetiredCategoryPath('/categories/'+p.slug)&&activeCategoryHref(p.primaryCtaHref)).map(p=>({...p,internalLinks:p.internalLinks?.filter(l=>activeCategoryHref(l.href))}));
 }
 
 export async function getConfiguredCategoryPages(): Promise<CategoryPage[]> {

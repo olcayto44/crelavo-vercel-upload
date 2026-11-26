@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "@/lib/retired-categories";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
 import { buildAssistantKnowledgePrompt, buildAssistantRoutingRules } from "@/lib/assistant-knowledge";
 import { buildAssistantUserContextPrompt, loadAssistantUserContext } from "@/lib/assistant-user-context";
@@ -249,6 +250,7 @@ export async function POST(request: Request) {
   if (!verified.ok) return verified.response;
   if (!message) return Response.json({ error: "Write what you want to build or produce first." }, { status: 400 });
 
+  if([body.category,body.production_type,body.type,...inferJobTypes(message)].some(isRetiredCategory))return Response.json({ok:false,error:"category_retired",productionStarted:false},{status:410});
   const safety = validateProductionSafety([message, ...history.map((item) => item.content)]);
   if (!safety.ok) return Response.json({ error: safety.message }, { status: 400 });
 
@@ -263,6 +265,7 @@ export async function POST(request: Request) {
   const draft = await aiDraft(message, history, userContextPrompt);
   const draftJobs: DraftJob[] = Array.isArray(draft?.jobs) && draft?.jobs?.length ? draft.jobs.slice(0, 4) : inferJobTypes(message).map((type) => ({ type }));
 
+  if(draftJobs.some(job=>isRetiredCategory(job.type)))return Response.json({ok:false,error:"category_retired",productionStarted:false},{status:410});
   const jobs: OrchestratorJob[] = draftJobs.map((draftJob, index) => {
     const type = String(draftJob.type ?? inferProductionType(message)).trim() || "video";
     const defaults = defaultsForType(type, message);

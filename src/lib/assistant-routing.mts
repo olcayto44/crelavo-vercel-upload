@@ -20,12 +20,8 @@ export function detectCategory(idea: string) {
   if (includesAny(text, ["ai agent", "agent", "yapay zekâ temsilci", "yapay zeka temsilci", "ai influencer", "marka yüzü", "dijital avatar", "otonom sosyal medya", "sosyal medya müdürü", "rakip analizi", "trend ses", "7/24", "canlı yayın"])) return "AI Agents";
   if (includesAny(text, ["lokalizasyon", "localization", "küreselleşme", "global", "kültürel adaptasyon", "japonya", "brezilya", "çeviri", "ülkeye göre", "culture", "cultural adaptation"])) return "Global Localization";
   if (includesAny(text, ["görselden video", "gorselden video", "image-to-video", "image to video", "linkten video", "link-to-video", "senaryodan video", "script-to-video", "video büyüt", "video buyut", "video extend", "fligransız", "filigransız", "watermark-free", "watermarksız"])) return "Video Tools";
-  if (includesAny(text, ["documentary", "belgesel", "docu series", "docuseries", "research-led video", "interview documentary", "archival visuals"])) return "Documentary";
   if (includesAny(text, ["çöp adam", "cop adam", "stickman"])) return "Stickman Animation";
   if (includesAny(text, ["anime kısa film", "anime short film", "anime film", "manga video", "shonen", "chibi", "anime scene"])) return "Anime Short Film";
-  if (includesAny(text, ["hayvan video", "hayvan videosu", "animal video", "pet video", "kedi videosu", "köpek videosu", "komik hayvan", "funny animal", "wildlife animal"])) return "Animal Video";
-  if (includesAny(text, ["doğa videosu", "doga videosu", "nature video", "landscape video", "wildlife video", "orman videosu", "dağ videosu", "dag videosu", "weather video", "ocean video"])) return "Nature Video";
-  if (includesAny(text, ["gezegen videosu", "planet video", "space video", "uzay videosu", "astronomy video", "galaxy video", "universe video", "cosmic video"])) return "Planet / Space Video";
   if (includesAny(text, ["animasyon", "animation", "2d", "2.5d", "3d", "whiteboard", "motion control", "hareket kontrolü", "karakter animasyon"])) return "Animation";
   if (includesAny(text, ["stüdyo", "studio", "dizi", "film stüdyo", "senaryo", "sahne planı", "karakter dökümü", "fragman", "trailer"])) return "Studio / Series-Film";
   if (includesAny(text, ["sinematik", "cinematic", "lüks video", "luxury video", "premium video"])) return "Cinematic Video";
@@ -36,7 +32,6 @@ export function detectCategory(idea: string) {
   if (includesAny(text, ["görsel klon", "gorsel klon", "visual clone", "style clone", "referans stil", "style transfer"])) return "Visual Clone / Style Clone";
   if (includesAny(text, ["görselden video", "gorselden video", "image-to-video", "image to video", "linkten video", "link-to-video", "senaryodan video", "script-to-video", "video büyüt", "video buyut", "video extend", "fligransız", "filigransız", "watermark-free", "watermarksız"])) return "Video Tools";
   if (includesAny(text, ["mobil", "mobile", "ios", "android", "react native", "expo", "app ", "uygulama"])) return "Mobile App";
-  if (includesAny(text, ["admin panel", "admin dashboard", "yönetim paneli", "crm", "cms", "crud"]) && !text.includes("saas")) return "Admin Panel Project";
   if (includesAny(text, ["saas", "dashboard", "panel", "portal", "müşteri paneli", "client portal", "subscription", "abonelik"])) return "SaaS";
   if (includesAny(text, ["brand kit", "marka kiti", "logo", "kurumsal kimlik", "visual identity", "renk paleti", "typography", "tipografi"])) return "Brand Kit";
   if (includesAny(text, ["doküman", "document", "pdf", "pitch", "proposal", "teklif", "sunum", "deck", "katalog", "catalog", "dosya paketi"])) return "Document / File Pack";
