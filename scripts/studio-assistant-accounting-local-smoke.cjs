@@ -1,0 +1,47 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=require("@electric-sql/pglite");
+(async()=>{
+ const db=new PGlite(),owner="11111111-1111-4111-8111-111111111111",other="22222222-2222-4222-8222-222222222222";
+ const key=n=>"33333333-3333-4333-8333-"+String(n).padStart(12,"0"),hash="a".repeat(64);
+ const policy={version:"offline-v1",model:"gpt-6.1-terra",inputLimit:16000,outputLimit:1200,requestMicroUSD:50000,totalMicroUSD:200000,userRPM:10,systemRPM:100,inputRate:3000000,outputRate:5000000};
+ const call=async(name,...args)=>(await db.query("select public."+name+"("+args.map((_,i)=>"$"+(i+1)).join(",")+") as v",args)).rows[0].v;
+ const query=(s,args=[])=>db.query(s,args);
+ try{
+ await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create table public.production_requests(id uuid primary key,user_id uuid,production_type text);create table public.credit_balances(user_id uuid primary key,balance integer,reserved integer);grant select on public.production_requests,public.credit_balances to service_role;");
+ await db.exec(fs.readFileSync("docs/studio-assistant-accounting-isolated.sql","utf8"));
+ await query("insert into auth.users values($1),($2)",[owner,other]);await query("insert into credit_balances values($1,500,20)",[owner]);
+ assert.deepEqual(await call("studio_agent_readiness"),{version:"b3-isolated-cost",database:true,accounting:false});
+ const create=(user,category="website")=>call("studio_agent_create_project",user,category,"Offline project",null,{},"[]");
+ const project=await create(owner),otherProject=await create(other,"image");
+ const reserve=(n,revision=0,opts={})=>call("studio_agent_budget_reserve",opts.user??owner,opts.project??project,opts.category??"website",key(n),opts.hash??hash,opts.units??3,"tariff-v1","Change the headline",revision,JSON.stringify(opts.policy??policy),1000,1200);
+ await assert.rejects(reserve(1),/budget_policy_mismatch/);
+ await query("insert into studio_agent_cost_config(policy,tariff_version,input_units,output_units) values($1,'tariff-v1',1,1)",[JSON.stringify(policy)]);
+ await assert.rejects(reserve(1),/insufficient_assistant_credits/);
+ await query("insert into studio_agent_wallets_private(user_id,balance) values($1,100),($2,10)",[owner,other]);
+ assert.equal((await call("studio_agent_readiness")).accounting,true);
+ await db.exec("set role authenticated");await assert.rejects(call("studio_agent_wallets",owner));await assert.rejects(query("select * from studio_agent_requests"));await db.exec("reset role");
+ await db.exec("set role service_role");
+ await assert.rejects(reserve(1,0,{project:otherProject}),/project_not_found/);
+ await assert.rejects(reserve(1,0,{units:2}),/budget_policy_mismatch/);
+ await assert.rejects(reserve(1,0,{policy:{...policy,inputRate:1}}),/budget_policy_mismatch/);
+ assert.deepEqual(await reserve(1),{state:"fresh"});assert.equal((await reserve(1)).state,"pending");await assert.rejects(reserve(1,0,{hash:"b".repeat(64)}),/request_payload_conflict/);await assert.rejects(reserve(2),/project_request_pending/);
+ assert.equal((await call("studio_agent_wallets",owner)).assistant.reserved,3);
+ assert.equal(await call("studio_agent_budget_claim",other,key(1)),false);assert.equal(await call("studio_agent_budget_claim",owner,key(1)),true);assert.equal(await call("studio_agent_budget_claim",owner,key(1)),false);
+ const responseProject={id:project,userId:owner,categoryId:"website",title:"Offline project",productionId:null,snapshot:{categoryId:"website",revision:1,fields:{}},messages:[{role:"user",content:"Change the headline"},{role:"assistant",content:"Proposal ready"}]};
+ const proposal={siteId:key(90),baseHash:hash,expectedRevision:1,commands:[{op:"palette",value:"ink"}],resultHash:hash,proposalOnly:true};
+ const result={project:responseProject,reply:"Proposal ready",chargedCredits:2,usage:{inputTokens:100,outputTokens:100},blockedTools:[],nextQuestion:null,websiteRevisionProposal:proposal};
+ const receipt={model:policy.model,policyVersion:policy.version,providerRequestId:"chatcmpl-offline-1",finishReason:"stop",cachedInputTokens:0,reasoningTokens:0};
+ const record=(n,r=result,usage=result.usage,units=2,proof=receipt)=>call("studio_agent_budget_record",owner,key(n),JSON.stringify(r),JSON.stringify(usage),units,JSON.stringify(proof));
+ await assert.rejects(record(1,result,{inputTokens:1001,outputTokens:100}),/provider_usage_unverifiable/);
+ await assert.rejects(record(1,{...result,project:{...responseProject,userId:other}}),/invalid_result/);
+ await record(1);await record(1);assert.equal((await reserve(1)).state,"result_ready");
+ const settled=await call("studio_agent_budget_settle",owner,key(1),"real");assert.equal(settled.chargedAccount,"assistant");assert.equal(settled.chargedCredits,2);assert.deepEqual(settled.websiteRevisionProposal,proposal);assert.deepEqual(await call("studio_agent_budget_settle",owner,key(1),"real"),settled);assert.deepEqual((await reserve(1)).response,settled);
+ assert.deepEqual(settled.wallets.assistant,{balance:98,reserved:0,available:98});assert.deepEqual(settled.wallets.production,{balance:500,reserved:20,available:480});
+ assert.equal((await query("select count(*)::int n from studio_agent_messages")).rows[0].n,2);
+ await assert.rejects(reserve(2,0),/project_changed_reload/);assert.equal((await reserve(2,1)).state,"fresh");await call("studio_agent_budget_release",owner,key(2));await call("studio_agent_budget_release",owner,key(2));assert.equal((await reserve(2,1)).state,"released");
+ assert.equal((await reserve(3,1)).state,"fresh");assert.equal(await call("studio_agent_budget_claim",owner,key(3)),true);await call("studio_agent_uncertain",owner,key(3));await assert.rejects(call("studio_agent_budget_release",owner,key(3)),/uncertain_cannot_release/);assert.equal((await reserve(3,1)).state,"pending");assert.equal(await call("studio_agent_budget_claim",owner,key(3)),false);
+ assert.deepEqual((await call("studio_agent_wallets",owner)).assistant,{balance:98,reserved:3,available:95});
+ assert.deepEqual((await query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0],{balance:500,reserved:20});
+ await db.exec("reset role");
+ console.log("durable assistant accounting: missing policy denied, service-only RLS, separate wallets, bounds, one claim/settlement, proposal persistence, stale/foreign project rejection, uncertain hold");
+ }finally{await db.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});
