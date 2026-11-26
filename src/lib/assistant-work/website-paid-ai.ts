@@ -27,5 +27,5 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  if(acceptance.warnings.length)throw Error("website_ai_incomplete_content");
  // The same design becomes the source for the project editor and delivery.
  const files=[...rendered.files,{path:"README.md",contentType:"text/markdown",content:"# "+design.brand+"\n\nStatic website. Review business facts, configure the destination hosting and contact service before publication.\n"}];
- return {...artifact,files,plan:{...artifact.plan,status:"approved",editableDesign:design,editableDesignHash:rendered.manifest.designHash,websiteAIReceipt:result.receipt},websiteContent:{...artifact.websiteContent,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
+ return {...artifact,files,plan:{...artifact.plan,status:"approved" as const,editableDesign:design,editableDesignHash:rendered.manifest.designHash,websiteAIReceipt:result.receipt},websiteContent:{...artifact.websiteContent,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
 }
