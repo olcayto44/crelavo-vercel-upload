@@ -17,7 +17,7 @@ type Generate = (brief: ReturnType<typeof websiteEngineInput>, projectId: string
 
 export async function runIsolatedWebsiteGeneration(
   raw: z.input<typeof Input>,
-  deps: { ledger: WebsiteCreditLedger; loadReserved: (productionId: string, userId: string) => Promise<unknown>; generate?: Generate },
+  deps: { ledger: WebsiteCreditLedger; loadReserved: (productionId: string, userId: string) => Promise<unknown>; generate?: Generate; remoteGeneration?: boolean },
 ) {
   const input = Input.parse(raw);
   const identity = {
@@ -71,6 +71,9 @@ export async function runIsolatedWebsiteGeneration(
       websiteEngineInput(brief), input.productionId,
     );
   } catch {
+    // A remote provider may have incurred a platform cost. No local failure
+    // evidence is fabricated, no automatic retry, and no customer charge.
+    if(deps.remoteGeneration)return {state:"reconciliation_required" as const,charged:false};
     // The deterministic local generator has no remote provider submission.
     // Never apply this failure shortcut to an external/uncertain provider call.
     await deps.ledger.record({
@@ -83,7 +86,7 @@ export async function runIsolatedWebsiteGeneration(
   await deps.ledger.record({
     ...identity,
     outcome: "ready",
-    result: { files: artifact.files, websiteContent: artifact.websiteContent, pageManifest: artifact.pageManifest },
+    result: { files: artifact.files, websiteContent: artifact.websiteContent, pageManifest: artifact.pageManifest, plan: artifact.plan ?? {} },
   });
   const settlement = await deps.ledger.finalize({ ...identity, outcome: "ready" });
   if (!settlement || typeof settlement !== "object" ||
