@@ -3,7 +3,8 @@ import {getCategory} from "@/lib/crelavo/categoryCatalog";
 import {requireVerifiedRequestUser,supabaseAdmin} from "@/lib/supabase";
 import {clientIpFromRequest,rateLimit,rateLimitResponse,rejectSuspiciousText} from "@/lib/security";
 import {validateProductionSafety} from "@/lib/content-safety";
-import {normalizeAssistantWebsiteBrief,missingWebsiteBrief,unsupportedWebsiteScope,websitePlanHash} from "@/lib/assistant-work/website-brief";
+import {preparePaidWebsiteAI} from "@/lib/assistant-work/website-paid-ai";
+import {normalizeAssistantWebsiteBrief,missingWebsiteBrief,unsupportedWebsiteScope,websitePlanHash,websiteEngineInput} from "@/lib/assistant-work/website-brief";
 import {paidWebsiteScopeAllowed} from "@/lib/website-paid-scope";
 import {websitePageManifest} from "@/lib/website-engine";
 import {executePaidWebsiteProduction,websitePaidProductionEnabled,websitePaidCanaryAllowed} from "@/lib/assistant-work/website-paid-production";
@@ -52,6 +53,7 @@ export async function POST(request:Request){
  const safety=validateProductionSafety(values);if(!safety.ok)return reply({ok:false,code:"unsafe_brief",message:safety.message},400);
  const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",userId).maybeSingle();if(walletError)return reply({ok:false,code:"credit_read_failed"},503);
  const check=productionCreditCheck(pack.credits,Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0)));if(!check.ok)return reply(check,check.status);
+ try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
  const planHash=websitePlanHash(brief,packId);
  // A quote persists the exact reviewed plan; it never starts production or holds credits.
  // The separate generate request must explicitly confirm and recheck the same owner/hash.

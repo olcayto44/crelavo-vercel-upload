@@ -79,12 +79,13 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
   if(state.packId==="landing_page"&&websitePageManifest(brief.pages).length!==1)return reply({ok:false,code:"website_package_page_limit"},422);
-  try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
   const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
   if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
   const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
   const check=productionCreditCheck(credits,available);
   if(!check.ok)return reply(check,check.status);
+  try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+
   const ledger = createWebsiteCreditLedger(async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     return { data, error };
@@ -114,7 +115,12 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
     if (result.state === "generation_failed")
       return reply({ ok: false, state: result.state, code: "website_generation_failed_credits_released" }, 502);
     return reply({ ok: false, state: result.state, code: "website_generation_reconciliation_required" }, 409);
-  } catch {
+  } catch(error) {
+    if(error instanceof Error&&error.message==="insufficient_production_credits"){
+      const {data:current,error:readError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
+      if(!readError){const check=productionCreditCheck(credits,Math.max(0,Number(current?.balance??0)-Number(current?.reserved??0)));if(!check.ok)return reply(check,check.status);}
+      return reply({ok:false,code:"insufficient_credits",required:credits,topUpUrl:"/dashboard/payment",productionStarted:false},402);
+    }
     // The reservation may already exist. Never auto-retry or call legacy spending.
     return reply({ ok: false, code: "website_generation_reconciliation_required" }, 503);
   }
