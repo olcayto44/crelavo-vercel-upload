@@ -3,7 +3,7 @@ import {getCategory} from "@/lib/crelavo/categoryCatalog";
 import {z} from "zod";
 // A provider name in a catalogue never establishes runtime readiness.
 export function selectProductionRoute(categoryId:string,operation:string){
- if(categoryId==="website"&&operation==="generate_website")return {id:"website-local-v1",provider:"local",model:null,adapterImplemented:true,remoteProviderCostMicroUSD:0,realAI:false,fallbackAllowed:false} as const;
+ if(categoryId==="website"&&operation==="generate_website")return {id:"website-paid-ai-v1",provider:"openai",model:"gpt-6.1-terra",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
  if(categoryId==="website"&&operation==="generate_website_ai_copy")return {id:"website-ai-copy-v1",provider:"openai",model:"gpt-6.1-terra",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
  if(categoryId==="image"&&operation==="image_generate")return {id:"image-minimax-v1",provider:"minimax",model:"image-01",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
  return null;
@@ -20,5 +20,5 @@ export function websiteProductionQuote(raw:unknown){
  if(!pack||!Number.isSafeInteger(pack.credits)||pack.credits!==v.storedCredits||pack.credits!==v.estimatedCredits)throw Error("website_tariff_changed");
  const route=selectProductionRoute("website","generate_website")!;
  const quote={version:"website-quote-v1",userId:v.userId,projectId:v.projectId,productionId:v.productionId,planHash:v.planHash,packId:v.packId,credits:v.storedCredits,creditAccount:"production",routeId:route.id};
- return {quoteHash:createHash("sha256").update(JSON.stringify(quote)).digest("hex"),credits:quote.credits,packId:quote.packId,planHash:quote.planHash,creditAccount:quote.creditAccount,route,providerCostMicroUSD:0,platformOperatingCostMicroUSD:null,executionReady:false as const};
+ return {quoteHash:createHash("sha256").update(JSON.stringify(quote)).digest("hex"),credits:quote.credits,packId:quote.packId,planHash:quote.planHash,creditAccount:quote.creditAccount,route,providerCostMicroUSD:null,platformOperatingCostMicroUSD:null,executionReady:false as const};
 }
