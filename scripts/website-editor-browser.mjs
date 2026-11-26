@@ -236,7 +236,8 @@ try{
  await customer.getByRole("button",{name:"Taslağı kaydet",exact:true}).click();
  await customer.getByText(/Kayıtlı sürüm 2/).waitFor();assert.equal(saveCount,1);
  await customer.getByText(/Sayfa görselleri \(0\/6\)/).click();
- await customer.getByRole("button",{name:"Görsel kredisi hesapla",exact:true}).click();assert.equal(imageCalls,0);
+ await customer.getByLabel("Kayıtlı sayfa",{exact:true}).waitFor();await customer.waitForFunction(()=>document.querySelector('select[aria-label="Kayıtlı sayfa"]')?.value==="home");
+ try{await customer.getByRole("button",{name:"Görsel kredisi hesapla",exact:true}).click();}catch(e){console.log("Image panel diagnostic",JSON.stringify({fixtureRequests,errors:customerErrors,status:await customer.locator("main").innerText()}));throw e;}assert.equal(imageCalls,0);
  await customer.getByText("90 üretim kredisi",{exact:true}).waitFor();
  await customer.getByRole("button",{name:"Onayla ve üret",exact:true}).filter({visible:true}).click();
  await customer.getByRole("button",{name:"Görseli önizle",exact:true}).click();assert.equal(imageCalls,1);assert.equal(placeCalls,0);
