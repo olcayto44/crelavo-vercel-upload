@@ -14,14 +14,14 @@ export function buildSettledWebsiteCandidate(raw:unknown,productionId:string){
  return buildWebsiteSelfHostedBundle({design:row.design,revision:1,catalog:[],articles:[],heroMedia:[]});
 }
 
-const DirectJob=z.object({production_id:id,user_id:id,plan_hash:hash,state:z.literal("settled"),credits:z.number().int().positive(),maximum_micro_usd:z.number().int().positive(),receipt:z.object({requestId:z.string().min(1)}),reviewed_cost:z.object({source:z.literal("reviewed_provider_usage"),requestId:z.string().min(1),actualMicroUSD:z.number().int().positive()}),artifact:z.object({editableDesign:z.unknown(),editableDesignHash:hash})});
+const DirectJob=z.object({production_id:id,user_id:id,plan_hash:hash,state:z.literal("settled"),credits:z.number().int().positive(),maximum_micro_usd:z.number().int().positive(),receipt:z.object({requestId:z.string().min(1),estimatedMicroUSD:z.number().int().positive().optional()}),reviewed_cost:z.discriminatedUnion("source",[z.object({source:z.literal("reviewed_provider_usage"),requestId:z.string().min(1),actualMicroUSD:z.number().int().positive()}),z.object({source:z.literal("metered_policy_estimate"),requestId:z.string().min(1),estimatedMicroUSD:z.number().int().positive(),invoicePending:z.literal(true)})]),artifact:z.object({editableDesign:z.unknown(),editableDesignHash:hash})});
 const DirectProject=z.object({id,user_id:id,production_type:z.literal("website"),status:z.literal("ready"),reserved_credits:z.literal(0),output_json:z.object({websiteBillingMode:z.literal("atomic_v1"),websiteBillingPending:z.literal(false),charged:z.number().int().positive(),websiteAssistant:z.object({approvedHash:hash})})});
 const DirectReservation=z.object({production_id:id,user_id:id,plan_hash:hash,state:z.literal("settled"),credits:z.number().int().positive()});
 // All three inputs must come from trusted server queries scoped to the verified owner.
 // This is a read-only delivery path; it cannot finalize or reserve any credits.
 export function directSettledWebsiteRows(actor:string,productionId:string,job:unknown,project:unknown,reservation:unknown){
  const j=DirectJob.parse(job),p=DirectProject.parse(project),r=DirectReservation.parse(reservation);
- if([j.user_id,p.user_id,r.user_id].some(v=>v!==actor)||[j.production_id,p.id,r.production_id].some(v=>v!==productionId)||r.plan_hash!==j.plan_hash||p.output_json.websiteAssistant.approvedHash!==j.plan_hash||r.credits!==j.credits||!websiteCreditDeliveryProof(p,r)||j.reviewed_cost.requestId!==j.receipt.requestId||j.reviewed_cost.actualMicroUSD>j.maximum_micro_usd)throw Error("settled_delivery_denied");
+ if([j.user_id,p.user_id,r.user_id].some(v=>v!==actor)||[j.production_id,p.id,r.production_id].some(v=>v!==productionId)||r.plan_hash!==j.plan_hash||p.output_json.websiteAssistant.approvedHash!==j.plan_hash||r.credits!==j.credits||!websiteCreditDeliveryProof(p,r)||j.reviewed_cost.requestId!==j.receipt.requestId||(j.reviewed_cost.source==="reviewed_provider_usage"?j.reviewed_cost.actualMicroUSD>j.maximum_micro_usd:j.reviewed_cost.estimatedMicroUSD>j.maximum_micro_usd||j.reviewed_cost.estimatedMicroUSD!==j.receipt.estimatedMicroUSD))throw Error("settled_delivery_denied");
  return [{productionId,designHash:j.artifact.editableDesignHash,design:j.artifact.editableDesign}];
 }
 export function buildSettledWebsitePreview(raw:unknown,productionId:string){

@@ -15,7 +15,7 @@ const req=z.discriminatedUnion("action",[
 ]);
 const rowSchema=z.object({id:uuid,user_id:uuid,production_type:z.literal("website"),status:z.string(),estimated_credits:z.number().int().positive(),output_json:z.object({websiteAssistant:z.object({phase:z.string(),planHash:hash,approvedHash:hash.nullable().optional(),packId:z.enum(["landing_page","business_website"]),credits:z.number().int().positive(),brief:z.record(z.string(),z.unknown())})})});
 const jobSchema=z.object({production_id:uuid,user_id:uuid,plan_hash:hash,state:z.enum(["queued","claimed","artifact_cost_pending","reconcile_required","settled"])});
-type Deps={userId:string;canaryId:string;enabled:()=>boolean;policy:CostPolicy;apiKey:string;loadProject:(user:string,id:string)=>Promise<unknown>;loadJob:(user:string,id:string)=>Promise<unknown>;policyMatches:()=>Promise<boolean>;rpc:Parameters<typeof runWebsiteAIWorkerOnce>[0]["rpc"];transport?:typeof fetch};
+type Deps={userId:string;canaryId:string;enabled:()=>boolean;policy:CostPolicy;apiKey:string;loadProject:(user:string,id:string)=>Promise<unknown>;loadJob:(user:string,id:string)=>Promise<unknown>;policyMatches:()=>Promise<boolean>;rpc:Parameters<typeof runWebsiteAIWorkerOnce>[0]["rpc"];transport?:typeof fetch;autoMeteredSettlement?:boolean};
 export async function handleWebsiteAILaunch(request:Request,d:Deps){
  const reply=(value:unknown,status=200)=>Response.json(value,{status,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"}});
  const fail=(status:number,code:string)=>reply({ok:false,code,safeToRetryAutomatically:false},status);
@@ -36,7 +36,7 @@ export async function handleWebsiteAILaunch(request:Request,d:Deps){
  if(p.status!=="pending"||a.phase!=="approved"||a.approvedHash!==a.planHash||brief.locale!=="en"||missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||websitePlanHash(brief,a.packId)!==a.planHash||a.credits!==p.estimated_credits||getCategory("website")?.packs.find(x=>x.id===a.packId)?.credits!==a.credits)return fail(409,"current_supported_approval_required");
  prepareWebsiteAICopy(websiteEngineInput(brief),d.policy);prepareEditableWebsiteBrief(websiteEngineInput(brief));
  const quoteHash=createHash("sha256").update(JSON.stringify(["website-ai-copy-v1",d.userId,p.id,a.planHash,a.packId,a.credits,policyHash])).digest("hex");
- if(v.action==="quote")return reply({ok:true,productionId:p.id,quoteHash,credits:a.credits,packId:a.packId,route:"website-ai-copy-v1",scope:"marketing_website_candidate",requiresReviewedProviderCost:true});
+ if(v.action==="quote")return reply({ok:true,productionId:p.id,quoteHash,credits:a.credits,packId:a.packId,route:"website-ai-copy-v1",scope:"marketing_website_candidate",requiresReviewedProviderCost:!d.autoMeteredSettlement});
  if(v.quoteHash!==quoteHash||v.approvedCredits!==a.credits)return fail(409,"quote_changed_reload");
  const reserved=await d.rpc("website_ai_approve_enqueue",{p_user:d.userId,p_production:p.id,p_hash:a.planHash,p_policy_version:d.policy.version,p_policy_hash:policyHash,p_credits:a.credits,p_maximum:d.policy.requestMicroUSD,p_brief:a.brief,p_pack:a.packId});
  if(reserved.error)return fail(503,"reservation_unconfirmed_check_status");
@@ -45,6 +45,10 @@ export async function handleWebsiteAILaunch(request:Request,d:Deps){
  // owner-approved production. Interruption after reserve requires explicit review.
  if(!d.enabled()||!await d.policyMatches())return reply({ok:true,productionId:p.id,state:"queued",safeToRetryAutomatically:false});
  const result=await runWebsiteAIWorkerOnce({...d,testUserId:d.userId,loadNext:async()=>d.loadJob(d.userId,p.id)});
+ if(result.state==="artifact_cost_pending"&&d.autoMeteredSettlement){
+ const settled=await d.rpc("website_ai_finalize_metered",{p_user:d.userId,p_production:p.id,p_hash:a.planHash});
+ if(!settled.error&&(settled.data==="settled"||settled.data==="already_settled"))return reply({ok:true,productionId:p.id,state:"settled",costBasis:"metered_policy_estimate",invoicePending:true,safeToRetryAutomatically:false});
+ }
  return reply({ok:result.state==="artifact_cost_pending",productionId:p.id,...result},result.state==="artifact_cost_pending"?200:409);
  }catch{return fail(503,"website_ai_outcome_unconfirmed");}
 }

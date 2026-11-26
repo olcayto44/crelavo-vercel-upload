@@ -24,7 +24,7 @@ export async function POST(request:Request){
  if(userId!==canaryId)return fail(403,"website_ai_canary_required");
  if(!rateLimit({key:"website-ai-launch:"+userId,limit:10,windowMs:60000}).allowed)return fail(429,"rate_limit");
  const policy=readCostPolicy(),hash=websiteAIPolicyDigest(policy),apiKey=websitePilotProviderKey();
- return await handleWebsiteAILaunch(request,{userId,canaryId,policy,apiKey,
+ return await handleWebsiteAILaunch(request,{userId,canaryId,policy,apiKey,autoMeteredSettlement:true,
  enabled:()=>websiteDesignPilotEnabled()&&isolatedDatabaseTarget()&&process.env.STUDIO_WEBSITE_AI_LAUNCH_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_REAL_AI_ENABLED==="true"&&process.env.STUDIO_AGENT_PROVIDER_VERIFIED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true",
  policyMatches:async()=>{const r=await db.from("website_ai_activation").select("policy_version,policy_hash,maximum_micro_usd,total_micro_usd,user_rpm,system_rpm,enabled").eq("singleton",true).maybeSingle();const p=r.data;return !r.error&&!!p&&p.enabled===true&&p.policy_version===policy.version&&p.policy_hash===hash&&p.maximum_micro_usd===policy.requestMicroUSD&&p.total_micro_usd===policy.totalMicroUSD&&p.user_rpm===policy.userRPM&&p.system_rpm===policy.systemRPM;},
  loadProject:async(user,id)=>{const r=await db.from("production_requests").select("id,user_id,production_type,status,estimated_credits,output_json").eq("id",id).eq("user_id",user).eq("production_type","website").maybeSingle();if(r.error)throw Error("storage");return r.data;},
