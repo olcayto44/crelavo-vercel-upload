@@ -57,7 +57,10 @@ for(const code of ['en','tr','de','es','fr','ar'])assert.match(view,new RegExp('
 assert.match(client,/localStorage\.setItem\('clipora_language'/,'Studio language must persist with site language settings');
 assert.match(client,/language='en'/,'Studio must default to English');
 assert.match(client,/const createControl=\$\('\[data-global="create"\]'\)/,'Website uses original Create toolbar rather than a patched Canvas button');
-assert.match(client,/createControl\.onclick=current\.id==='website'\?openFunctionalWebsiteBuilder:null/,'create must be functional for website only');
+assert.match(client,/createControl\.onclick=current\.id==='website'\?openFunctionalWebsiteBuilder:stagedImage\?/,'Website retains its Create action and only supported image scopes open the staged workspace');
+assert.match(client,/\['image','brand_kit','visual_clone','virtual_model_studio'\]\.includes\(current\.id\)/);
+assert.match(client,/\/dashboard\/staged-productions\?category=/);
+assert.match(client,/createControl\.disabled=current\.id!=='website'&&!stagedImage/);
 assert.ok(!client.includes("$('.empty-actions').appendChild(button)"),'do not paste extra button over original Canvas');
 const workspace=read('src/lib/studio-agent/workspace.ts');
 const videoRoute=read('src/app/api/studio/video-library/route.ts');
