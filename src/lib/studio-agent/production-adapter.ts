@@ -44,8 +44,8 @@ export async function dispatchWebsiteAdapter(rawAction:unknown, trustedContext:u
   }
   if(result.status===502&&p.ok===false&&p.state==="generation_failed"&&p.code==="website_generation_failed_credits_released")
    return {state:"failed_released",code:String(p.code),safeToRetryAutomatically:false};
-  const preflightCodes=["website_atomic_production_not_enabled","website_render_invalid_request","website_paid_canary_account_not_enabled","website_project_not_found","website_current_approval_required","website_approved_package_or_brief_changed"];
-  if(p.ok===false&&typeof p.code==="string"&&preflightCodes.includes(p.code)&&[400,403,404,409,503].includes(result.status))return notDispatched(p.code);
+  const preflightCodes=["website_atomic_production_not_enabled","website_render_invalid_request","website_paid_canary_account_not_enabled","website_project_not_found","website_current_approval_required","website_approved_package_or_brief_changed","website_ai_provider_or_scope_unavailable","insufficient_credits","website_credit_balance_unavailable"];
+  if(p.ok===false&&typeof p.code==="string"&&preflightCodes.includes(p.code)&&[400,402,403,404,409,503].includes(result.status))return notDispatched(p.code);
   // All unexpected responses, network exceptions or uncertain settlements require
   // reconciliation. No fallback, refund claim, duplicate request or fake output.
   return uncertain();
