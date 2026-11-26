@@ -38,6 +38,7 @@ const {load}=require('./studio-agent-test-loader.cjs');
    try{return{data:(await db.query('select public.'+name+'('+params.map((_,i)=>'$'+(i+1)).join(',')+') as value',params)).rows[0].value,error:null};}
    catch(error){return{data:null,error:{message:String(error.message)}};}
   };
+  {
   // Exercise isolated handoff SQL with the real production schema and the relevant assistant contract.
   await db.exec(fs.readFileSync('docs/studio-assistant-accounting-isolated.sql','utf8'));
   await db.exec("create table public.studio_agent_website_bindings(project_id uuid primary key references public.studio_agent_projects(id));");
@@ -71,6 +72,7 @@ const {load}=require('./studio-agent-test-loader.cjs');
   // Isolate this added fixture from existing production list/ledger assertions.
   await db.query("delete from studio_agent_projects where id=$1",[assistantId]);
   await db.query("delete from production_requests where id=$1",[result.productionId]);
+  }
   const {runIsolatedWebsiteAI,websiteAIPolicyDigest}=load('src/lib/studio-agent/website-ai-orchestrator.ts');
   const policy={version:'offline-v1',model:'gpt-6.1-terra',inputLimit:16000,outputLimit:1200,requestMicroUSD:50000,totalMicroUSD:1000000,userRPM:2,systemRPM:5,inputRate:3000000,outputRate:5000000};
   const approval={userId:owner,productionId,planHash,packId,credits,policyVersion:policy.version,policyHash:websiteAIPolicyDigest(policy),maximumMicroUSD:policy.requestMicroUSD,source:'persisted_explicit_user_approval',brief:hashBrief};
