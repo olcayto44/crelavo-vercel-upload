@@ -190,6 +190,46 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
  assert.equal((await post("/member/login",{username:registration.username,password:registration.password})).status,403);
  assert.equal((await post("/admin/member-state",{csrf:memberOwnerCsrf,id:memberId,state:"active"},memberOwner)).status,303);
  assert(!(await (await get("/member",memberCookie)).text()).includes("Updated member"));
+ // Exact extracted account recovery module, using only synthetic email transport.
+ assert.equal((await post("/member/reset-request",{username:registration.username,email:"verified@example.test"})).status,503);
+ const recoveryDb=new (require("node:sqlite").DatabaseSync)(path.join(currentDataDir,"site.sqlite"));
+ recoveryDb.exec("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000");
+ const createRecovery=require(path.join(dir,"member-recovery.cjs")),recoveryCrypto=require("node:crypto");
+ const recoveryToken=()=>recoveryCrypto.randomBytes(32).toString("hex"),recoveryHash=(pw,salt)=>recoveryCrypto.scryptSync(pw,salt,64).toString("hex");
+ let sent=[],recoveryMode="accepted";
+ const recoveryDeps={db:recoveryDb,config:{language:"tr",modules:["accounts"]},local:false,esc:String,hidden:()=>"",page:(title,body)=>body,send:(res,status,body)=>{res.status=status;res.body=body;},redirect:(res,to,headers)=>{res.status=303;res.headers=headers;},value:(f,k,max)=>{const v=f.get(k);if(!v||v.length>max||f.getAll(k).length!==1)throw Error("field");return v;},token:recoveryToken,hash:recoveryHash,crypto:recoveryCrypto,password:(f,k)=>{const v=f.get(k);if(!v||v.length<16||v.length>256||f.getAll(k).length!==1)throw Error("password");return v;},equal:(a,b)=>recoveryCrypto.timingSafeEqual(Buffer.from(a,"hex"),Buffer.from(b,"hex")),env:{SITE_CUSTOMER_ACCOUNTS:"1",SITE_ACCOUNT_EMAIL:"1",SITE_EMAIL_FROM:"notice@example.test",SITE_RESEND_API_KEY:"synthetic-key-not-real"},transport:async(url,init)=>{assert.equal(url,"https://api.resend.com/emails");assert.equal(init.redirect,"error");const d=JSON.parse(init.body),code=d.text.match(/[a-f0-9]{64}$/)[0];assert.match(init.headers["Idempotency-Key"],/^crelavo-account-[a-f0-9]{64}$/);assert.equal(d.to[0],"verified@example.test");assert(!d.text.includes("https://"));sent.push(code);if(recoveryMode==="uncertain")throw Error("offline");return Response.json({id:"synthetic"});}};
+ const invokeRecovery=async(mod,p,body,s=null)=>{const res={};assert.equal(await mod.post(p,new URLSearchParams(body),res,s),true);return res;};
+ try{
+ const account=recoveryDb.prepare("SELECT * FROM members WHERE id=?").get(memberId),scope={member:{id:memberId},version:account.auth_version,csrf:"synthetic"},verify={email:"Verified@example.test",current:registration.password},requestReset={username:registration.username,email:"verified@example.test"},complete={username:registration.username,next:"Reset-synthetic-password-789",confirm:"Reset-synthetic-password-789"};
+ const disabled=createRecovery({...recoveryDeps,local:true});assert.equal((await invokeRecovery(disabled,"/member/email-request",verify,scope)).status,503);assert.equal(sent.length,0);
+ const recovery=createRecovery(recoveryDeps);assert.equal((await invokeRecovery(recovery,"/member/email-request",verify)).status,403);
+ assert.equal((await invokeRecovery(recovery,"/member/email-request",{...verify,current:"Wrong-synthetic-password"},scope)).status,403);
+ assert.equal((await invokeRecovery(recovery,"/member/reset-request",requestReset)).status,200);assert.equal(sent.length,0);
+ assert.equal((await invokeRecovery(recovery,"/member/email-request",verify,scope)).status,200);assert.equal(sent.length,1);
+ const verification=sent[0];assert.equal(recoveryDb.prepare("SELECT digest FROM member_email_codes WHERE member_id=?").get(memberId).digest,recoveryCrypto.createHash("sha256").update(verification).digest("hex"));
+ assert.equal((await invokeRecovery(recovery,"/member/email-request",verify,scope)).status,200);assert.equal(sent.length,1);
+ assert.equal((await invokeRecovery(recovery,"/member/email-verify",{code:"0".repeat(64)},scope)).status,409);
+ assert.equal((await invokeRecovery(recovery,"/member/email-verify",{code:verification},scope)).status,303);
+ assert.equal((await invokeRecovery(recovery,"/member/email-verify",{code:verification},scope)).status,409);
+ assert.equal(recoveryDb.prepare("SELECT email FROM member_verified_email WHERE member_id=?").get(memberId).email,"verified@example.test");
+ const unknown=await invokeRecovery(recovery,"/member/reset-request",{...requestReset,username:"unknown"});
+ assert.equal(unknown.status,200);assert.equal(sent.length,1);
+ recoveryDb.prepare("UPDATE member_email_codes SET created_at=created_at-61000 WHERE member_id=?").run(memberId);
+ const valid=await invokeRecovery(recovery,"/member/reset-request",requestReset);assert.deepEqual(valid,unknown);assert.equal(sent.length,2);
+ recoveryDb.prepare("UPDATE member_email_codes SET expires=?,created_at=created_at-61000 WHERE purpose='reset'").run(Date.now()-1);
+ assert.equal((await invokeRecovery(recovery,"/member/reset-complete",{...complete,code:sent[1]})).status,409);
+ recoveryMode="uncertain";assert.equal((await invokeRecovery(recovery,"/member/reset-request",requestReset)).status,200);assert.equal(sent.length,3);
+ const reset=sent[2];assert.equal(recoveryDb.prepare("SELECT send_state FROM member_email_codes WHERE digest=?").get(recoveryCrypto.createHash("sha256").update(reset).digest("hex")).send_state,"uncertain");
+ recoveryDb.prepare("UPDATE member_email_codes SET created_at=created_at-61000 WHERE member_id=?").run(memberId);
+ assert.equal((await invokeRecovery(recovery,"/member/reset-request",requestReset)).status,200);assert.equal(sent.length,3);
+ assert.equal((await invokeRecovery(recovery,"/member/reset-complete",{...complete,code:verification})).status,409);
+ const preReset=await post("/member/login",{username:registration.username,password:registration.password});assert.equal(preReset.status,303);const preResetCookie=preReset.headers.get("set-cookie").split(";")[0];
+ assert.equal((await invokeRecovery(recovery,"/member/reset-complete",{...complete,code:reset})).status,303);
+ assert.equal((await invokeRecovery(recovery,"/member/reset-complete",{...complete,code:reset})).status,409);
+ assert.equal(recoveryDb.prepare("SELECT auth_version FROM members WHERE id=?").get(memberId).auth_version,account.auth_version+1);
+ assert(!(await (await get("/member",preResetCookie)).text()).includes("Updated member"));
+ }finally{recoveryDb.close();}
+ console.log("independent account recovery: disabled by default, authenticated verification, hashed code, verified recipient only, expiry, replay and rate limit, generic response and revoked sessions (synthetic transport)");
  console.log("independent customer accounts: one-use invite, private credentials, isolated member/admin sessions, CSRF, escaped profile, immediate suspension and revocation");
  const oldCookie=memberOwner,otherAdmin=await (await get("/admin",oldCookie)).text(),otherCsrf=otherAdmin.match(/name="csrf" value="([a-f0-9]+)"/)[1];
  assert.equal((await post("/contact-form",{name:"Delete fixture",email:"delete@example.test",message:"Delete this message"})).status,303);
