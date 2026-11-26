@@ -33,7 +33,11 @@ export async function generateSingleMinimaxImage(raw:unknown,apiKey:string,trans
   const res=await transport("https://api.minimax.io/v1/image_generation",{method:"POST",redirect:"error",signal:AbortSignal.timeout(90000),headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"image-01",prompt:input.prompt,aspect_ratio:input.aspect,response_format:"base64",n:1,prompt_optimizer:false,...(referenceJpeg?{subject_reference:[{type:"character",image_file:"data:image/jpeg;base64,"+referenceJpeg.toString("base64")}]}:{})})});
   const rawResponse=JSON.parse(await readLimited(res));
   const parsedId=receiptId.safeParse(rawResponse?.id);if(parsedId.success)id=parsedId.data;
-  if(!res.ok||rawResponse?.base_resp?.status_code!==0||!id||String(rawResponse?.metadata?.success_count)!=="1"||String(rawResponse?.metadata?.failed_count)!=="0")return uncertain("image_provider_receipt_unverified",id);
+  const status=String(rawResponse?.base_resp?.status_code??"missing");
+  if(!res.ok)return uncertain("minimax_http_"+res.status,id);
+  if(status!=="0")return uncertain("minimax_status_"+(/^[0-9]{1,8}$/.test(status)?status:"missing"),id);
+  if(!id)return uncertain("minimax_trace_id_missing");
+  if(String(rawResponse?.metadata?.success_count)!=="1"||String(rawResponse?.metadata?.failed_count)!=="0")return uncertain("minimax_metadata_count_mismatch",id);
   const images=rawResponse?.data?.image_base64;
   if(!Array.isArray(images)||images.length!==1||typeof images[0]!=="string"||images[0].length>maxBody||!(/^[A-Za-z0-9+/]+={0,2}$/).test(images[0])||images[0].length%4!==0)return uncertain("image_payload_invalid",id);
   const decoded=Buffer.from(images[0],"base64");
