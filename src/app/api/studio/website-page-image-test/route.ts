@@ -7,7 +7,7 @@ import {websitePilotCanary} from "@/lib/studio-agent/website-pilot-provider";
 import {rateLimit} from "@/lib/security";
 import {buildWebsiteMediaPlan} from "@/lib/website-media-art-direction";
 import {handleImageLaunch} from "@/lib/studio-agent/image-launch";
-import {websiteImageCandidates,verifyWebsiteOpenAIImageModel} from "@/lib/studio-agent/website-image-routes";
+import {websiteImageCandidates,verifyWebsiteImageCandidate} from "@/lib/studio-agent/website-image-routes";
 import {generateSingleMinimaxImage,generateSingleOpenAIWebsiteImage,generateAlternativeWebsiteImage} from "@/lib/studio-agent/image-provider";
 import {optimizeSettledImageForWebsite} from "@/lib/studio-agent/website-settled-image";
 export const runtime="nodejs";
@@ -56,7 +56,7 @@ export async function POST(request:Request){
  const eligible=enabled()&&cfg.data?.enabled?candidates.filter(c=>routes.data?.some(r=>r.version===c.route.version&&r.provider===c.route.provider&&r.model===c.route.model)&&tariffs.data?.some(t=>t.version===c.route.version&&t.credits===c.route.credits&&t.max_micro_usd===c.route.max_micro_usd)&&c.route.max_micro_usd<=remaining&&c.route.credits<=available):[];
  let selected:(typeof eligible)[number]|undefined=eligible[0];
  // Free metadata check before quoting or submitting. No provider switch after dispatch.
- if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(c.route.provider==="openai"&&!await verifyWebsiteOpenAIImageModel(c.key)){selected=undefined;continue;}selected=c;break;}}
+ if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(!await verifyWebsiteImageCandidate(c.route.provider,c.key)){selected=undefined;continue;}selected=c;break;}}
  const loadTariff=async()=>selected?{version:selected.route.version,credits:selected.route.credits,max_micro_usd:selected.route.max_micro_usd,enabled:true}:null;
  const loadTarget=async()=>{const t=await db.from("studio_website_image_targets").select("request_id,project_id,prompt,placed_media_version").eq("user_id",userId).eq("site_id",v.siteId).eq("design_version",v.version).eq("page_slug",v.pageSlug).maybeSingle();if(t.error)throw Error("target");return t.data;};
  const loadOperation=async(user:string,id:string)=>{const r=await db.from("studio_image_operations").select("request_id,user_id,project_id,state").eq("request_id",id).eq("user_id",user).maybeSingle();if(r.error)throw Error("operation");return r.data;};
