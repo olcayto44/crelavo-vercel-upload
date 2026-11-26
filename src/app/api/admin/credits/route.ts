@@ -15,16 +15,13 @@ export async function POST(request: Request) {
   const invoiceReference = String(body.invoiceReference ?? body.invoiceUrl ?? "").trim();
   const notifyUser = body.notifyUser !== false;
 
-  if (!email || !Number.isSafeInteger(rawAmount) || rawAmount <= 0 || rawAmount > 10000000) {
+  if (!email || !Number.isFinite(rawAmount) || rawAmount <= 0) {
     return Response.json({ error: "Valid email and positive credit amount are required." }, { status: 400 });
   }
   if (!["add", "remove"].includes(action)) {
     return Response.json({ error: "Action must be add or remove." }, { status: 400 });
   }
 
-  if (process.env.STUDIO_ADMIN_ATOMIC_WALLET_ENABLED !== "true" || process.env.VERCEL_ENV !== "production") {
-    return Response.json({ error: "Atomic credit adjustment is not enabled." }, { status: 503 });
-  }
   try {
     const supabase = supabaseAdmin();
     let { data: profile, error: profileError } = await supabase
@@ -68,26 +65,53 @@ export async function POST(request: Request) {
       profile = canonicalProfile;
     }
 
-    // The candidate must be installed and explicitly enabled before this write path opens.
-    // Never fall back to the old non-atomic write after an uncertain RPC outcome.
+    const { data: currentBalance, error: balanceReadError } = await supabase
+      .from("credit_balances")
+      .select("balance, reserved, bonus_credits")
+      .eq("user_id", profile.id)
+      .maybeSingle();
+
+    if (balanceReadError) throw balanceReadError;
+
+    const current = currentBalance?.balance ?? 0;
+    const nextReserved = currentBalance?.reserved ?? 0;
+    const nextBalance = Math.max(0, current + amount);
+    if (action === "remove" && nextBalance < nextReserved) {
+      return Response.json({ error: `Cannot remove credits below the active reserved amount. Reserved: ${nextReserved}, removable: ${Math.max(0, current - nextReserved)}.` }, { status: 409 });
+    }
+    const currentBonus = currentBalance?.bonus_credits ?? 0;
+    const nextBonusCredits = action === "add" ? currentBonus + Math.abs(amount) : Math.max(0, currentBonus - Math.abs(amount));
+
+    const { data: balance, error: balanceError } = await supabase
+      .from("credit_balances")
+      .upsert({
+        user_id: profile.id,
+        balance: nextBalance,
+        reserved: nextReserved,
+        bonus_credits: nextBonusCredits,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "user_id" })
+      .select("balance, reserved, bonus_credits, updated_at")
+      .single();
+
+    if (balanceError) throw balanceError;
+
     const eventNote = [
       note,
       receiptReference ? `receipt=${receiptReference}` : "",
       invoiceReference ? `invoice=${invoiceReference}` : ""
     ].filter(Boolean).join(" | ");
-    if (eventNote.length > 2000) return Response.json({ error: "Credit adjustment note is too long." }, { status: 400 });
-    const { data: balance, error: balanceError } = await supabase.rpc("studio_admin_adjust_bonus", {
-      p_user: profile.id, p_delta: amount, p_note: eventNote,
-    });
-    if (balanceError) {
-      if (["wallet_reconciliation_required", "insufficient_unreserved_bonus"].some(code => balanceError.message.includes(code))) {
-        return Response.json({ error: "Credit adjustment requires reconciliation or sufficient unreserved bonus credits." }, { status: 409 });
-      }
-      return Response.json({ error: "Credit adjustment could not be confirmed. Check the wallet before retrying." }, { status: 503 });
-    }
-    if (!balance || !Number.isSafeInteger(balance.balance)) {
-      return Response.json({ error: "Credit adjustment outcome is unconfirmed. Check the wallet before retrying." }, { status: 503 });
-    }
+
+    const { error: eventError } = await supabase
+      .from("credit_events")
+      .insert({
+        user_id: profile.id,
+        type: "adjustment",
+        amount,
+        note: eventNote
+      });
+
+    if (eventError) throw eventError;
 
     const emailResult = action === "add" && notifyUser
       ? await sendCreditActivationEmail({

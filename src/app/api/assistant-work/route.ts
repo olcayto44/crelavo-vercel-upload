@@ -1,4 +1,3 @@
-import {productionCreditCheck} from "@/lib/studio-agent/production-credit-policy";
 import { resolveReplyLanguage } from "@/lib/assistant-work/chat-language";
 import { translateWorkspaceText } from "@/lib/assistant-work/workspace-i18n";
 import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
@@ -163,17 +162,18 @@ export async function POST(req: NextRequest) {
       // Do not re-ask for approval here; this endpoint only validates the request identity.
     }
 
-    // A final render is production, even if its text contains "color" or "copy".
-    // Server catalog pricing takes precedence over any client hint.
-    const catalog = getCatalogCategory(category);
-    if(!catalog)return NextResponse.json({ok:false,spend:false,code:"unknown_category"},{status:400});
-    if(catalog.billing!=="credits")return NextResponse.json({ok:false,spend:false,code:"service_subscription_required",message:"Use the service subscription page."},{status:409});
-    const packId=String(body.packId||"");
-    const selectedPack=catalog.packs.find(pack=>pack.id===packId);
-    if(packId&&!selectedPack)return NextResponse.json({ok:false,spend:false,code:"invalid_production_pack"},{status:400});
-    const tariffs=catalog.packs.map(p=>p.credits).filter((n):n is number=>typeof n==="number"&&Number.isSafeInteger(n)&&n>0);
-    const priced={credits:selectedPack?.credits??(tariffs.length?Math.min(...tariffs):0)};
-    if(!Number.isSafeInteger(priced.credits)||priced.credits<=0)return NextResponse.json({ok:false,spend:false,code:"production_tariff_unavailable"},{status:503});
+    if (isLocalCopyOnly(prompt) || isCopyLayoutColorOnly(prompt)) {
+      if (isLocalCategory(category, type)) {
+        const local = await runLocalEngine({ prompt, type, category, scene, action });
+        return NextResponse.json({ ...local, spend: false });
+      }
+      const copy = await runMediaEngine({ prompt, type, category, scene, extras });
+      return NextResponse.json({ ...copy, spend: false });
+    }
+
+    const quoted = quote(category, [], "revise", prompt);
+     const selectedPack = getCatalogCategory(category)?.packs.find((pack) => pack.id === String(body.packId || ""));
+     const priced = selectedPack?.credits != null ? { ...quoted, credits: selectedPack.credits, engine: selectedPack.credits > 0, reason: "selected_pack" } : quoted;
     const creditUrl = new URL(req.url);
     creditUrl.pathname = "/api/credits";
     creditUrl.search = "user_id=" + encodeURIComponent(user.id);
@@ -181,8 +181,9 @@ export async function POST(req: NextRequest) {
     const creditData = await creditResponse.json().catch(() => ({})) as Record<string, unknown>;
     if (!creditResponse.ok) return NextResponse.json({ ok: false, spend: false, code: "credit_read_failed", message: String(creditData.error || "Credit balance could not be read.") }, { status: creditResponse.status });
     const available = Number(creditData.available ?? creditData.balance ?? creditData.credits ?? 0);
-    const creditCheck=productionCreditCheck(priced.credits,available);
-    if(!creditCheck.ok)return NextResponse.json(creditCheck,{status:creditCheck.status});
+    if (priced.credits > 0 && available < priced.credits) {
+      return NextResponse.json({ ok: false, spend: false, code: "insufficient", message: `Not enough credits. Need ${priced.credits}. Balance ${available}.`, balance: available, need: priced.credits }, { status: 402 });
+    }
 
     let result;
     if (category === "video_clipping") {
@@ -206,7 +207,6 @@ export async function POST(req: NextRequest) {
       result = await runMediaEngine({ prompt, type, category, scene, extras, renderFinal: body.render === true });
     }
     if (!result.ok) return NextResponse.json(result, { status: 400 });
-    if(!result.spend)return NextResponse.json({ok:false,spend:false,code:"production_output_not_available",message:"No chargeable production output was created."},{status:409});
     if (result.media?.url && result.status === "ready" && result.engine !== "local") {
       try { result.media.url = await mirrorProviderAsset({ productionId: "assistant-" + user.id, sourceUrl: result.media.url, filenameBase: "media-" + ("taskId" in result && result.taskId ? result.taskId : crypto.randomUUID()), fallbackContentType: result.media.kind === "image" ? "image/jpeg" : result.media.kind === "audio" ? "audio/mpeg" : "video/mp4" }); } catch { /* retain provider URL when storage mirroring is unavailable */ }
     }

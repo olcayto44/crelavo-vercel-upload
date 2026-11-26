@@ -1,4 +1,3 @@
-import {commitVerifiedWhopPurchase,whopAtomicPurchaseEnabled} from "@/lib/studio-agent/whop-atomic-purchase";
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
@@ -419,8 +418,6 @@ async function addCredits(input: {
   if (!profile) return { activated: false, reason: "crelavo_user_not_found" };
 
   const supabase = supabaseAdmin();
-  // Shared transaction candidate. No fallback to a legacy write after RPC uncertainty.
-  if (whopAtomicPurchaseEnabled()) return commitVerifiedWhopPurchase(supabase,{profile,product:input.product,billing:input.billing,credits:input.credits,paymentId:input.paymentId,membershipId:input.membershipId,source:"webhook"});
   const { data: existingEvent, error: existingError } = await supabase
     .from("credit_events")
     .select("id")
@@ -603,7 +600,7 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
     amountUsd,
     credits: activation.activated ? credits : 0,
     kind: "credits",
-    status: activation.activated || ("reason" in activation && activation.reason === "already_processed") ? "fulfilled" : "pending_user",
+    status: activation.activated ? "fulfilled" : "pending_user",
     billingReason,
   }).catch(() => null);
   if (activation.activated && activationProfileId) {
