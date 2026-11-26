@@ -65,6 +65,13 @@ export async function POST(request: Request) {
       profile = canonicalProfile;
     }
 
+    const eventNote = [note,receiptReference ? `receipt=${receiptReference}` : "",invoiceReference ? `invoice=${invoiceReference}` : ""].filter(Boolean).join(" | ");
+    let balance:{balance:number;reserved:number;bonus_credits:number;updated_at:string};
+    if(process.env.CRELAVO_ATOMIC_ADMIN_CREDITS_ENABLED==="true"){
+      const r=await supabase.rpc("studio_admin_adjust_bonus",{p_user:profile.id,p_delta:amount,p_note:eventNote});
+      if(r.error||!r.data)return Response.json({error:"wallet_adjustment_unconfirmed"},{status:409});
+      balance=r.data;
+    }else{
     const { data: currentBalance, error: balanceReadError } = await supabase
       .from("credit_balances")
       .select("balance, reserved, bonus_credits")
@@ -82,7 +89,7 @@ export async function POST(request: Request) {
     const currentBonus = currentBalance?.bonus_credits ?? 0;
     const nextBonusCredits = action === "add" ? currentBonus + Math.abs(amount) : Math.max(0, currentBonus - Math.abs(amount));
 
-    const { data: balance, error: balanceError } = await supabase
+    const { data: legacyBalance, error: balanceError } = await supabase
       .from("credit_balances")
       .upsert({
         user_id: profile.id,
@@ -95,12 +102,8 @@ export async function POST(request: Request) {
       .single();
 
     if (balanceError) throw balanceError;
+    balance=legacyBalance;
 
-    const eventNote = [
-      note,
-      receiptReference ? `receipt=${receiptReference}` : "",
-      invoiceReference ? `invoice=${invoiceReference}` : ""
-    ].filter(Boolean).join(" | ");
 
     const { error: eventError } = await supabase
       .from("credit_events")
@@ -113,6 +116,7 @@ export async function POST(request: Request) {
 
     if (eventError) throw eventError;
 
+    }
     const emailResult = action === "add" && notifyUser
       ? await sendCreditActivationEmail({
           to: profile.email,

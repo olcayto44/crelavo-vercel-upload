@@ -1,3 +1,4 @@
+import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
@@ -418,6 +419,9 @@ async function addCredits(input: {
   if (!profile) return { activated: false, reason: "crelavo_user_not_found" };
 
   const supabase = supabaseAdmin();
+  if(whopAtomicPurchaseEnabled()){
+    return commitVerifiedWhopPurchase(supabase,{profile,product:input.product,billing:input.billing,credits:input.credits,paymentId:input.paymentId,membershipId:input.membershipId,source:"webhook"});
+  }
   const { data: existingEvent, error: existingError } = await supabase
     .from("credit_events")
     .select("id")

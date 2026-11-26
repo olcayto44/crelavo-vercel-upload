@@ -1,6 +1,8 @@
 import {createClient} from "@supabase/supabase-js";
 import {supabaseAdmin} from "../supabase";
 import {StageTariff} from "./stage-plan";
+import {stageCommercialReview} from "./stage-commercial-policy";
+import {optionalProviderEnv} from "../providers/env";
 const prod="https://yahegfagwxvixjnybkaw.supabase.co",isolated="https://bwzxdxqgrgbsvndinmrv.supabase.co";
 export function stageEnvironment(){
  const env=process.env;
@@ -8,7 +10,7 @@ export function stageEnvironment(){
   return {db:createClient(isolated,env.STUDIO_AGENT_TEST_SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}}),scope:"isolated" as const,editKey:env.STUDIO_EDIT_TEST_PROVIDER_KEY?.trim()||"",key:env.STUDIO_IMAGE_TEST_PROVIDER_KEY?.trim()||"",canary:env.STUDIO_IMAGE_TEST_USER_ID?.trim()||""};
  }
  if(env.VERCEL_ENV==="production"&&env.NEXT_PUBLIC_SUPABASE_URL?.trim().replace(/\/$/,"")===prod&&env.STUDIO_AGENT_ISOLATED_PREVIEW!=="true"){
-  return {db:supabaseAdmin(),scope:"production" as const,editKey:env.STABILITY_API_KEY?.trim()||env.STABILITY_KEY?.trim()||"",key:env.MINIMAX_API_KEY?.trim()||env.MINIMAX_KEY?.trim()||"",canary:env.CRELAVO_STAGE_CANARY_USER_ID?.trim()||""};
+  return {db:supabaseAdmin(),scope:"production" as const,editKey:optionalProviderEnv("stability"),key:optionalProviderEnv("minimax"),canary:env.CRELAVO_STAGE_CANARY_USER_ID?.trim()||""};
  }
  return null;
 }
@@ -18,7 +20,8 @@ export function stageTariff(){
  return p.success?p.data:null;
 }
 export function stageEnabled(e:StageEnvironment,user:string){
- return Boolean(process.env.CRELAVO_STAGE_IMAGE_ENABLED==="true"&&process.env.CRELAVO_STAGE_IMAGE_PROVIDER_VERIFIED==="true"&&process.env.CRELAVO_STAGE_SHARED_WALLET_VERIFIED==="true"&&stageTariff()&&e.key&&e.canary===user);
+ const tariff=stageTariff();
+ return Boolean(tariff&&stageCommercialReview(tariff).imageReady&&process.env.CRELAVO_STAGE_IMAGE_ENABLED==="true"&&process.env.CRELAVO_STAGE_IMAGE_PROVIDER_VERIFIED==="true"&&process.env.CRELAVO_STAGE_SHARED_WALLET_VERIFIED==="true"&&stageTariff()&&e.key&&e.canary===user);
 }
 
-export function stageEditEnabled(e:StageEnvironment,user:string){const t=stageTariff();return Boolean(stageEnabled(e,user)&&process.env.CRELAVO_STAGE_EDIT_PROVIDER_VERIFIED==="true"&&e.editKey&&t?.editCredits&&t.editMaxMicroUSD);}
+export function stageEditEnabled(e:StageEnvironment,user:string){const t=stageTariff();return Boolean(stageEnabled(e,user)&&process.env.CRELAVO_STAGE_EDIT_PROVIDER_VERIFIED==="true"&&e.editKey&&t?.editCredits&&t.editMaxMicroUSD&&stageCommercialReview(t).editReady);}
