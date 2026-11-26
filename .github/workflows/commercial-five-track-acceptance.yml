@@ -9,6 +9,7 @@ on:
       - 'src/app/api/studio/**'
       - 'src/lib/studio-agent/**'
       - 'scripts/studio-mp4-*.mjs'
+      - 'scripts/studio-production-*-smoke.cjs'
       - 'scripts/studio-ffmpeg-compose.mjs'
       - 'Dockerfile.studio-worker'
       - 'worker-deps/**'
@@ -38,6 +39,9 @@ jobs:
           node scripts/website-production-draft-smoke.cjs
           node scripts/studio-reconciliation-monitor-smoke.cjs
           npm run smoke:studio-v2-wiring
+          node scripts/studio-production-adapter-smoke.cjs
+          node scripts/studio-production-dispatch-smoke.cjs
+          node scripts/studio-production-status-smoke.cjs
       - name: Integrated MP4 worker runtime (release branch)
         run: |
           sudo apt-get update -qq
