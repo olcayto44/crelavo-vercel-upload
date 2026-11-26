@@ -19,6 +19,7 @@ export function RouteAwareFooter({ children }: { children: React.ReactNode }) {
   const hideFooter = Boolean(
     pathname?.startsWith("/admin") ||
     pathname?.startsWith("/auth") ||
+    pathname === "/website-cms-test" || pathname?.startsWith("/website-cms-test/") || pathname === "/website-design-test" ||
     pathname?.startsWith("/dashboard/assistant-workspace") ||
     pathname?.startsWith("/dashboard/studio-v2") ||
     pathname === "/dashboard/studio" || pathname?.startsWith("/dashboard/studio/") ||
