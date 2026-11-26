@@ -72,6 +72,13 @@ export async function handleStudioConversation(request:Request,deps:{authenticat
     // No implicit mock fallback. New server flags are off unless explicitly configured AFTER offline migration review.
     const readiness=await studioReadiness(db);if(!readiness.ready)throw new ConversationError("studio_not_ready"); const tariff=readAssistantTariff();const provider=createExistingProviderAdapter();provider.preflight();
     const store=createDatabaseConversationStore(db);
+    if(body.categoryId==="website"&&(body.action==="message"||body.action==="bind_website")){
+      // A private CMS-bound project must use the saved-design revision endpoint
+      // with its explicit quote and server-verified site context, not generic chat.
+      const {data:binding,error:bindingError}=await db.from("studio_agent_website_bindings").select("project_id").eq("user_id",userId).eq("project_id",body.projectId).maybeSingle();
+      if(bindingError)throw new ConversationError("studio_storage_unavailable");
+      if(binding)throw new ConversationError("website_revision_endpoint_required",409);
+    }
     if(body.action==="bind_website") {
       if(body.categoryId!=="website"||process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")throw new ConversationError("website_binding_not_allowed",403);
       const {data:website,error:websiteError}=await db.from("production_requests").select("id").eq("id",body.productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();
