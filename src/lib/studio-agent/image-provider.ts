@@ -24,12 +24,13 @@ async function readLimited(response:Response){
 }
 // Only the isolated central orchestrator may call this low-level transport.
 // All returned failures after dispatch are conservative/uncertain, including 4xx.
-export async function generateSingleMinimaxImage(raw:unknown,apiKey:string,transport:typeof fetch=fetch):Promise<ImageProviderResult>{
+export async function generateSingleMinimaxImage(raw:unknown,apiKey:string,transport:typeof fetch=fetch,referenceJpeg?:Buffer):Promise<ImageProviderResult>{
  const input=ImageRequestSchema.parse(raw);
+ if(referenceJpeg&&(referenceJpeg.length>1_000_000||referenceJpeg[0]!==255||referenceJpeg[1]!==216))throw Error("image_reference_invalid");
  if(!apiKey.trim())throw Error("image_provider_key_missing");
  let id:string|undefined;
  try{
-  const res=await transport("https://api.minimax.io/v1/image_generation",{method:"POST",redirect:"error",signal:AbortSignal.timeout(90000),headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"image-01",prompt:input.prompt,aspect_ratio:input.aspect,response_format:"base64",n:1,prompt_optimizer:false})});
+  const res=await transport("https://api.minimax.io/v1/image_generation",{method:"POST",redirect:"error",signal:AbortSignal.timeout(90000),headers:{"Authorization":"Bearer "+apiKey,"Content-Type":"application/json"},body:JSON.stringify({model:"image-01",prompt:input.prompt,aspect_ratio:input.aspect,response_format:"base64",n:1,prompt_optimizer:false,...(referenceJpeg?{subject_reference:[{type:"character",image_file:"data:image/jpeg;base64,"+referenceJpeg.toString("base64")}]}:{})})});
   const rawResponse=JSON.parse(await readLimited(res));
   const parsedId=receiptId.safeParse(rawResponse?.id);if(parsedId.success)id=parsedId.data;
   if(!res.ok||rawResponse?.base_resp?.status_code!==0||!id||String(rawResponse?.metadata?.success_count)!=="1"||String(rawResponse?.metadata?.failed_count)!=="0")return uncertain("image_provider_receipt_unverified",id);
