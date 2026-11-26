@@ -77,6 +77,36 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  assert.equal((await post("/admin/cart-order",cancellation,cookie)).status,303);
  assert.deepEqual(stock(),[["NEW",2],["TEST-1",2]]);
  assert.equal((await post("/cart/submit",cartRequest)).status,409);
+ const expiryDb=()=>new (require("node:sqlite").DatabaseSync)(path.join(currentDataDir,"site.sqlite"));
+ const expiredQuote=await quoteCart(),expiredRequest={...cartRequest,quote:expiredQuote};
+ assert.equal((await post("/cart/submit",expiredRequest)).status,303);
+ assert.deepEqual(stock(),[["NEW",0],["TEST-1",1]]);
+ let edb=expiryDb();try{
+ const o=edb.prepare("SELECT expires_at FROM cart_orders WHERE id=?").get(expiredQuote);assert(o.expires_at>=Math.floor(Date.now()/1000)+86390);
+ edb.prepare("UPDATE cart_orders SET expires_at=unixepoch()-1 WHERE id=?").run(expiredQuote);
+ }finally{edb.close();}
+ assert.equal((await get("/cart")).status,200);assert.deepEqual(stock(),[["NEW",2],["TEST-1",2]]);
+ assert.equal((await post("/cart/submit",expiredRequest)).status,409);
+ assert.equal((await post("/admin/cart-order",{csrf,id:expiredQuote,expected:"pending",next:"accepted"},cookie)).status,409);
+ const singleHtml=await shop(),expiredSingle={...order,request_key:parseField(singleHtml,"request_key"),version:parseField(singleHtml,"version"),quantity:"1"};
+ assert.equal((await post("/shop/request",expiredSingle)).status,303);
+ edb=expiryDb();try{edb.prepare("UPDATE order_requests SET expires_at=unixepoch()-1 WHERE id=?").run(expiredSingle.request_key);}finally{edb.close();}
+ await get("/shop");assert.deepEqual(stock(),[["NEW",2],["TEST-1",2]]);
+ assert.equal((await post("/shop/request",expiredSingle)).status,409);
+ edb=expiryDb();let eventId;try{
+ assert.equal(edb.prepare("SELECT cancel_reason FROM cart_orders WHERE id=?").get(expiredQuote).cancel_reason,"expired");
+ assert.equal(edb.prepare("SELECT cancel_reason FROM order_requests WHERE id=?").get(expiredSingle.request_key).cancel_reason,"expired");
+ assert.equal(edb.prepare("SELECT count(*) n FROM operations_events WHERE kind='cart' AND ref=? AND event='expired'").get(expiredQuote).n,1);
+ eventId=edb.prepare("SELECT id FROM operations_events WHERE kind='cart' AND ref=? AND event='expired'").get(expiredQuote).id;
+ }finally{edb.close();}
+ assert(!(await (await get("/admin")).text()).includes("Müşteri bildirim inceleme kuyruğu"));
+ assert((await (await get("/admin",cookie)).text()).includes("Müşteri bildirim inceleme kuyruğu"));
+ assert.equal((await post("/admin/operations-review",{csrf,id:String(eventId)})).status,403);
+ assert.equal((await post("/admin/operations-review",{csrf:"bad",id:String(eventId)},cookie)).status,403);
+ assert.equal((await post("/admin/operations-review",{csrf,id:String(eventId)},cookie)).status,303);
+ assert.equal((await post("/admin/operations-review",{csrf,id:String(eventId)},cookie)).status,303);
+ edb=expiryDb();try{assert.equal(edb.prepare("SELECT reviewed FROM operations_events WHERE id=?").get(eventId).reviewed,1);}finally{edb.close();}
+ console.log("independent operations: pending single/cart deadlines, atomic expiration stock restoration, replay rejection, owner-only event review and no message dispatch");
  const q3=await quoteCart(),request3={...cartRequest,quote:q3};
  assert.equal((await post("/cart/submit",request3)).status,303);
  const action={csrf,id:q3,expected:"pending",next:"accepted"};
