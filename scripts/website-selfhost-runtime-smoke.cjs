@@ -279,6 +279,27 @@ assert.equal((await post("/appointments/request",{...booking,request_key:"b".rep
  paymentDb.prepare("UPDATE payment_test_runs SET checked_at=0 WHERE id=?").run(subRun.id);scenario="normal";
  assert.equal((await invokePayment(payments,"check",{id:subRun.id})).status,200);
  assert.equal(paymentDb.prepare("SELECT subscription_status FROM payment_test_runs WHERE id=?").get(subRun.id).subscription_status,"active");
+ // Signed webhook tests exercise exact extracted module without any external network.
+ const createEvents=require(path.join(dir,"payment-events.cjs")),secret="whsec_synthetic123456789",eventEnv={...payEnv,SITE_STRIPE_TEST_WEBHOOK_SECRET:secret};
+ const eventDeps={db:paymentDb,origin:new URL("https://customer.example.test"),local:false,env:eventEnv,crypto:payCrypto,send:()=>{},esc:String,hidden:()=>"",rate:()=>true};
+ const events=createEvents(eventDeps),now=Math.floor(Date.now()/1000);
+ const sign=(raw,timestamp=now)=>"t="+timestamp+",v1="+payCrypto.createHmac("sha256",secret).update(timestamp+".").update(raw).digest("hex");
+ const event={id:"evt_offlinecheckout123",object:"event",livemode:false,created:now,type:"checkout.session.completed",data:{object:{id:payRun.checkout_id,livemode:false}}};
+ const raw=Buffer.from(JSON.stringify(event));
+ assert.equal(createEvents({...eventDeps,local:true}).accept(raw,sign(raw),now),503);
+ assert.equal(events.accept(raw,"t="+now+",v1="+"0".repeat(64),now),400);
+ assert.equal(events.accept(raw,sign(raw,now-301),now),400);
+ assert.equal(events.accept(Buffer.concat([raw,Buffer.from(" ")]),sign(raw),now),400);
+ const live=Buffer.from(JSON.stringify({...event,livemode:true}));assert.equal(events.accept(live,sign(live),now),400);
+ assert.equal(events.accept(raw,sign(raw),now),200);assert.equal(events.accept(raw,sign(raw),now),200);
+ assert.equal(paymentDb.prepare("SELECT count(*) n FROM payment_test_events WHERE id=?").get(event.id).n,1);
+ assert.equal(paymentDb.prepare("SELECT run_id FROM payment_test_events WHERE id=?").get(event.id).run_id,payRun.id);
+ const subEvent={...event,id:"evt_offlinesubscription123",type:"customer.subscription.deleted",data:{object:{id:testSubscription,livemode:false,status:"canceled"}}};
+ const sr=Buffer.from(JSON.stringify(subEvent));assert.equal(events.accept(sr,sign(sr),now),200);assert.equal(paymentDb.prepare("SELECT run_id FROM payment_test_events WHERE id=?").get(subEvent.id).run_id,subRun.id);
+ const refund={...event,id:"evt_offlinerefund123",type:"charge.refunded",data:{object:{id:"ch_offline123456",livemode:false}}};
+ const rr=Buffer.from(JSON.stringify(refund));assert.equal(events.accept(rr,sign(rr),now),200);assert.equal(paymentDb.prepare("SELECT state FROM payment_test_events WHERE id=?").get(refund.id).state,"unmatched");
+ assert.equal(paymentDb.prepare("SELECT state FROM payment_test_runs WHERE id=?").get(payRun.id).state,"test_paid");
+ console.log("independent sandbox webhooks: raw signature, timestamp, live rejection, deduplication, matched subscription cancellation and unmatched refund, no financial mutation");
  assert.deepEqual(paymentDb.prepare("SELECT * FROM cart_orders WHERE id=?").get(q3),cartBefore);
  assert.deepEqual(paymentDb.prepare("SELECT * FROM members WHERE id=?").get(memberId),memberBefore);
  assert.equal((await invokePayment(payments,"create",subOrder)).status,409);
