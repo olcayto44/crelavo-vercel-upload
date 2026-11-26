@@ -1,3 +1,4 @@
+import {activeCategoryHref} from "./retired-categories";
 import { categoryShowcaseItems, featureShowcaseItems } from "@/lib/showcase-items";
 
 export type PublicNavLink = {
@@ -724,7 +725,7 @@ export function normalizePublicNavLinks(input: unknown): PublicNavLink[] {
   const links = input
     .filter(isRecord)
     .map(normalizeConfiguredNavLink)
-    .filter((item) => item.label && item.href && /^(?:\/|https?:\/\/)/i.test(item.href))
+    .filter((item) => item.label && item.href && activeCategoryHref(item.href) && /^(?:\/|https?:\/\/)/i.test(item.href))
     .sort((a, b) => a.order - b.order)
     .filter((item, index, items) => items.findIndex((candidate) => candidate.label === item.label) === index);
   if (!links.length) return defaultPublicNavLinks;
@@ -754,7 +755,7 @@ export function normalizeBlogTopics(input: unknown): BlogTopic[] {
       order: Number(item.order ?? index + 1),
       active: Boolean(item.active)
     };
-  }).filter((item) => item.id && item.title && item.summary && item.body.length);
+  }).filter((item) => item.id && item.title && item.summary && item.body.length && activeCategoryHref(item.ctaHref));
   return topics.length ? topics.sort((a, b) => a.order - b.order) : defaultBlogTopics;
 }
 

@@ -55,7 +55,7 @@ export const adminMenu = [
     "group": "Production"
   },
   {
-    "label": "37 kategori",
+    "label": "28 kategori",
     "href": "/admin/studio-capabilities",
     "group": "Production"
   },

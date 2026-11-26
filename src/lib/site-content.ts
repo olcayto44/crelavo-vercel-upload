@@ -30,13 +30,11 @@ export const footerGroups: FooterGroup[] = [
       { label: "Series / Film Studio", href: footerInfoHref("series-film-studio") },
       { label: "AI Live Sales Agent", href: productionInfoHref("live_sales_agent") },
       { label: "Drama / Short Series", href: productionInfoHref("drama") },
-      { label: "Documentary", href: productionInfoHref("documentary") },
       { label: "Animation", href: productionInfoHref("animation") },
       { label: "Anime Short Film", href: productionInfoHref("anime_short_film") },
       { label: "AI Agents", href: footerInfoHref("ai-agents") },
       { label: "Global Localization", href: footerInfoHref("global-localization") },
       { label: "Brand Kit", href: footerInfoHref("brand-kit") },
-      { label: "Document Pack", href: footerInfoHref("document-pack") }
     ]
   },
   {
@@ -50,9 +48,6 @@ export const footerGroups: FooterGroup[] = [
       { label: "Video Tools Pack", href: productionInfoHref("video_tools") },
       { label: "UGC Video", href: footerInfoHref("ugc-video") },
       { label: "Stickman Animation", href: footerInfoHref("stickman-animation") },
-      { label: "Animal Video", href: productionInfoHref("animal_video") },
-      { label: "Nature Video", href: productionInfoHref("nature_video") },
-      { label: "Planet / Space Video", href: productionInfoHref("planet_space_video") },
       { label: "Drone / Satellite Video", href: productionInfoHref("drone_video") },
       { label: "Product Ad Video", href: footerInfoHref("product-ad-video") },
       { label: "Long Film/Series Clipping", href: footerInfoHref("long-film-series-clipping") },
@@ -73,19 +68,15 @@ export const footerGroups: FooterGroup[] = [
     ]
   },
   {
-    title: "Business and File Production",
+    title: "Business and Visual Production",
     links: [
       { label: "Website", href: footerInfoHref("website") },
       { label: "Shopify AI Product Video App", href: "/shopify-ai-product-video-app" },
       { label: "WooCommerce AI Product Video Plugin", href: "/woocommerce-ai-product-video-plugin" },
       { label: "SaaS", href: footerInfoHref("saas") },
       { label: "Mobile App", href: footerInfoHref("mobile-app") },
-      { label: "Admin Panel", href: footerInfoHref("admin-panel") },
-      { label: "Admin Panel Project", href: productionInfoHref("admin_project") },
-      { label: "Pitch Deck / PDF", href: footerInfoHref("pitch-deck-pdf") },
       { label: "Visual / Image Pack", href: footerInfoHref("visual-image-pack") },
       { label: "Image / Visual", href: productionInfoHref("image") },
-      { label: "Document / File Pack", href: productionInfoHref("document_pack") }
     ]
   },
   {
@@ -156,7 +147,7 @@ export const defaultFaqItems: FaqItem[] = [
   {
     id: "what-is-clipora",
     question: "What exactly does Crelavo produce?",
-    answer: "Crelavo prepares managed production requests for videos, music videos, visuals, brand kits, documents, websites, SaaS screens, mobile apps, and campaign packages through a credit-based workflow.",
+    answer: "Crelavo prepares managed production requests for videos, music videos, visuals, brand kits, websites, SaaS screens, mobile apps, and campaign packages through a credit-based workflow.",
     category: "General",
     order: 1,
     active: true
@@ -188,7 +179,7 @@ export const defaultFaqItems: FaqItem[] = [
   {
     id: "which-tools",
     question: "Which AI tools are supported?",
-    answer: "The platform brings together AI video, image-to-video, text-to-video, Seedance 2.0, UGC video, music video, voice-over, dubbing, localization, brand kit, and file production flows inside one production panel.",
+    answer: "The platform brings together AI video, image-to-video, text-to-video, Seedance 2.0, UGC video, music video, voice-over, dubbing, localization, brand kit, and visual production flows inside one production panel.",
     category: "Tools",
     order: 5,
     active: true
