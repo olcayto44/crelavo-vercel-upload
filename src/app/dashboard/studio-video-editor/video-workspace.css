@@ -1,0 +1,330 @@
+
+/* Video workstation only. No shared Studio/image-editor layout dependency. */
+.studio-tool-page:has(.studio-compact-video-editor){width:100%;min-height:100dvh;background:#101116;color:#e8e8ee}
+.studio-tool-page .studio-compact-video-editor{--surface:#191a23;--surface2:#20212c;--border:#323440;--ink:#eeeef4;--muted:#a4a5b4;--accent:#8556e6;--track-label:106px;--track-gap:6px;box-sizing:border-box!important;width:100%!important;max-width:none!important;min-width:0!important;margin:0!important;padding:8px 10px 12px!important;background:#101116!important;color:var(--ink)!important;font:13px/1.4 Inter,system-ui,sans-serif!important}
+.studio-tool-page .studio-compact-video-editor *{box-sizing:border-box}
+.studio-tool-page .studio-compact-video-editor [hidden]{display:none!important}
+.studio-tool-page .studio-compact-video-editor :is(h1,h2,h3,p){margin:0}
+.studio-tool-page .studio-compact-video-editor button{display:inline-flex;align-items:center;justify-content:center;gap:5px;max-width:100%;min-width:0;width:auto;min-height:28px;padding:5px 9px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--ink)!important;font:500 12px/1.25 Inter,system-ui,sans-serif;cursor:pointer;white-space:normal}
+.studio-tool-page .studio-compact-video-editor button:hover:not(:disabled){border-color:#7860ae;background:#303040}
+.studio-tool-page .studio-compact-video-editor button[aria-pressed=true],.studio-tool-page .studio-compact-video-editor button.is-active{border-color:var(--accent);background:#4d347f}
+.studio-tool-page .studio-compact-video-editor button:disabled{opacity:.42;cursor:not-allowed}
+.studio-tool-page .studio-compact-video-editor :is(button,input,select,summary,a):focus-visible{outline:2px solid #b69aff;outline-offset:2px}
+.studio-tool-page .studio-compact-video-editor :is(input:not([type=file]):not([type=checkbox]):not([type=range]),select,textarea){width:100%;min-width:0;max-width:100%;min-height:30px;padding:5px 8px;border:1px solid #383a48;border-radius:6px;background:#12131b;color:var(--ink);font:12px/1.4 Inter,system-ui,sans-serif}
+.studio-tool-page .studio-compact-video-editor input[type=checkbox]{appearance:auto!important;width:15px!important;min-width:15px!important;height:15px!important;min-height:15px!important;accent-color:var(--accent);margin:0 6px 0 0!important;vertical-align:middle}
+.studio-tool-page .studio-compact-video-editor input[type=range]{appearance:none!important;-webkit-appearance:none!important;display:block;width:100%!important;max-width:100%;height:18px!important;min-height:0!important;border:0!important;box-shadow:none!important;padding:0!important;margin:0!important;background:transparent!important;accent-color:var(--accent);cursor:ew-resize}
+.studio-tool-page .studio-compact-video-editor input[type=range]::-webkit-slider-runnable-track{height:4px;background:#494b5b;border-radius:4px}
+.studio-tool-page .studio-compact-video-editor input[type=range]::-webkit-slider-thumb{appearance:none;width:13px;height:13px;border:0;border-radius:50%;background:#bda6ff;margin-top:-4.5px}
+.studio-tool-page .studio-compact-video-editor input[type=range]::-moz-range-track{height:4px;background:#494b5b;border-radius:4px}
+.studio-tool-page .studio-compact-video-editor input[type=range]::-moz-range-thumb{width:13px;height:13px;border:0;border-radius:50%;background:#bda6ff}
+.studio-tool-page .studio-compact-video-editor small{color:var(--muted);font-size:11px;line-height:1.4}
+.studio-tool-page .studio-compact-video-editor label{font-size:12px;color:var(--ink)}
+.studio-tool-page .studio-compact-video-editor fieldset{min-width:0;border:1px solid var(--border);border-radius:6px;padding:8px}
+.studio-tool-page .studio-compact-video-editor legend{color:var(--muted);font-size:11px;padding:0 4px}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-header{display:flex!important;align-items:center!important;justify-content:space-between!important;flex-wrap:wrap!important;gap:8px!important;padding:0 0 8px!important;margin:0 0 5px!important;border-bottom:1px solid var(--border)!important;position:relative;z-index:5}
+.studio-tool-page .studio-compact-video-editor :is(.studio-brand,.studio-header-actions){display:flex!important;align-items:center;flex-wrap:wrap;gap:7px;min-width:0;width:auto!important}
+.studio-tool-page .studio-compact-video-editor .studio-brand h1{font-size:18px!important;line-height:1.3;margin:0!important;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-brand-mark{color:var(--accent);font-size:23px;font-weight:800}
+.studio-tool-page .studio-compact-video-editor .studio-brand a{padding:3px 8px!important;text-decoration:none;color:var(--ink)!important;background:var(--surface);border:1px solid var(--border);border-radius:6px}
+.studio-tool-page .studio-compact-video-editor .studio-project-label,.studio-tool-page .studio-compact-video-editor .studio-brand small{border-left:1px solid var(--border);padding-left:8px;color:var(--muted);font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-header-actions>select{width:auto!important;max-width:100px;flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-header-actions>button{width:auto!important;flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-header-actions>details{position:relative!important;z-index:10}
+.studio-tool-page .studio-compact-video-editor .studio-header-actions>details>summary{cursor:pointer;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-header-actions>details>div{position:absolute!important;top:calc(100% + 6px);right:0;width:min(340px,85vw);padding:10px;margin:0!important;background:#20212c;border:1px solid #444653;border-radius:8px;box-shadow:0 10px 28px #0008}
+.studio-tool-page .studio-compact-video-editor .studio-top-export,.studio-tool-page .studio-compact-video-editor .studio-export-primary{background:var(--accent)!important;color:white!important;border-color:#a07aed!important;font-weight:650;padding:7px 14px}
+.studio-tool-page .studio-compact-video-editor .studio-format-preset{display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:2px}
+.studio-tool-page .studio-compact-video-editor .studio-format-label{display:none}
+.studio-tool-page .studio-compact-video-editor .studio-format-button{font-size:11px;padding:5px 6px}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{display:grid!important;grid-template-columns:minmax(250px,28%) minmax(0,1fr) minmax(275px,24%)!important;grid-template-areas:"media preview inspector" "timeline timeline inspector"!important;min-height:0!important;height:auto!important;max-height:none!important;gap:7px!important;align-items:stretch!important;overflow:visible!important;isolation:isolate}
+.studio-tool-page .studio-compact-video-editor .studio-left-workspace{grid-area:media!important;display:grid!important;grid-template-columns:56px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;min-height:0;min-width:0;max-height:none;gap:6px;overflow:hidden;contain:paint}
+.studio-tool-page .studio-compact-video-editor .studio-left-workspace>.studio-tool-rail{grid-column:1!important;grid-row:1!important;display:flex!important;flex-direction:column;align-items:stretch;gap:4px;min-width:0!important;min-height:0!important;width:auto!important;height:100%;overflow:auto;position:relative!important;inset:auto!important;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px}
+.studio-tool-page .studio-compact-video-editor .studio-tool-rail button{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 1px;min-height:48px;background:transparent;border:1px solid transparent;font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-tool-rail button span{font-size:19px;line-height:1}
+.studio-tool-page .studio-compact-video-editor .studio-tool-rail button small{font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-left-workspace>.studio-media-library{grid-column:2!important;grid-row:1!important;grid-area:auto;display:flex;flex-direction:column;gap:7px;min-width:0!important;min-height:0!important;height:100%!important;max-height:none!important;width:auto!important;margin:0!important;position:relative!important;inset:auto!important;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px;overflow:auto!important;overscroll-behavior:contain;scrollbar-width:thin}
+.studio-tool-page .studio-compact-video-editor .studio-media-library h2{font-size:13px;font-weight:650;flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-media-drop{display:grid;justify-items:center;text-align:center;gap:6px;flex:none;min-height:92px;padding:10px 5px;border:1px dashed #55586a;border-radius:7px;background:#14151d;cursor:pointer}
+.studio-tool-page .studio-compact-video-editor .studio-media-drop span{font-size:24px;line-height:1}
+.studio-tool-page .studio-compact-video-editor .studio-media-drop strong{background:var(--accent);color:white;border-radius:5px;padding:5px 12px;font-size:12px}
+.studio-tool-page .studio-compact-video-editor .studio-media-drop small{font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-media-drop:hover{border-color:var(--accent)}
+.studio-tool-page .studio-compact-video-editor :is(.studio-media-imports,.studio-media-filters){display:flex;flex-wrap:wrap;gap:4px;flex:none}
+.studio-tool-page .studio-compact-video-editor :is(.studio-media-imports,.studio-media-filters) button{padding:4px 6px;font-size:10px;min-height:24px}
+.studio-tool-page .studio-compact-video-editor .studio-media-search{flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-hint{font-size:10px;color:var(--muted)}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;align-content:start}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-clip{min-width:0;overflow:hidden;padding:5px!important;background:#20212c!important;border:1px solid var(--border)!important;border-radius:6px!important;cursor:grab}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-clip.is-active,.studio-tool-page .studio-compact-video-editor .studio-timeline-clip.is-drop-target{border-color:var(--accent)!important}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-thumb{height:64px;width:100%;background:#0b0c10;border-radius:4px;display:grid;place-items:center;overflow:hidden;margin-bottom:3px;pointer-events:none}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-thumb img{width:100%;height:100%;object-fit:contain;display:block}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-actions{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px!important;margin-top:4px!important}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-actions button{min-height:24px;padding:2px!important}
+.studio-tool-page .studio-compact-video-editor .studio-asset-card{display:grid;gap:4px;min-width:0;overflow-wrap:anywhere;text-align:left;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-asset-card span{font-size:22px;display:block;text-align:center;padding:10px;background:#15161f;border-radius:4px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{grid-area:preview!important;min-width:0;min-height:0;max-height:none;display:flex;flex-direction:column;justify-content:flex-start;gap:6px;overflow:auto;background:#11121a;border:1px solid var(--border);border-radius:8px;padding:8px;scrollbar-width:thin}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{width:100%;min-height:0;flex:1 1 auto;display:grid;place-items:center;background:#08090d;border-radius:5px;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame{position:relative;display:grid;place-items:center;background:black;overflow:hidden;border-radius:3px;width:min(100%,660px)}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait{width:min(100%,190px)}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square{width:min(100%,315px)}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape{width:min(100%,640px)}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame video{width:100%!important;height:100%!important;min-height:0}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen{width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;background:#000!important;display:grid!important;place-items:center!important;border-radius:0!important;aspect-ratio:auto!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen canvas{position:absolute!important;inset:50% auto auto 50%!important;transform:translate(-50%,-50%);width:min(100vw,calc(100vh * var(--fullscreen-ratio)))!important;height:min(100vh,calc(100vw / var(--fullscreen-ratio)))!important;object-fit:contain!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait:fullscreen{--fullscreen-ratio:0.5625}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape:fullscreen{--fullscreen-ratio:1.7777777778}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square:fullscreen{--fullscreen-ratio:1}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen video{visibility:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-no-clips{color:var(--muted);font-size:12px;text-align:center;padding:18px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport{flex:none;display:grid;gap:4px;padding:4px 2px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row button{min-height:26px;padding:4px 7px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-time{font-variant-numeric:tabular-nums;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-fullscreen{margin-left:auto}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls{flex:none;display:flex;gap:4px;flex-wrap:wrap;align-items:center;justify-content:center}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls button{font-size:10px;padding:4px 6px;min-height:25px}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-controls span,.studio-tool-page .studio-compact-video-editor :is(.studio-video-framing-note,.studio-selected-clip-note){font-size:10px;color:var(--muted);line-height:1.35}
+.studio-tool-page .studio-compact-video-editor .studio-inspector{grid-area:inspector!important;min-height:0!important;max-height:100%!important;min-width:0;position:relative!important;inset:auto!important;align-self:stretch!important;overflow:auto!important;overscroll-behavior:contain;scrollbar-width:thin;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:9px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector-tabs{position:sticky;top:0;z-index:2;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:3px;padding:2px 0 9px;background:var(--surface)}
+.studio-tool-page .studio-compact-video-editor .studio-inspector-tabs button{padding:7px 2px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector h2{font-size:14px;margin-bottom:8px}
+.studio-tool-page .studio-compact-video-editor .studio-property-group{border:1px solid var(--border);border-radius:7px;background:#20212a;margin-bottom:7px}
+.studio-tool-page .studio-compact-video-editor .studio-property-group summary{padding:10px;font-size:12px;font-weight:650;cursor:pointer}
+.studio-tool-page .studio-compact-video-editor .studio-property-body{display:grid;gap:8px;padding:0 10px 10px}
+.studio-tool-page .studio-compact-video-editor .studio-property-body label{display:grid;gap:4px}
+.studio-tool-page .studio-compact-video-editor .studio-export-settings{margin:0;padding:0;border:0}
+.studio-tool-page .studio-compact-video-editor .studio-export-format{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-bottom:8px}
+.studio-tool-page .studio-compact-video-editor .studio-export-format button{display:grid;text-align:left;justify-items:start;padding:8px;gap:3px}
+.studio-tool-page .studio-compact-video-editor .studio-format-help{font-size:11px;color:var(--muted);margin:6px 0}
+.studio-tool-page .studio-compact-video-editor .studio-export-basics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.studio-tool-page .studio-compact-video-editor .studio-setting-field{display:grid;gap:5px}
+.studio-tool-page .studio-compact-video-editor .studio-setting-toggle{display:flex;align-items:center;gap:5px;padding:7px;border:1px solid var(--border);border-radius:6px}
+.studio-tool-page .studio-compact-video-editor .studio-export-extras{display:grid;grid-template-columns:minmax(0,1fr);gap:8px}
+.studio-tool-page .studio-compact-video-editor .studio-setting-card{display:grid;gap:8px;min-width:0;background:#20212a;border:1px solid var(--border);border-radius:7px;padding:10px}
+.studio-tool-page .studio-compact-video-editor .studio-setting-file-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.studio-tool-page .studio-compact-video-editor .studio-audio-processing{display:grid;gap:7px}
+.studio-tool-page .studio-compact-video-editor .studio-setting-volume{display:grid;gap:4px}
+.studio-tool-page .studio-compact-video-editor .studio-export-actions{display:grid;gap:8px;margin-top:10px}
+.studio-tool-page .studio-compact-video-editor .studio-export-primary{width:100%}
+.studio-tool-page .studio-compact-video-editor .studio-mp4-jobs{display:grid;gap:6px;border:1px solid var(--border);border-radius:6px;padding:8px}
+.studio-tool-page .studio-compact-video-editor :is(.studio-mp4-jobs-heading,.studio-mp4-job){display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;font-size:11px;overflow-wrap:anywhere}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{grid-area:timeline!important;position:relative!important;min-width:0;min-height:0!important;max-height:none!important;height:100%;overflow:auto!important;overscroll-behavior:contain;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:0 10px 10px;scrollbar-width:thin}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-resizer{height:10px;position:sticky;top:0;z-index:3;background:var(--surface);cursor:ns-resize;touch-action:none;display:grid;place-items:center}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-resizer::after{content:"";width:44px;height:3px;border-radius:4px;background:#646577}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650;margin:0 0 6px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar button{min-height:26px;padding:4px 7px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-track-section{border:0;padding:0;background:transparent;min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-section>div:first-child{margin-bottom:5px}
+.studio-tool-page .studio-compact-video-editor .studio-track-section>div:first-child label{display:flex;align-items:center;gap:7px;width:135px}
+.studio-tool-page .studio-compact-video-editor .studio-track-section>div:first-child label input{flex:1;min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{overflow-x:auto;overflow-y:hidden;padding-bottom:4px}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{display:grid;grid-template-columns:var(--track-label) minmax(0,1fr);gap:var(--track-gap);align-items:center;position:relative;font-size:11px;min-height:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid>span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c1c2d0}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid>div:not(.studio-playhead-overlay){min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid button{min-height:0;padding:1px 4px;border-radius:4px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-playhead-overlay{position:absolute;left:calc(var(--track-label) + var(--track-gap));right:0;top:23px;bottom:0;z-index:2;pointer-events:none}
+.studio-tool-page .studio-compact-video-editor .studio-playhead-overlay span{position:absolute;top:0;bottom:0;width:1px;background:#e9e6ff;box-shadow:0 0 2px #a78bfa}
+.studio-tool-page .studio-compact-video-editor .studio-playhead-overlay span::before{content:"";position:absolute;top:0;left:-4px;border-left:4px solid transparent;border-right:4px solid transparent;border-top:8px solid #e9e6ff}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-film{height:100%;width:100%;display:flex;align-items:center;gap:5px;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-film .studio-timeline-thumb{height:35px;width:60px;min-width:30px;flex:0 1 60px;margin:0;border-radius:3px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-film>span{overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media(min-width:1250px){.studio-tool-page .studio-compact-video-editor .studio-left-workspace,.studio-tool-page .studio-compact-video-editor .studio-preview-pane{height:auto}}
+@media(max-width:1000px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{grid-template-columns:220px minmax(0,1fr) 270px!important}.studio-tool-page .studio-compact-video-editor .studio-left-workspace{grid-template-columns:44px minmax(0,1fr)!important}.studio-tool-page .studio-compact-video-editor .studio-media-cards{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:820px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{grid-template-columns:minmax(0,1fr) 280px!important;grid-template-areas:"preview inspector" "media inspector" "timeline timeline"!important;grid-template-rows:auto 260px auto!important}.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{height:auto;min-height:350px!important}.studio-tool-page .studio-compact-video-editor .studio-timeline-resizer{display:none}.studio-tool-page .studio-compact-video-editor .studio-media-cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"preview" "media" "timeline" "inspector"!important;grid-template-rows:auto 260px auto auto!important}.studio-tool-page .studio-compact-video-editor .studio-inspector{max-height:none!important}.studio-tool-page .studio-compact-video-editor .studio-preview-pane{min-height:320px}.studio-tool-page .studio-compact-video-editor .studio-project-label{display:none}}
+
+/* Keep timeline focused on tracks; editing forms stay in the inspector. */
+.studio-tool-page .studio-compact-video-editor .studio-track-actions{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin-top:8px;padding:7px 0;border-top:1px solid var(--border)}
+.studio-tool-page .studio-compact-video-editor .studio-track-actions button{flex:0 0 auto;min-height:27px;padding:5px 9px;font-size:11px;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-caption-inspector{display:grid;gap:9px;margin:5px 0 0;padding:10px;background:#15161f;border:1px solid var(--border)}
+.studio-tool-page .studio-compact-video-editor .studio-caption-inspector label{display:grid;gap:4px}
+.studio-tool-page .studio-compact-video-editor .studio-caption-inspector button{justify-self:start}
+.studio-tool-page .studio-compact-video-editor .studio-export-help{border-top:1px solid var(--border);padding-top:8px;margin-top:4px}
+.studio-tool-page .studio-compact-video-editor .studio-export-help summary{font-size:11px;color:var(--muted);cursor:pointer}
+.studio-tool-page .studio-compact-video-editor .studio-export-help small{display:block;line-height:1.6;margin-top:7px}
+
+/* Responsive workspace, real filmstrip and readable inspector. */
+.studio-tool-page .studio-compact-video-editor .studio-workspace-status{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-height:18px;margin-bottom:5px}
+.studio-tool-page .studio-compact-video-editor .studio-media-filename{white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-film{position:relative;display:block;width:100%;height:100%;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-film-frames{display:flex;height:100%;width:100%;overflow:hidden;gap:1px}
+.studio-tool-page .studio-compact-video-editor .studio-film-frames img{flex:1 1 0;min-width:0;height:100%;object-fit:cover}
+.studio-tool-page .studio-compact-video-editor .studio-film-label{position:absolute;bottom:0;left:0;right:0;background:#101019b8;color:white;text-align:left;font-size:10px;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body label{font-size:12px;line-height:1.5}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body input,.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body select{font-size:12px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body button{min-height:31px}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{container-type:size;min-height:150px;flex:1 1 0}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape{width:min(100%,calc(100cqh * 16 / 9));max-width:none}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait{width:min(100%,calc(100cqh * 9 / 16));max-width:none}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square{width:min(100%,100cqh);max-width:none}
+@media(min-width:821px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{height:max(665px,calc(100dvh - 115px))!important;grid-template-rows:minmax(290px,1fr) minmax(350px,var(--timeline-height,350px))}.studio-tool-page .studio-compact-video-editor .studio-left-workspace,.studio-tool-page .studio-compact-video-editor .studio-preview-pane{height:100%;max-height:none}}
+
+/* Final workstation sizing: reserve space for picture rather than explanatory copy. */
+.studio-tool-page .studio-compact-video-editor{color-scheme:dark}
+.studio-tool-page .studio-compact-video-editor *{scrollbar-color:#474958 #14151c;scrollbar-width:thin}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:180px;flex:1 1 0;container-type:size}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame{flex:none;min-width:0;min-height:0;max-height:100%;box-shadow:0 0 0 1px #343441}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-landscape{width:min(100cqw,calc(100cqh * 16 / 9));height:auto;aspect-ratio:16/9}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-portrait{width:min(100cqw,calc(100cqh * 9 / 16));height:auto;aspect-ratio:9/16}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame.is-square{width:min(100cqw,100cqh);height:auto;aspect-ratio:1}
+.studio-tool-page .studio-compact-video-editor :is(.studio-video-framing-note,.studio-selected-clip-note){margin:0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{gap:4px;padding:6px;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport{gap:2px;padding:2px 0}
+.studio-tool-page .studio-compact-video-editor .studio-media-library{gap:5px;padding:6px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards{gap:5px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-clip{padding:4px!important}
+.studio-tool-page .studio-compact-video-editor .studio-inspector :is(select,input:not([type=checkbox]):not([type=range]),textarea){width:100%;min-width:0;box-sizing:border-box}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-setting-card{gap:7px;padding:9px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-setting-card[hidden]{display:none!important}
+.studio-tool-page .studio-compact-video-editor .studio-export-extras[hidden]{display:none!important}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog{position:fixed;inset:0;margin:auto;width:min(520px,calc(100vw - 28px));max-height:calc(100dvh - 40px);box-sizing:border-box;overflow:auto;background:#191a23;color:var(--ink);border:1px solid #414352;border-radius:14px;padding:20px;box-shadow:0 24px 90px #000b;color-scheme:dark}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog::backdrop{background:#05060bb5;backdrop-filter:blur(4px)}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog-header h2{margin:0;font-size:20px;font-weight:650}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog-header button{font-size:20px;width:32px;height:32px}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-format{margin:14px 0 8px}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-format button{min-height:66px}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-format button[aria-pressed=true]{border-color:var(--accent);background:#34234c}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-basics{gap:12px;margin:14px 0}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-primary{background:#7646d6;border-color:#986af4;min-height:40px;font-weight:650}
+.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-primary:disabled{opacity:.5}
+@media(min-width:821px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{height:max(680px,calc(100dvh - 105px))!important}.studio-tool-page .studio-compact-video-editor .studio-left-workspace,.studio-tool-page .studio-compact-video-editor .studio-preview-pane{box-sizing:border-box;height:100%;min-height:0}}
+@media(max-width:820px){.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{flex:none;height:clamp(240px,48vh,420px)}}
+@media(max-width:600px){.studio-tool-page .studio-compact-video-editor .studio-export-dialog{padding:14px}.studio-tool-page .studio-compact-video-editor .studio-export-dialog .studio-export-basics{grid-template-columns:minmax(0,1fr)}}
+
+/* Workspace controls and responsive view magnification. */
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage[data-preview-zoom="50"] .studio-video-preview-frame{scale:.5}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage[data-preview-zoom="75"] .studio-video-preview-frame{scale:.75}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage[data-preview-zoom="100"] .studio-video-preview-frame{scale:1}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-frame:fullscreen{scale:1!important}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[aria-pressed=true]{border:2px solid #bd9cff!important;box-shadow:inset 0 0 0 1px #e1d1ff;position:relative}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[aria-pressed=true] .studio-film-label{background:#593a9a}
+.studio-tool-page .studio-compact-video-editor .studio-export-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0 5px}
+.studio-tool-page .studio-compact-video-editor .studio-export-summary>div{display:grid;gap:4px;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--surface2)}
+.studio-tool-page .studio-compact-video-editor .studio-export-summary strong{font-size:13px;font-variant-numeric:tabular-nums}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-grid.is-media-collapsed>.studio-left-workspace,.studio-tool-page .studio-compact-video-editor .studio-workspace-grid.is-inspector-collapsed>.studio-inspector{display:none!important}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed{grid-template-columns:0 minmax(0,1fr) minmax(275px,24%)!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-inspector-collapsed{grid-template-columns:minmax(220px,25%) minmax(0,1fr) 0!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed.is-inspector-collapsed{grid-template-columns:0 minmax(0,1fr) 0!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{min-height:calc(365px + 300px + 7px)!important;height:auto!important;min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{min-height:265px}
+}
+@media(max-width:820px){
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed{grid-template-areas:"preview inspector" "timeline timeline"!important;grid-template-rows:auto auto!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-inspector-collapsed{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"preview" "media" "timeline"!important;grid-template-rows:auto 260px auto!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed.is-inspector-collapsed{grid-template-columns:minmax(0,1fr)!important;grid-template-areas:"preview" "timeline"!important;grid-template-rows:auto auto!important}
+}
+@media(max-width:600px){.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed:not(.is-inspector-collapsed){grid-template-areas:"preview" "timeline" "inspector"!important;grid-template-rows:auto auto auto!important}.studio-tool-page .studio-compact-video-editor .studio-export-summary{gap:4px}.studio-tool-page .studio-compact-video-editor .studio-export-summary>div{padding:6px}}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop{padding:6px!important;gap:3px!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards{gap:4px}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:3px}
+.studio-tool-page .studio-compact-video-editor .studio-track-actions{padding:3px 0;margin-top:4px}
+
+/* Compact workstation: desktop viewport budget and independently scrolling panes. */
+.studio-tool-page .studio-compact-video-editor .studio-status-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:22px;position:relative;z-index:6}
+.studio-tool-page .studio-compact-video-editor .studio-status-bar .studio-workspace-status{flex:1;min-width:0;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info{flex:none;position:relative;font-size:11px;color:var(--muted)}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info summary{cursor:pointer;white-space:nowrap;padding:2px 5px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info-body{position:absolute;right:0;top:100%;width:min(340px,80vw);padding:10px;background:#20212c;border:1px solid var(--border);border-radius:7px;box-shadow:0 8px 24px #0008}
+.studio-tool-page .studio-compact-video-editor .studio-preview-info-body p{white-space:normal;overflow:visible;margin:4px 0;line-height:1.5}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop{min-height:48px;display:flex;justify-content:center;align-items:center;flex-wrap:wrap;padding:5px!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop small{font-size:9px;flex-basis:100%}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop strong{padding:3px 7px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-thumb{height:48px;margin-bottom:2px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-clip{padding:3px!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-actions{gap:2px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-actions button{min-height:22px;font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector{padding:7px;box-sizing:border-box}
+.studio-tool-page .studio-compact-video-editor .studio-inspector-tabs{padding:2px 0 5px;gap:3px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-group{margin-bottom:5px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-group summary{padding:7px 8px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-property-body{gap:6px;padding:0 8px 8px}
+.studio-tool-page .studio-compact-video-editor .studio-inspector .studio-setting-card{gap:6px;padding:8px}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{box-sizing:border-box;padding:0 7px 5px;display:flex;flex-direction:column;gap:3px;overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-resizer{flex:none;height:7px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading{flex:none;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar{flex:none;gap:3px;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar button{min-height:22px;padding:2px 6px}
+.studio-tool-page .studio-compact-video-editor .studio-track-section{display:flex;flex-direction:column;gap:3px;flex:1;min-height:0;overflow:hidden}
+.studio-tool-page .studio-compact-video-editor .studio-track-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;font-size:10px;flex:none;margin:0!important}
+.studio-tool-page .studio-compact-video-editor .studio-track-toolbar button,.studio-tool-page .studio-compact-video-editor .studio-track-actions button{min-height:21px;padding:2px 5px;font-size:10px}
+.studio-tool-page .studio-compact-video-editor .studio-track-actions{flex:none;margin:0;padding:2px 0;border:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{min-height:0;flex:1;overflow:auto;padding-bottom:2px}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:2px}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor{height:calc(100dvh - 54px);min-height:0!important;display:flex;flex-direction:column;overflow:hidden;padding-bottom:5px!important}
+.studio-tool-page .studio-compact-video-editor .studio-workspace-header,.studio-tool-page .studio-compact-video-editor .studio-status-bar{flex:none}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{flex:1;min-height:0!important;height:0!important;overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{min-height:0;height:100%}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{min-height:0}
+.studio-tool-page .studio-compact-video-editor .studio-inspector{height:100%;min-height:0!important;max-height:100%!important}
+}
+@media(max-width:820px){
+.studio-tool-page .studio-compact-video-editor .studio-workspace-timeline{min-height:330px!important}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{max-height:330px}
+}
+
+/* Reclaim viewport space without shrinking the actual editing controls. */
+.studio-tool-page .studio-compact-video-editor .studio-workspace-header .studio-status-bar{flex:0 0 auto;min-height:0;margin:0}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>select{width:auto!important;min-width:64px;max-width:88px;flex:0 0 auto;min-height:26px;padding:3px 5px;font-size:11px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{flex-wrap:nowrap;gap:5px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>button{flex:0 0 auto;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-preview-time{white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{gap:5px;padding:7px}
+.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{flex:1 1 0;min-height:0}
+.studio-tool-page .studio-compact-video-editor .studio-media-library{gap:5px}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-thumb{height:60px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-actions{gap:4px}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{overflow:auto;min-height:0}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor{height:100dvh!important;max-height:100dvh!important;padding:6px 8px 5px!important;box-sizing:border-box}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{flex:1 1 0;min-height:0!important;height:0!important}
+.studio-tool-page .studio-compact-video-editor .studio-preview-pane{height:100%;min-height:0;overflow:auto}
+}
+@media(max-width:1100px){.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{flex-wrap:wrap}}
+@media(max-width:820px){.studio-tool-page .studio-compact-video-editor .studio-video-preview-stage{flex:none;min-height:240px}}
+
+/* Keep all primary controls reachable without taking space from the preview. */
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row{overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;min-width:0}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>select{width:70px!important;flex:0 0 70px}
+.studio-tool-page .studio-compact-video-editor .studio-preview-transport-row>span{flex:none}
+.studio-tool-page .studio-compact-video-editor .studio-media-library{overflow:hidden!important}
+.studio-tool-page .studio-compact-video-editor .studio-media-library>.studio-media-cards{flex:1 1 0;min-height:0;overflow-y:auto;overflow-x:hidden;align-content:start;padding-bottom:5px;scrollbar-gutter:stable}
+.studio-tool-page .studio-compact-video-editor .studio-media-cards>.studio-timeline-clip{align-self:start}
+.studio-tool-page .studio-compact-video-editor .studio-media-library>:not(.studio-media-cards){flex-shrink:0}
+.studio-tool-page .studio-compact-video-editor .studio-track-scroll{overflow:auto!important;scrollbar-gutter:stable}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{padding-bottom:4px}
+@media(min-width:821px){
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid{grid-template-columns:minmax(240px,25%) minmax(0,1fr) minmax(250px,23%)!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed{grid-template-columns:0 minmax(0,1fr) minmax(250px,23%)!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-inspector-collapsed{grid-template-columns:minmax(240px,25%) minmax(0,1fr) 0!important}
+.studio-tool-page .studio-compact-video-editor>.studio-workspace-grid.is-media-collapsed.is-inspector-collapsed{grid-template-columns:0 minmax(0,1fr) 0!important}
+}
+@media(min-width:821px) and (max-height:800px){
+.studio-tool-page .studio-compact-video-editor .studio-media-cards .studio-timeline-thumb{height:46px}
+.studio-tool-page .studio-compact-video-editor .studio-media-library .studio-media-drop small{display:none}
+.studio-tool-page .studio-compact-video-editor .studio-track-grid{row-gap:1px}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-toolbar,.studio-tool-page .studio-compact-video-editor .studio-track-actions{margin:0;padding:0;gap:3px}
+}
+
+/* Direct timeline reordering and visible merge action. */
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[draggable=true]{cursor:grab}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip[draggable=true]:active{cursor:grabbing}
+.studio-tool-page .studio-compact-video-editor .studio-video-track-clip.is-drop-target{border:2px solid #d5baff!important;box-shadow:inset 0 0 0 2px #8556e6!important;filter:brightness(1.2)}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading .studio-merge-button{margin-left:auto;background:#7646d6;border-color:#a67af3;font-size:11px;min-height:25px;padding:4px 11px;white-space:nowrap}
+.studio-tool-page .studio-compact-video-editor .studio-timeline-heading{align-items:center;flex-wrap:wrap}
+.studio-tool-page .studio-compact-video-editor .studio-film-label>span{font-size:12px;color:#e7d4ff}
+
+/* Fit rendered output without distortion and preserve access to delivery. */
+.studio-tool-page .studio-compact-video-editor .studio-render-result{display:grid;gap:8px;min-width:0;background:#11121a;border:1px solid #414352;border-radius:10px;padding:10px}
+.studio-tool-page .studio-compact-video-editor .studio-render-result video{display:block;width:100%;height:auto;max-height:min(35dvh,320px);object-fit:contain;background:#000;border-radius:6px}
+.studio-tool-page .studio-compact-video-editor .studio-result-download{position:sticky;bottom:0;z-index:2;background:#191a23;padding:8px 0;display:flex;justify-content:stretch}
+.studio-tool-page .studio-compact-video-editor .studio-result-download :is(a,button){display:block;width:100%;text-align:center;padding:10px;background:#7646d6;color:white!important;border-radius:7px;text-decoration:none}
+.studio-tool-page .studio-compact-video-editor .studio-export-error{color:#ffb5b5;background:#351b24;padding:10px;border-radius:6px;overflow-wrap:anywhere}
+
+.studio-tool-page .studio-render-result.is-expanded video{max-height:65dvh!important;object-fit:contain}
+.studio-tool-page .studio-render-result:fullscreen{display:flex!important;flex-direction:column;justify-content:center;align-items:center;width:100%;height:100%;background:#08090e;padding:16px;box-sizing:border-box;overflow:auto}
+.studio-tool-page .studio-render-result:fullscreen video{width:100%!important;max-height:78dvh!important;height:auto;object-fit:contain}
+.studio-result-view-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
