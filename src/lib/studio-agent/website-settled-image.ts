@@ -20,3 +20,11 @@ export async function optimizeSettledImageForWebsite(raw:unknown,userId:string,r
  }
  throw Error("image_optimization_limit");
 }
+
+const Metadata=Source.omit({artifact:true}).extend({updated_at:z.string().datetime({offset:true})});
+/** Only narrow metadata for eligible owner-scoped settled productions. No prompts or image bytes. */
+export function listSettledWebsiteImages(raw:unknown,actor:string){
+ if(!Id.safeParse(actor).success||!Array.isArray(raw)||raw.length>30)throw Error("invalid_image_list");
+ return raw.flatMap(item=>{const p=Metadata.safeParse(item);if(!p.success)return [];const s=p.data;if(s.user_id!==actor||s.actual_micro_usd>s.max_micro_usd||s.receipt.width*s.receipt.height>4194304)return [];
+ return [{requestId:s.request_id,width:s.receipt.width,height:s.receipt.height,updatedAt:s.updated_at,model:s.receipt.model}];});
+}
