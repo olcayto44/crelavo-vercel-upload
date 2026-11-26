@@ -9,7 +9,13 @@ on:
       - 'src/app/api/studio/**'
       - 'src/lib/studio-agent/**'
       - 'scripts/studio-mp4-*.mjs'
-      - 'scripts/studio-production-*-smoke.cjs'
+      - 'scripts/studio-*-smoke.cjs'
+      - 'scripts/website-*-smoke.cjs'
+      - 'scripts/studio-website-ai-worker.cjs'
+      - 'Dockerfile.website-ai-worker'
+      - 'src/app/website-cms-test/**'
+      - 'src/lib/website-*.ts'
+      - 'docs/*isolated.sql'
       - 'scripts/studio-ffmpeg-compose.mjs'
       - 'Dockerfile.studio-worker'
       - 'worker-deps/**'
@@ -48,13 +54,12 @@ jobs:
           sudo apt-get install -y ffmpeg
           node scripts/studio-mp4-runtime-test.mjs
   isolated-reference:
-    name: Existing isolated development evidence
+    name: Integrated isolated acceptance (release candidate)
     runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 04f756a58abc58cbef78fdba30667503ffb308e9
           persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
@@ -84,4 +89,4 @@ jobs:
         run: |
           node scripts/studio-production-status-smoke.cjs
           node scripts/website-cms-operations-local-smoke.cjs
-          echo "Offline reference tests do not certify the integrated release or authorize production spend."
+          echo "Release-candidate fixture tests do not authorize live provider spend or certify customer acceptance."
