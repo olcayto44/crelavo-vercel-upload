@@ -6,9 +6,9 @@ export type EngineResult = { ok: boolean; spend: boolean; code?: string; message
 export type EngineInput = {
   renderFinal?: boolean; prompt: string; type?: string; category: string; scene?: string; extras?: Record<string,string> };
 const HEYGEN_CATEGORIES = new Set(["talking_video","avatar","lip_sync","voice_clone","live_sales_agent","ai_agent","localization"]);
-const MINIMAX_CATEGORIES = new Set(["video","documentary","animation","music_video","drama","cinematic_video","video_tools","campaign","cultural_localization","visual_clone","image","brand_kit","anime_short_film","animal_video","nature_video","planet_space_video","drone_video","stickman_animation","studio"]);
+const MINIMAX_CATEGORIES = new Set(["video","animation","music_video","drama","cinematic_video","video_tools","campaign","cultural_localization","visual_clone","image","brand_kit","anime_short_film","drone_video","stickman_animation","studio"]);
 const MINIMAX_IMAGE_CATEGORIES = new Set(["image","brand_kit","visual_clone"]);
-const MINIMAX_T2A_CATEGORIES = new Set(["documentary","nature_video","planet_space_video","drone_video"]);
+const MINIMAX_T2A_CATEGORIES = new Set(["drone_video"]);
 const TITLE: Record<string,string> = { talking_video:"Talking video",avatar:"Avatar video",lip_sync:"Lip sync video",voice_clone:"Voice clone",live_sales_agent:"Live sales agent",ai_agent:"AI agent video",localization:"Localization",video:"AI video",documentary:"Documentary",animation:"Animation",music_video:"Music video",drama:"Drama",cinematic_video:"Cinematic video",video_tools:"Video tools",campaign:"Campaign video",cultural_localization:"Cultural localization",visual_clone:"Visual clone",image:"Image",brand_kit:"Brand kit visual",anime_short_film:"Anime short",animal_video:"Animal video",nature_video:"Nature video",planet_space_video:"Space video",drone_video:"Drone video",stickman_animation:"Stickman animation",studio:"Studio / series" };
 function minimaxBase(){return(process.env.MINIMAX_API_BASE||"https://api.minimax.io/v1").replace(/\/$/,"");}
 function minimaxKey(){return String(process.env.MINIMAX_API_KEY||"").trim();}

@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "@/lib/retired-categories";
 import { resolveReplyLanguage } from "@/lib/assistant-work/chat-language";
 import { translateWorkspaceText } from "@/lib/assistant-work/workspace-i18n";
 import { resolveWorkspaceCategory } from "@/lib/assistant-work/workspace-chat";
@@ -59,6 +60,7 @@ export async function POST(req: NextRequest) {
     const requestedCategory = String(body.category || "").trim().toLowerCase();
     const requestedType = String(body.type || "");
     const category = resolveWorkspaceCategory(requestedCategory, requestedType, String(body.prompt || ""));
+    if([requestedCategory,requestedType,category].some(isRetiredCategory))return NextResponse.json({ok:false,code:"category_retired",spend:false,productionStarted:false},{status:410});
     const prompt = String(body.prompt || "").trim();
     const type = category === "website" ? "Website" : requestedType;
     const scene = String(body.scene || "01");

@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "../retired-categories";
 export const LOCAL_CATEGORIES = [
   "website",
   "saas",
@@ -23,7 +24,7 @@ export function normalizeCategory(raw?: string): string {
 }
 export function isLocalCategory(category?: string, type?: string): boolean {
   const cat = normalizeCategory(category); if (LOCAL_SET.has(cat)) return true;
-  return LOCAL_SET.has(normalizeCategory(type));
+  return !isRetiredCategory(normalizeCategory(type))&&LOCAL_SET.has(normalizeCategory(type));
 }
 export function isCopyLayoutColorOnly(prompt?: string): boolean {
   const p = String(prompt || "").trim().toLowerCase();
@@ -86,7 +87,7 @@ function virtualModelPack(prompt:string):LocalEngineResult{return ok("virtual_mo
 function colorRevise(category:string,prompt:string):LocalEngineResult{return ok(category,"Updated",prompt.trim(),[],false);}
 export async function runLocalEngine(input:LocalEngineInput):Promise<LocalEngineResult>{
   const category=normalizeCategory(input.category)||normalizeCategory(input.type); const prompt=String(input.prompt||"").trim(); const scene=sceneIndex(input.scene);
-  if(!LOCAL_SET.has(category))return{ok:false,spend:false,engine:"local",category,code:"not_local",message:"Not a local file/copy category.",title:"",body:"",files:[],media:null};
+  if(isRetiredCategory(category)||!LOCAL_SET.has(category))return{ok:false,spend:false,engine:"local",category,code:"not_local",message:"Not a local file/copy category.",title:"",body:"",files:[],media:null};
   if(!prompt)return{ok:false,spend:false,engine:"local",category,code:"empty_prompt",message:"Write what to produce first.",title:"",body:"",files:[],media:null};
   if(isCopyLayoutColorOnly(prompt))return colorRevise(category,prompt);
   switch(category as LocalCategory){case"website":throw new Error("website_requires_approved_shared_engine");case"saas":return saasPack(prompt,scene);case"mobile_app":return mobilePack(prompt,scene);case"admin_project":return adminPack(prompt,scene);case"video_clipping":return clippingPack(prompt);case"ad_score_checker":return adScorePack(prompt);case"campaign_calendar":return calendarPack(prompt);case"document_pack":return documentPack(prompt);case"crelavo_academy":return academyPack(prompt);case"community_showcase":return showcasePack(prompt);case"virtual_model_studio":return virtualModelPack(prompt);default:return colorRevise(category,prompt);}

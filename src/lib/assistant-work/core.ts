@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "../retired-categories";
 import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { ledgerRead, ledgerSpend } from "./ledger";
 
@@ -108,6 +109,7 @@ export async function handleAssistantWork(req: Request, body: Record<string, unk
   if (action === "balance") return { status: 200, payload: { ok: true, balance } };
 
   const category = String(body.category || "video");
+  if(isRetiredCategory(category)||isRetiredCategory(body.type))return {status:410,payload:{ok:false,code:"category_retired",spend:false}};
   if (category === "website" && action !== "quote") return { status: 409, payload: { ok: false, code: "website_shared_engine_required", message: "Open the website assistant to review and approve a Website Brief before production.", href: "/dashboard/assistant-workspace?category=website&type=Website" } };
   const typeName = String(body.typeName || "");
   const chips = Array.isArray(body.chips) ? body.chips.map(String) : [];

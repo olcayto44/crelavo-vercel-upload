@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "@/lib/retired-categories";
 import { after } from "next/server";
 import { adminRequiredResponse, getAdminEmail, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceDailyProductionBudget, enforceRouteBudget } from "@/lib/api-cost-guard";
@@ -417,6 +418,7 @@ export async function POST(request: Request) {
   const prompt = String(body.prompt ?? "").trim();
   let productionType = String(body.production_type ?? "").trim();
   let packageId = String(body.package_id ?? "").trim();
+  if(isRetiredCategory(productionType)||isRetiredCategory(getProductionPackage(packageId)?.productionType))return Response.json({error:"category_retired",productionStarted:false},{status:410});
   const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
   const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};
   const serverRouteText = `${productionType} ${packageId} ${title} ${prompt} ${String(body.features ?? "")} ${JSON.stringify(initialRequestMetadata)} ${JSON.stringify(initialInputJson)}`.toLowerCase();
