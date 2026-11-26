@@ -42,6 +42,16 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  assert.deepEqual((await call("studio_agent_wallets",owner)).assistant,{balance:98,reserved:3,available:95});
  assert.deepEqual((await query("select balance,reserved from credit_balances where user_id=$1",[owner])).rows[0],{balance:500,reserved:20});
  await db.exec("reset role");
+ const budgetPolicy={...policy,totalMicroUSD:10000};
+ await query("update studio_agent_cost_config set policy=$1",[JSON.stringify(budgetPolicy)]);
+ await db.exec("set role service_role");await assert.rejects(reserve(4,0,{user:other,project:otherProject,category:"image",policy:budgetPolicy}),/budget_exhausted/);
+ await db.exec("reset role");
+ const ratePolicy={...policy,systemRPM:1};
+ await query("update studio_agent_cost_config set policy=$1",[JSON.stringify(ratePolicy)]);
+ await db.exec("set role service_role");await assert.rejects(reserve(4,0,{user:other,project:otherProject,category:"image",policy:ratePolicy}),/rate_limit/);
+ assert.deepEqual((await call("studio_agent_wallets",other)).assistant,{balance:10,reserved:0,available:10});
+ await db.exec("reset role");
+ console.log("assistant ledger limits: global spend and unresolved holds count toward budget; rate ceiling denies before wallet reservation");
  console.log("durable assistant accounting: missing policy denied, service-only RLS, separate wallets, bounds, one claim/settlement, proposal persistence, stale/foreign project rejection, uncertain hold");
  }finally{await db.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
