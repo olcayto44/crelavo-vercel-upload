@@ -2,12 +2,6 @@ export const studioConversationClientScript=String.raw`(()=>{
 const $=selector=>document.querySelector(selector);
 let session=null,project=null,mockState='',mode=window.__studioB2?.mockAllowed?'mock':'real',epoch=0,busy=false,pending=null,status=null,walletCache=null,uiError='';
 let liveProductionBalance=null;
-let previewDraftMessages=[];
-const previewDraftEnabled=()=>!session&&Boolean(window.__studioB2?.previewOnly);
-function previewDraftKey(){return 'crelavo-studio-preview-brief-v1:'+current.id;}
-function loadPreviewDraft(){try{const saved=JSON.parse(sessionStorage.getItem(previewDraftKey())||'[]');previewDraftMessages=Array.isArray(saved)?saved.filter(x=>x&&(x.role==='user'||x.role==='assistant')&&typeof x.content==='string').slice(-30):[]}catch(_error){previewDraftMessages=[];}}
-function savePreviewDraft(){try{sessionStorage.setItem(previewDraftKey(),JSON.stringify(previewDraftMessages.slice(-30)))}catch(_error){}}
-
 let activeVideoSelection=null;
 let serverPlanning=null;let canvasState='empty',selectedProduction=null,websiteData=null,device='desktop',activeView='canvas',referenceFile=null,previewEpoch=0;
 const availableStudioLanguages=['en','tr','de','es','fr','ar'];
@@ -84,16 +78,8 @@ window.studioBriefPresentation={label:fieldLabel,value:valueLabel,openPlan:()=>s
 function remember(data){project=data.project;serverPlanning=data.planning&&project?{...data.planning,projectId:project.id,categoryId:project.categoryId}:null;mockState=data.mockState||'';if(project&&session){try{sessionStorage.setItem(key(),JSON.stringify({projectId:project.id,mockState}));}catch(_error){/* Storage can be unavailable in private or restricted browser contexts. */}}if(project){try{const url=new URL(parent.location.href);url.searchParams.set('chatProject',project.id);url.searchParams.set('category',current.id);parent.history.replaceState(null,'',url);}catch(_error){/* A restricted embed may deny parent navigation; keep the conversation usable. */}}draw(data.wallets);}
 function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPlanning.categoryId===current.id&&serverPlanning.briefRevision===project.snapshot.revision)return {revision:serverPlanning.briefRevision,missing:serverPlanning.missingFields.map(fieldId=>({fieldId})),state:serverPlanning.state,advanced:serverPlanning.advanced};const fields=project?.snapshot.fields||{},missing=(window.__studioB2?.requirements?.[current.id]||[]).filter(f=>f.required&&!Object.prototype.hasOwnProperty.call(fields,f.id));return {revision:project?.snapshot.revision||0,missing,state:missing.length?"collecting":"draft_ready"};} function draw(wallets){
  if(wallets)walletCache=wallets;if($('#advanced-open-plan'))$('#advanced-open-plan').disabled=busy||!project;
- const messages=$('#messages');messages.replaceChildren();(previewDraftEnabled()?previewDraftMessages:(project?.messages||[])).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
- if(!project?.messages.length&&!previewDraftMessages.length)messages.appendChild(node('div',previewDraftEnabled()?(language==='tr'?'Crelavo geliştirici asistanı hazır. Sorunu veya üretim fikrini yaz. Bu önizleme gerçek AI yanıtı verir; kod çalıştırmaz veya üretim başlatmaz.':'Crelavo expert developer assistant is ready. Ask about building, debugging or producing. This preview gives real AI replies; it does not execute code or render media.'):session?t(16):t(5),'message'));
- if(previewDraftEnabled()){
-   const notice=node('div',language==='tr'?'Gerçek AI sohbeti · önizleme · medya üretimi veya Crelavo kredisi harcaması yok':'Real AI chat · preview · no media render or Crelavo credit charge','message');
-   notice.style.cssText='opacity:.75;font-size:11px';
-   messages.appendChild(notice);
-   const login=node('button',language==='tr'?'Bulut projeleri için giriş yap':'Sign in for cloud projects');
-   login.type='button';login.onclick=()=>parent.postMessage({type:'crelavo-studio-request-login'},parent.location.origin);
-   messages.appendChild(login);
- }
+ const messages=$('#messages');messages.replaceChildren();(project?.messages||[]).forEach(message=>{const item=node('div',message.content,'message'+(message.role==='user'?' user':''));item.dataset.userContent='true';item.dataset.b2Role=message.role;messages.appendChild(item)});
+ if(!project?.messages.length)messages.appendChild(node('div',session?t(16):t(5),'message'));
  if(busy&&$('#prompt').value.trim()){const draft=node('div',$('#prompt').value.trim(),'message user');draft.dataset.b2Role='pending';draft.dataset.userContent='true';messages.append(draft,node('div',t(15),'message'));}
  if(uiError)messages.appendChild(node('div',uiError,'message error'));
  if(current.id==='website'&&mode==='real'&&session){
@@ -134,12 +120,10 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   messages.appendChild(card);
  }
  if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind)&&mode==='real'){
-  const panel=node('details',undefined,'studio-video-plan');
+  const panel=node('section',undefined,'studio-video-plan');
   panel.setAttribute('aria-label','Video production plan');
-  panel.style.cssText='margin:6px 0;padding:10px 12px;border:1px solid #594071;border-radius:10px;background:#1b1327';
-  const summary=node('summary',language==='tr'?'Video üretim planı · ayrıntıları aç':'Video production plan · expand details');
-  summary.style.cssText='font-size:12px;font-weight:650;cursor:pointer;line-height:1.6';
-  panel.appendChild(summary);
+  panel.style.cssText='margin:10px 0;padding:13px;border:1px solid #594071;border-radius:12px;background:#1b1327;display:grid;gap:8px';
+  panel.appendChild(node('strong',language==='tr'?'Video üretim planı':'Video production plan'));
   const request=[...(project?.messages||[])].reverse().find(item=>item.role==='user')?.content||'';
   const model=request.match(/\b(runway|kling|veo|pika|minimax|fal[.]ai)\b/i);
   const duration=request.match(/\b(\d{1,3})\s*(?:saniye|seconds?|secs?|sn)\b/i);
@@ -161,8 +145,6 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   }
   const controls=node('div');controls.style.cssText='display:flex;gap:7px;flex-wrap:wrap';
   const review=node('button',language==='tr'?'Planı görüntüle':'Review plan');review.onclick=()=>showAux('brief');controls.append(review);
-  const localEditor=node('button',language==='tr'?'Yerel video editörünü aç':'Open local video editor');
-  localEditor.type='button';localEditor.onclick=()=>openStudioTool('video');controls.append(localEditor);
   if(activeVideoSelection){
    const timeline=node('button',language==='tr'?'Sahneleri aç':'Open scenes');timeline.onclick=()=>showAux('timeline');controls.append(timeline);
   }
@@ -184,18 +166,8 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
  :mode==='real'&&!status?.realEnabled?'Planlama sohbeti mevcut asistan API ile çalışır. Üretim ve kredi tahsilatı başlatılmaz; sohbet yalnız bu tarayıcı sekmesinde saklanır.'
  :mode==='mock'?(project?.advanced?.memory==='isolated_postgres'?(language==='tr'?'Yerel PostgreSQL hafızası · Yanıtlar ve bakiyeler Mock simülasyondur. Gerçek AI kapalı.':'Isolated local PostgreSQL memory · Replies and balances are Mock simulations. Real AI disabled.'):t(7)):t(8);
  const choices=$('#b2-choices');choices.replaceChildren();if(project){const missing=(window.__studioB2?.requirements?.[current.id]||[]).find(f=>f.required&&!Object.prototype.hasOwnProperty.call(project.snapshot.fields,f.id)&&!f.serverOnly);missing?.options.slice(0,5).forEach(value=>{const b=node('button',valueLabel(missing.id,value));b.disabled=busy;b.onclick=()=>{$('#prompt').value=valueLabel(missing.id,value);sendMessage()};choices.appendChild(b)});}
- $('#send').disabled=busy||(!session&&!previewDraftEnabled())||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||(!session&&!previewDraftEnabled());$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||(!session&&!previewDraftEnabled());$('#b2-defaults').disabled=busy||(!session&&!previewDraftEnabled());$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
- if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);}
- // Keep production/brief cards ABOVE the conversation bubbles, never below
- // the latest message. Otherwise scrolling to the bottom hides a user's text
- // behind the fixed header/credit strip and looks as if Send did nothing.
- const chat=$('.chat');
- const bubbles=[...messages.querySelectorAll('.message')];
- for(const bubble of bubbles)messages.appendChild(bubble);
- if(chat){
-  chat.scrollTop=chat.scrollHeight;
-  requestAnimationFrame(()=>{chat.scrollTop=chat.scrollHeight});
- }
+ $('#send').disabled=busy||!session||(mode==='mock'&&!status?.mockAllowed);$('#send').textContent=busy?t(15):t(2)+' ↗';$('#send').setAttribute('aria-busy',String(busy));$('#prompt').disabled=busy||!session;$('#prompt').placeholder=t(6);$('#b2-new-project').disabled=busy||!session;$('#b2-defaults').disabled=busy||!session;$('.assistant').setAttribute('dir',language==='ar'?'rtl':'ltr');
+ if(project){const p=planning();$('#b2-context').textContent+='\n'+planSummary(p);if(p.advanced)$('#b2-context').textContent+='\n'+p.advanced.decisions.length+' '+(language==='tr'?'kayıtlı karar':'saved decisions');$('.canvas').dataset.planState=p.state;$('.canvas').dataset.briefRevision=String(p.revision);}else{delete $('.canvas').dataset.planState;delete $('.canvas').dataset.briefRevision;} if(activeView==='brief')showAux('brief');window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(project){const p=planning(),caption=$('#canvas-caption');caption.textContent=caption.textContent.split(' · Brief r')[0]+' · Brief r'+p.revision+' · '+planSummary(p);} $('.chat').scrollTop=$('.chat').scrollHeight;
 }
 function resetProjectNav(){$('#saved-websites').replaceChildren();$('#saved-websites').hidden=true;$('#b2-projects').replaceChildren(node('option',t(17)));}
 function clearCanvas(){previewEpoch++;selectedProduction=null;websiteData=null;canvasState='empty';$('#site-wrapper').replaceChildren();$('#website-pages').replaceChildren(node('option','Sayfa yok'));$('#website-pages').disabled=true;$('#preview-scale').textContent='';showCanvas('empty');}
@@ -246,17 +218,7 @@ async function showStudioElements(){
  const heading=node('h2',language==='tr'?'Elements · Referans Kütüphanesi':'Elements · Reference Library');
  const help=node('p',language==='tr'?'Karakter, ürün, mekân ve ses referanslarını bu tarayıcıda kaydedin. AI üretimine dosya gönderilmez.':'Save character, product, location and voice references in this browser. Media is not sent to AI production.');
  root.append(heading,help);
- if(!session?.userId){
-  root.append(node('p','You are viewing Studio without an account session. Your cloud library is private; local editor tools can still be inspected.'));
-  if(window.__studioB2?.previewOnly){
-   root.append(node('p','Try the local Elements library without signing in. Cloud sync requires an account.'));
-   const open=node('button','Open local Elements library');
-   open.type='button';
-   open.onclick=()=>openStudioTool('elements');
-   root.append(open);
-  }
-  return;
- }
+ if(!session?.userId){root.append(node('p','Sign in to access your library.'));return;}
  const kinds=['character','product','location','wardrobe','voice','style','reference'];
  const controls=node('div');controls.className='studio-elements-controls';
  controls.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;margin:18px 0;align-items:end;padding:16px;border-radius:13px;background:#21172f;border:1px solid #49345a;max-width:100%;box-sizing:border-box';
@@ -342,33 +304,10 @@ async function showStudioElements(){
  };
  await render();
 }
-function productionStatusCard(root){
- if(current.id!=='website'||mode!=='real'||!session?.accessToken||!project?.productionId||status?.isolatedPreview)return;
- const panel=node('section');panel.style.cssText='padding:12px;border:1px solid #443052;border-radius:10px;display:grid;gap:8px';
- const title=node('strong',language==='tr'?'Sunucu üretim durumu':'Server production status');
- const detail=node('p',language==='tr'?'Durumu sunucudan kontrol edin.':'Check the recorded status on the server.');
- detail.setAttribute('role','status');detail.setAttribute('aria-live','polite');
- const refresh=node('button',language==='tr'?'Üretim durumunu yenile':'Refresh production status');refresh.type='button';
- const labels={approved:['Plan onaylı','Plan approved'],queued:['Sırada','Queued'],credits_reserved:['Kredi rezerve edildi','Credits reserved'],generating:['Üretim sürüyor','Generating'],provider_cost_pending:['Sağlayıcı maliyeti doğrulanıyor','Provider cost pending'],settlement_pending:['Tahsilat doğrulanıyor','Settlement pending'],ready:['Teslimata hazır','Ready for delivery'],failed_released:['Başarısız · rezervasyon bırakıldı','Failed · reservation released'],reconciliation_required:['İşlem inceleme gerektiriyor · tekrar başlatmayın','Review required · do not restart']};
- refresh.onclick=async()=>{const seq=epoch,pid=project?.id,productionId=project?.productionId;refresh.disabled=true;detail.textContent=language==='tr'?'Kontrol ediliyor…':'Checking…';try{const data=await request('/api/studio/production/status?projectId='+encodeURIComponent(pid));if(seq!==epoch||project?.id!==pid||project?.productionId!==productionId||!panel.isConnected)return;if(data.projectId!==pid||data.productionId!==productionId)throw Error('project mismatch');detail.textContent=(labels[data.stage]||labels.reconciliation_required)[language==='tr'?0:1];}catch(_error){if(seq===epoch&&panel.isConnected)detail.textContent=language==='tr'?'Sunucu durumu doğrulanamadı. Üretimi tekrar başlatmayın.':'Server status could not be confirmed. Do not restart production.';}finally{refresh.disabled=false;}};
- panel.append(title,detail,refresh);root.appendChild(panel);
-}
 function showAux(view){activeView=view;window.studioWorkspace?.setView(view);document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));$('#aux-panel').hidden=view==='canvas';if(view==='canvas')return;
  if(view==='assets'){void showStudioElements();return;}if(!['brief','assets'].includes(view)){window.studioWorkspace?.showView(view);return;}
  const root=$('#aux-panel');root.replaceChildren(node('h2',view==='brief'?'Brief & Plan':'Referanslar'));
- if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));productionStatusCard(root);
-  if(previewDraftEnabled()){
-    const heading=node('h3',language==='tr'?'Yerel proje briefi':'Local project brief');
-    root.appendChild(heading);
-    if(!previewDraftMessages.length)root.appendChild(node('p',language==='tr'?'Henüz brief notu yazılmadı. Sağdaki sohbet alanına yazıp Gönder düğmesine basın.':'No brief notes yet. Type in the assistant panel and press Send.'));
-    for(const note of previewDraftMessages){
-      const item=node('p',note.content);
-      item.style.cssText='white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border:1px solid #443052;border-radius:8px';
-      root.appendChild(item);
-    }
-    const disclaimer=node('small',language==='tr'?'Bu önizlemede AI planları bir öneridir; hiçbir kod uygulanmaz veya medya üretilmez.':'AI plans in this preview are suggestions; no code changes or media production are executed.');
-    root.appendChild(disclaimer);
-  }
+ if(view==='brief'){const p=planning();root.appendChild(node('p',planSummary(p)));
   if(current.id!=='website'&&!status?.realEnabled&&mode==='real'&&project?.messages?.length){
    const title=node('h3','Kategori planı · sohbet taslağı');root.appendChild(title);
    const latest=[...project.messages].reverse().find(item=>item.role==='assistant');
@@ -567,30 +506,7 @@ function saveLocalCategoryChat(){
  try{sessionStorage.setItem(localCategoryKey(),JSON.stringify(project.messages.slice(-24)));}catch(_error){}
 }
 async function sendMessage(defaults=[]){
- const message=$('#prompt').value.trim();if(!message||busy)return;
- if(previewDraftEnabled()){
-  const categoryAtSend=current.id, seq=epoch;
-  const history=previewDraftMessages.slice(-12);
-  previewDraftMessages=[...previewDraftMessages,{role:'user',content:message.slice(0,4000)}].slice(-30);
-  savePreviewDraft();$('#prompt').value='';busy=true;uiError='';draw();
-  try {
-   const response=await fetch('/api/studio/developer-chat',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    credentials:'same-origin',redirect:'error',cache:'no-store',
-    body:JSON.stringify({category:categoryAtSend,language,prompt:message.slice(0,4000),messages:history})
-   });
-   const data=await response.json();
-   if(!response.ok||data.ok!==true||typeof data.reply!=='string'||!data.reply.trim())
-    throw Error('Developer AI service unavailable ('+(data.error||response.status)+'). No credit was used.');
-   if(epoch!==seq||current.id!==categoryAtSend)return;
-   previewDraftMessages=[...previewDraftMessages,{role:'assistant',content:data.reply.slice(0,9000)}].slice(-30);
-   savePreviewDraft();
-  }catch(error){
-   if(epoch===seq&&current.id===categoryAtSend)uiError=error instanceof Error?error.message:'AI chat request failed. Please retry.';
-  }finally{if(epoch===seq&&current.id===categoryAtSend){busy=false;draw();}}
-  return;
- }
- if(!session)return;
+ const message=$('#prompt').value.trim();if(!message||busy||!session)return;
  const seq=epoch;busy=true;uiError='';draw();
  try{
   if(current.id==='website'&&mode==='real'&&!status?.realEnabled){
@@ -696,24 +612,35 @@ addEventListener('message',event=>{
  composer.focus();
  showAux('canvas');
 });
-// Navigate the top-level preview to working editor routes. The Vercel-protected
-// preview denies nested iframes, which previously displayed 'refused to connect'.
-function openStudioTool(tool){
- const allowed=tool==='video'||tool==='image'||tool==='elements';
- if(!allowed||(!session&&!window.__studioB2?.previewOnly))return;
- parent.postMessage({type:'crelavo-studio-open-tool',tool},parent.location.origin);
-}
 function openStudioImageEditor(){
- if(!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
- openStudioTool('image');
-}
-function openStudioVideoEditor(){
- if(!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
- openStudioTool('video');
+ if(!session||!['image','character','brand'].includes($('.studio')?.dataset?.kind||''))return;
+ activeView='image-editor';
+ const root=$('#aux-panel');root.replaceChildren();root.hidden=false;
+ root.style.padding='0';root.style.overflow='hidden';
+ const frame=node('iframe');frame.id='studio-image-editor-frame';
+ frame.title='Crelavo local image editor';frame.src='/dashboard/studio-image-editor';
+ frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;width:100%;height:100%;border:0;background:#120e1b';
+ root.append(frame);
 }
 addEventListener('crelavo-studio-open-image-editor',openStudioImageEditor);
+function openStudioVideoEditor(){
+ if(!session||!['video','clips','video_edit','series','avatar','localization'].includes(current.kind))return;
+ activeView='video-editor';
+ const root=$('#aux-panel');
+ root.replaceChildren();
+ root.hidden=false;
+ root.style.padding='0';
+ root.style.overflow='hidden';
+ const frame=node('iframe');
+ frame.id='studio-video-editor-frame';
+ frame.title='Crelavo local video timeline editor';
+ frame.src='/dashboard/studio-video-editor';
+ frame.setAttribute('loading','eager');
+ frame.style.cssText='display:block;border:0;width:100%;height:100%;background:#110e1b';
+ root.append(frame);
+}
 addEventListener('crelavo-studio-open-video-editor',openStudioVideoEditor);
-addEventListener('crelavo-studio-open-elements',()=>showAux('assets'));
 function studioWebsiteAction(action){
  if(current.id!=='website'||!session)return;
  if(['edit','history','design','create'].includes(action)){openFunctionalWebsiteBuilder(action==='history'?'history':'editor');return;}
@@ -736,24 +663,9 @@ function setup(){
  // pasted over the reference Canvas artwork.
  const createControl=$('[data-global="create"]');
  if(createControl){
-  createControl.disabled=false;
-  createControl.title=current.id==='website'?'Open Website Builder':'Write a new production brief (AI rendering not available in preview)';
-  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:()=>{
-    showAux('brief');$('#prompt').focus();
-  };
- }
-
- const globalActions={
-  edit:()=>{if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind))openStudioTool('video');
-          else if(['image','character','brand'].includes($('.studio')?.dataset?.kind||''))openStudioTool('image');
-          else showAux('brief');},
-  export:()=>{if(['video','clips','video_edit','series','avatar','localization'].includes(current.kind))openStudioTool('video');
-            else if(['image','character','brand'].includes($('.studio')?.dataset?.kind||''))openStudioTool('image');
-            else showAux('assets');}
- };
- for(const name of ['edit','export']){
-  const button=$('[data-global="'+name+'"]');
-  if(button){button.disabled=false;button.title=name==='edit'?'Open the available local editor':'Open the editor or your saved assets for export';button.onclick=globalActions[name]}
+  createControl.disabled=current.id!=='website';
+  createControl.title=current.id==='website'?'Open Website Builder':'Production not enabled for this category';
+  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:null;
  }
  $('#website-builder-open')?.remove();
  if(current.id==='website'){
@@ -765,19 +677,8 @@ function setup(){
   }
  }else $('#website-builder-rail')?.remove();
  const modes=$('#b2-mode');modes.replaceChildren();['mock','real'].forEach(value=>{const o=node('option',value==='mock'?'Mock demo':'Real AI');o.value=value;o.disabled=value==='mock'?!status?.mockAllowed:false;modes.appendChild(o)});modes.value=mode;modes.onchange=()=>{mode=modes.value;epoch++;project=null;mockState='';walletCache=null;pending=null;busy=false;uiError='';resetProjectNav();clearCanvas();setup();if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();else if(current.id!=='website')restoreLocalCategoryChat()};
- $('#b2-new-project').onclick=()=>{if(previewDraftEnabled()){previewDraftMessages=[];try{sessionStorage.removeItem(previewDraftKey())}catch(_error){}$('#prompt').value='';draw();return;}epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}try{sessionStorage.removeItem(localCategoryKey());}catch(_error){}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
- $('#b2-defaults').onclick=()=>{
- if(previewDraftEnabled()){
-  const sample=current.kind==='video'
-   ? (language==='tr'?'15 saniyelik dikey tanıtım videosu. Hedef kitle, sahneler, görsel stil, ses ve çağrı metnini planla.':'15-second vertical promotional video: define audience, scenes, visual style, audio, and CTA.')
-   : (language==='tr'?'Tutarlı bir karakter için görünüm, yüz detayları, kıyafet, poz, ışık ve arka plan briefi oluştur.':'Create a consistent character brief: facial features, outfit, pose, lighting and background.');
-  $('#prompt').value=sample;$('#prompt').focus();return;
- }
- const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});
- if(!list.length)return;
- $('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';
- sendMessage(list);
-};
+ $('#b2-new-project').onclick=()=>{epoch++;project=null;websiteData=null;selectedProduction=null;mockState='';pending=null;uiError='';clearCanvas();draw();if(!status?.realEnabled){if(current.id==='website'){$('#prompt').focus();return;}try{sessionStorage.removeItem(localCategoryKey());}catch(_error){}restoreLocalCategoryChat();$('#prompt').focus();return;}createProject().catch(showError)};
+ $('#b2-defaults').onclick=()=>{const list=Object.keys(window.__studioB2?.defaults?.[current.id]||{});if(!list.length)return;$('#prompt').value=language==='tr'?'Önerilen varsayılanları kullan.':'Use the proposed defaults.';sendMessage(list)};
  $('#b2-projects').onfocus=()=>savedConversations().catch(showError);$('#b2-projects').onchange=async()=>{const value=$('#b2-projects').value;if(!value)return;epoch++;clearCanvas();const seq=epoch;try{const data=await api({action:'load',projectId:value});if(seq!==epoch)return;remember(data);if(current.id==='website'&&project.productionId){selectedProduction=project.productionId;await previewWebsite(selectedProduction)}}catch(error){if(seq===epoch)showError(error)}};
  $('#send').onclick=()=>sendMessage();$('#prompt').onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();sendMessage()}};
  $('#file').accept=current.panel.accept||'image/*,audio/*,video/*,.pdf,.txt';$('#file').onchange=()=>{referenceFile=$('#file').files?.[0]||null;$('#b2-attachment').textContent=referenceFile?referenceFile.name+' — '+t(9):'';window.studioWorkspace?.refresh(project,websiteData,referenceFile);if(activeView==='assets')showAux('assets')};$('#b2-file-button').onclick=()=>$('#file').click();$('#add-reference').onclick=()=>$('#file').click();
@@ -804,7 +705,7 @@ addEventListener('crelavo-studio-video-selected',event=>{
  $('#project-title').textContent=detail.title;
  draw();
 });
-const originalSelect=selectCategory;selectCategory=function(...args){epoch++;activeVideoSelection=null;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);loadPreviewDraft();clearCanvas();showAux('canvas');setup();if(session){
+const originalSelect=selectCategory;selectCategory=function(...args){epoch++;activeVideoSelection=null;project=null;mockState='';pending=null;busy=false;uiError='';referenceFile=null;$('#file').value='';$('#b2-attachment').textContent='';resetProjectNav();originalSelect(...args);clearCanvas();showAux('canvas');setup();if(session){
  if(status?.realEnabled||mode==='mock'&&status?.mockAllowed)restore();
  else if(current.id!=='website')restoreLocalCategoryChat();
  void loadReadyVideoCanvas();
@@ -851,7 +752,6 @@ const localizeObserver=new MutationObserver(()=>{
 // Only new DOM content is localized. Observing each text mutation caused
 // repeated translations and visible flicker during initial loading.
 localizeObserver.observe(document.body,{subtree:true,childList:true});
-loadPreviewDraft();
 setup();
 updateStudioLanguage();
 })();`;
