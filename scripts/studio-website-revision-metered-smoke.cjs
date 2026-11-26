@@ -44,6 +44,22 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  assert.equal(design.palette,"sand");assert.equal(design.pages[0].headline,"Original headline");
  const applied=applyWebsiteRevision(design,3,{expectedRevision:result.websiteRevisionProposal.expectedRevision,commands:result.websiteRevisionProposal.commands});assert.equal(applied.design.palette,"ink");assert.equal(applied.design.pages[0].headline,"Yeni koleksiyon");assert.equal(applied.design.pages[0].sections[0].heading,"Second");assert.equal(applied.design.pages[0].title,"Yeni SEO başlığı");
  const again=await runConversation(input,deps);assert.deepEqual(again,result);assert.equal(calls,1);assert.equal(store.wallets.production.balance,0);
+ const {handleWebsiteAssistantRevision}=load("src/lib/studio-agent/website-revision-handler.ts");
+ const oldEnabled=process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED;process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED="false";
+ let boundId=null,storedResponse=result,contextCalls=0;
+ const db={rpc:async(name,args)=>{assert.equal(name,"studio_agent_website_context");contextCalls++;assert.equal(args.p_user,actor);if(args.p_site!==siteId)return {error:{message:"project_not_found"}};if(args.p_version!==3)return {error:{message:"project_changed_reload"}};if(args.p_create)boundId=project.id;return {data:{siteId,version:3,design,projectId:boundId}};},from(name){assert.equal(name,"studio_agent_requests");const scopes={};return {select(){return this;},eq(k,v){scopes[k]=v;return this;},async maybeSingle(){assert.deepEqual(scopes,{user_id:actor,project_id:project.id,category_id:"website",request_id:requestId});return {data:{state:"settled",response:storedResponse}};}};}};
+ const invoke=async(body,authenticate=async()=>({userId:actor,db}))=>{const r=await handleWebsiteAssistantRevision(new Request("https://preview.example.test/api",{method:"POST",body:JSON.stringify(body)}),{authenticate});return {status:r.status,data:await r.json()};};
+ const base={siteId,version:3};
+ try{
+ assert.equal((await invoke({action:"status",...base})).data.connected,false);assert.equal((await invoke({action:"connect",...base})).data.connected,true);assert.equal((await invoke({action:"status",...base})).data.ready,false);
+ assert.equal((await invoke({action:"connect",siteId:requestId,version:3})).status,404);assert.equal((await invoke({action:"status",siteId,version:2})).status,409);const beforeContext=contextCalls;
+ assert.equal((await invoke({action:"status",...base,userId:actor})).status,400);assert.equal(contextCalls,beforeContext);
+ assert.equal((await invoke({action:"quote",...base,requestId,message:input.message})).data.code,"studio_not_ready");
+ assert.equal((await invoke({action:"submit",...base,requestId,message:input.message,quote:signed,approvedMaxCredits:quote.maxCredits})).data.code,"studio_not_ready");
+ const recovered=await invoke({action:"result",...base,requestId});assert.equal(recovered.status,200);assert.equal(recovered.data.design.palette,"ink");assert.equal(recovered.data.proposalOnly,true);assert.equal(recovered.data.chargedCredits,2);assert.equal(calls,1);
+ storedResponse={...result,websiteRevisionProposal:{...result.websiteRevisionProposal,resultHash:"0".repeat(64)}};assert.equal((await invoke({action:"result",...base,requestId})).data.code,"revision_result_invalid");assert.equal(calls,1);
+ console.log("website revision HTTP handler acceptance: free binding, disabled quote and dispatch, invalid owner/version rejected, settled result recovery validates hash without provider call");
+ }finally{if(oldEnabled===undefined)delete process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED;else process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED=oldEnabled;}
  console.log("metered website revision acceptance: gated existing provider transport, one reserve/claim/record/settle, minimal trusted context, structured proposal, no site mutation, no duplicate dispatch (synthetic)");
  }finally{global.fetch=originalFetch;for(const [k,v] of Object.entries(prior)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
 })().catch(e=>{console.error(e);process.exitCode=1;});
