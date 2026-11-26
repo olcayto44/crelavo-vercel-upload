@@ -52,9 +52,9 @@ export async function POST(request:Request){
  if(budget.error)return fail(503,"image_budget_unavailable");
  const remaining=Math.max(0,(cfg.data?.total_micro_usd??0)-(budget.data??[]).reduce((sum,row)=>sum+row.max_micro_usd,0));
  const eligible=enabled()&&cfg.data?.enabled?candidates.filter(c=>routes.data?.some(r=>r.version===c.route.version&&r.provider===c.route.provider&&r.model===c.route.model)&&tariffs.data?.some(t=>t.version===c.route.version&&t.credits===c.route.credits&&t.max_micro_usd===c.route.max_micro_usd)&&c.route.max_micro_usd<=remaining):[];
- let selected=eligible[0];
+ let selected:(typeof eligible)[number]|undefined=eligible[0];
  // Free metadata check before quoting or submitting. No provider switch after dispatch.
- if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(c.route.provider==="openai"&&!await verifyWebsiteOpenAIImageModel(c.key)){selected=undefined as typeof selected;continue;}selected=c;break;}}
+ if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(c.route.provider==="openai"&&!await verifyWebsiteOpenAIImageModel(c.key)){selected=undefined;continue;}selected=c;break;}}
  const loadTariff=async()=>selected?{version:selected.route.version,credits:selected.route.credits,max_micro_usd:selected.route.max_micro_usd,enabled:true}:null;
  const loadTarget=async()=>{const t=await db.from("studio_website_image_targets").select("request_id,project_id,prompt,placed_media_version").eq("user_id",userId).eq("site_id",v.siteId).eq("design_version",v.version).eq("page_slug",v.pageSlug).maybeSingle();if(t.error)throw Error("target");return t.data;};
  const loadOperation=async(user:string,id:string)=>{const r=await db.from("studio_image_operations").select("request_id,user_id,project_id,state").eq("request_id",id).eq("user_id",user).maybeSingle();if(r.error)throw Error("operation");return r.data;};
@@ -80,10 +80,11 @@ export async function POST(request:Request){
  return json({ok:true,state:"placed",mediaVersion:r.data,requestId:target.request_id});
  }
  if(!enabled()||!selected)return fail(503,"image_provider_not_configured");
+ const chosen=selected;
  const payload={action:v.action,projectId:target.project_id,requestId:target.request_id,request:{prompt:target.prompt,aspect:plan.aspect},...(v.action==="submit"?{quoteHash:v.quoteHash,approvedCredits:v.approvedCredits,confirmProduction:true}:{})};
  const result=await handleImageLaunch(new Request("https://internal.invalid/image",{method:"POST",body:JSON.stringify(payload)}),{userId,canaryId,enabled:()=>enabled()&&!!selected,loadTariff,loadOperation,route:selected.route,
  loadProject:async(user,id)=>{const r=await db.from("production_requests").select("id,user_id,production_type").eq("id",id).eq("user_id",user).eq("production_type","image").maybeSingle();if(r.error)throw Error("project");return r.data;},
- rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>selected.route.provider==="openai"?generateSingleOpenAIWebsiteImage(input,selected.key):generateSingleMinimaxImage(input,selected.key)});
+ rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>chosen.route.provider==="openai"?generateSingleOpenAIWebsiteImage(input,chosen.key):generateSingleMinimaxImage(input,chosen.key)});
  if(v.action==="submit"&&result.ok){const output=await result.clone().json();if(output.state==="artifact_recorded_cost_pending"){const finalized=await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});if(!finalized.error&&["settled","already_settled"].includes(String(finalized.data)))return json({ok:true,state:"settled",requestId:target.request_id,costSource:"metered_or_published_price_estimate",invoicePending:true,safeToRetryAutomatically:false});}}
  if(v.action==="quote"&&result.ok){const output=await result.json();return json({...output,requiresReviewedProviderCost:false,maximumProviderMicroUsd:selected.route.max_micro_usd,invoicePending:true});}
  return result;
