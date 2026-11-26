@@ -17,6 +17,13 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  const input={userId:actor,projectId:project.id,categoryId:"website",requestId,message:"Koyu renk kullan, başlığı değiştir ve ikinci bölümü öne al.",uiLanguage:"tr",acceptedDefaults:[],websiteRevisionContext:context};
  assert(!ConversationRequestSchema.safeParse({...input,mode:"real",action:"message"}).success);
  assert.throws(()=>applyCompletion({project,message:input.message,uiLanguage:"tr",acceptedDefaults:[]},output));
+ const compact=applyCompletion({...input,project},patch);assert.equal(compact.websiteRevisionProposal.resultHash,validateWebsiteAIRevision(context,patch).resultHash);
+ assert.throws(()=>applyCompletion({...input,project},{...patch,expectedRevision:2}));
+ assert.throws(()=>applyCompletion({...input,project},{...patch,unexpected:"extra"}));
+ assert.throws(()=>applyCompletion({...input,project},{...patch,commands:[{op:"headline",page:"missing",value:"X"}]}));
+ assert.equal(applyCompletion({...input,project},{expectedRevision:3,commands:[]}).websiteRevisionProposal,undefined);
+ assert.throws(()=>applyCompletion({project,message:input.message,uiLanguage:"tr",acceptedDefaults:[]},patch));
+ console.log("compact website revision: exact version, strict commands, no extra keys, no unauthorized proposal");
  assert.throws(()=>validateWebsiteAIRevision(context,{...patch,expectedRevision:2}));
  assert.throws(()=>validateWebsiteAIRevision(context,{...patch,commands:[{op:"headline",page:"missing",value:"X"}]}));
  assert.throws(()=>validateWebsiteAIRevision(context,{...patch,commands:[{op:"headline",page:"home",value:"<script>bad</script>"}]}));
@@ -26,7 +33,7 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  const prior=Object.fromEntries(Object.keys(env).map(k=>[k,process.env[k]])),originalFetch=global.fetch;
  try{
  Object.assign(process.env,env);let calls=0;global.fetch=async(url,init)=>{
-  calls++;assert.equal(url,"https://api.openai.com/v1/chat/completions");assert.deepEqual(store.events.slice(-2),["reserve","claim"]);const body=JSON.parse(init.body);assert.equal(body.max_completion_tokens,1200);const prompt=JSON.stringify(body.messages);assert(prompt.includes("Original headline"));assert(!prompt.includes("UNRELATED_HISTORY_PRIVATE"));assert(!prompt.includes(siteId));assert(!prompt.includes("fake-service-key"));return Response.json({id:"chatcmpl-synthetic-revision",model:env.STUDIO_AGENT_MODEL_SNAPSHOT,usage:{prompt_tokens:100,completion_tokens:80},choices:[{finish_reason:"stop",message:{content:JSON.stringify(output)}}]});
+  calls++;assert.equal(url,"https://api.openai.com/v1/chat/completions");assert.deepEqual(store.events.slice(-2),["reserve","claim"]);const body=JSON.parse(init.body);assert.equal(body.max_completion_tokens,1200);const prompt=JSON.stringify(body.messages);assert(prompt.includes("Original headline"));assert(!prompt.includes("UNRELATED_HISTORY_PRIVATE"));assert(!prompt.includes(siteId));assert(!prompt.includes("fake-service-key"));return Response.json({id:"chatcmpl-synthetic-revision",model:env.STUDIO_AGENT_MODEL_SNAPSHOT,usage:{prompt_tokens:100,completion_tokens:80},choices:[{finish_reason:"stop",message:{content:JSON.stringify(patch)}}]});
  };
  const deps={store,provider:createExistingProviderAdapter(),tariff:{version:"offline",inputPer1K:1,outputPer1K:1},mode:"real"};
  process.env.STUDIO_AGENT_REAL_AI_ENABLED="false";await assert.rejects(runConversation(input,deps));assert.equal(calls,0);process.env.STUDIO_AGENT_REAL_AI_ENABLED="true";
