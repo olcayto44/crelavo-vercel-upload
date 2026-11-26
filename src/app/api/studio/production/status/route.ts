@@ -4,6 +4,9 @@ import {handleProductionStatus} from "@/lib/studio-agent/production-status";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
 export async function GET(request:Request){
+ // The isolated Website pilot uses its own authenticated API and database.
+ // Never fall back to the live database from preview or development builds.
+ if(process.env.VERCEL_ENV!=="production"||process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")return Response.json({ok:false,code:"production_environment_required",safeToRetryAutomatically:false},{status:503,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"}});
  try{
  const token=bearerTokenFromRequest(request);
  if(!token)return Response.json({ok:false,code:"sign_in"},{status:401,headers:{"Cache-Control":"no-store"}});
