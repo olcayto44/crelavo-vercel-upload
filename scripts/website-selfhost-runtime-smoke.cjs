@@ -106,6 +106,29 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  assert.equal((await post("/admin/operations-review",{csrf,id:String(eventId)},cookie)).status,303);
  assert.equal((await post("/admin/operations-review",{csrf,id:String(eventId)},cookie)).status,303);
  edb=expiryDb();try{assert.equal(edb.prepare("SELECT reviewed FROM operations_events WHERE id=?").get(eventId).reviewed,1);}finally{edb.close();}
+ // The exact ZIP mail module, offline: no real key, domain or network.
+ assert.equal((await post("/admin/email-send",{csrf,event:String(eventId),confirm:"verified"})).status,403);
+ assert.equal((await post("/admin/email-send",{csrf,event:String(eventId),confirm:"verified"},cookie)).status,503);
+ const mailDb=expiryDb(),createMail=require(path.join(dir,"mail.cjs")),crypto=require("node:crypto");
+ let mailCalls=0,mode="accepted",mailResponse;
+ const mailEnv={SITE_TRANSACTIONAL_EMAIL:"1",SITE_EMAIL_FROM:"notice@example.test",SITE_RESEND_API_KEY:"synthetic-key-not-real"};
+ const mailDeps={db:mailDb,config:{language:"tr"},local:false,esc:String,hidden:()=>"",page:(title,body)=>body,send:(res,status,body)=>{res.status=status;res.body=body;},redirect:()=>{},value:(f,k)=>{if(f.getAll(k).length!==1)throw Error("invalid field");return f.get(k);},crypto,env:mailEnv,transport:async(url,init)=>{
+ mailCalls++;assert.equal(url,"https://api.resend.com/emails");assert.equal(init.redirect,"error");assert.match(init.headers["Idempotency-Key"],/^crelavo-event-[a-f0-9]{64}$/);assert.equal(init.method,"POST");
+ const d=JSON.parse(init.body);assert.deepEqual(Object.keys(d).sort(),["from","subject","text","to"]);assert.equal(d.from,"notice@example.test");assert.equal(d.to.length,1);assert(!d.text.includes("Cart buyer"));assert(!d.text.includes("Fixture product"));assert(!d.text.includes("https://"));
+ if(mode==="uncertain")throw Error("synthetic network failure");return Response.json({id:"offline-receipt-123"});
+ }};
+ const email=async(mail,event,confirm="verified")=>{mailResponse={};assert.equal(await mail.adminPost("/admin/email-send",new URLSearchParams({event:String(event),confirm}),mailResponse),true);return mailResponse.status;};
+ try{
+ const disabled=createMail({...mailDeps,local:true});assert.equal(await email(disabled,eventId),503);assert.equal(mailCalls,0);
+ const mail=createMail(mailDeps),stale=mailDb.prepare("SELECT id FROM operations_events WHERE kind='cart' AND ref=? AND event='pending'").get(expiredQuote).id;
+ assert.equal(await email(mail,stale),409);assert.equal(await email(mail,eventId,"no"),400);assert.equal(mailCalls,0);
+ assert.equal(await email(mail,eventId),200);assert.equal(mailCalls,1);assert.equal(await email(mail,eventId),409);assert.equal(mailCalls,1);
+ assert.equal(mailDb.prepare("SELECT state FROM mail_attempts WHERE event_id=?").get(eventId).state,"accepted");
+ const otherEvent=mailDb.prepare("SELECT id FROM operations_events WHERE kind='single' AND ref=? AND event='expired'").get(expiredSingle.request_key).id;
+ mode="uncertain";assert.equal(await email(mail,otherEvent),503);assert.equal(mailCalls,2);assert.equal(mailDb.prepare("SELECT state FROM mail_attempts WHERE event_id=?").get(otherEvent).state,"uncertain");
+ assert.equal(await email(createMail(mailDeps),otherEvent),409);assert.equal(mailCalls,2);
+ }finally{mailDb.close();}
+ console.log("independent transactional email: local disabled, explicit recipient review, latest event only, one provider claim, uncertain outcome never retried (synthetic transport)");
  console.log("independent operations: pending single/cart deadlines, atomic expiration stock restoration, replay rejection, owner-only event review and no message dispatch");
  const q3=await quoteCart(),request3={...cartRequest,quote:q3};
  assert.equal((await post("/cart/submit",request3)).status,303);
