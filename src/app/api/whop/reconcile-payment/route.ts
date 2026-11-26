@@ -100,6 +100,7 @@ function membershipStatus(payment: WhopObject) {
 
 function creditsForProduct(product: Product, billing: string) {
   if (product.planType !== "subscription") return product.credits;
+  if (billing === "yearly" && "yearlyCredits" in product && typeof product.yearlyCredits === "number") return product.yearlyCredits;
   return billing === "yearly" ? product.credits * 12 : product.credits;
 }
 
