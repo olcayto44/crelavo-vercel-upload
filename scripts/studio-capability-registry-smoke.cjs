@@ -6,7 +6,7 @@ const all=listProductionCapabilities();
 assert.equal(all.length,37);
 assert.deepEqual(all.map(c=>c.id),CATEGORIES.map(c=>c.id));
 for(const c of all){
- assert.equal(c.executionReady,false);
+ assert.equal(c.executionReady,false);assert.equal(c.productionRoutes.executionReady,false);assert.equal(c.productionRoutes.routes.length,c.id==="website"?2:c.id==="image"?1:0);assert(c.productionRoutes.routes.every(r=>!r.executionReady&&r.requiresExplicitApproval&&r.requiresVerifiedArtifact));
  assert(c.fields.some(f=>f.id==="brief"));
  assert(c.planRequired && c.approval==="explicit_server_approval");
  assert(c.operations.every(o=>o.executionReady===false));
@@ -19,6 +19,7 @@ assert(image.operations.some(o=>o.id==="image_background_remove" && o.evidence==
 image.operations.length=0;
 assert(getProductionCapability("image").operations.length>0);
 assert.equal(getProductionCapability("website").execution,"existing_website_api_unbound");
+assert(getProductionCapability("website").productionRoutes.routes.some(r=>r.operation==="generate_website_ai_copy"&&r.realAI&&r.remoteProviderCostMicroUSD===null));
 console.log("studio-capability-registry-smoke ok: 37 canonical category projections, local vs planned image operations, fail-closed execution");
 
 const {getCategoryContract,createBriefFieldsSchema,evaluateRequirements}=load("src/lib/studio-agent/requirements.ts");
