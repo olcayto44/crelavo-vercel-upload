@@ -25,6 +25,7 @@ export default function DashboardPage() {
           <article className="card"><h3>Billing</h3><p>Preview, renewal and cancellation through the active customer portal.</p><a className="cta" href="/dashboard/billing">Open billing</a></article>
           <article className="card"><h3>Productions</h3><p>Previews, files and delivery status.</p><a className="cta" href="/dashboard/productions">Open productions</a></article>
         </div>
+        <article className="card" style={{marginTop:14}}><h3>Aşamalı üretimler / Staged productions</h3><p>Kayıtlı üretimler, kredi bekleyen aşamalar ve hazır dosyalar.</p><a className="cta" href="/dashboard/staged-productions">Üretimlerimi aç</a></article>
         <StudioDiscovery privateWorkspace />
         <div className="grid g4" style={{ marginTop: 14 }}>
           <article className="card"><h3>Growth Intelligence</h3><p>Monthly competitor reports. Not a credit top-up.</p><a className="ghost" href="/growth-intelligence">View plans</a></article>

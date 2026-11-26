@@ -5,12 +5,12 @@ import {z} from "zod";
 export function selectProductionRoute(categoryId:string,operation:string){
  if(categoryId==="website"&&operation==="generate_website")return {id:"website-paid-ai-v1",provider:"openai",model:"gpt-6.1-terra",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
  if(categoryId==="website"&&operation==="generate_website_ai_copy")return {id:"website-ai-copy-v1",provider:"openai",model:"gpt-6.1-terra",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
- if(categoryId==="image"&&operation==="image_generate")return {id:"image-minimax-v1",provider:"minimax",model:"image-01",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
+ if(["image","brand_kit","visual_clone","virtual_model_studio"].includes(categoryId)&&operation==="image_generate")return {id:"image-minimax-v1",provider:"minimax",model:"image-01",adapterImplemented:true,remoteProviderCostMicroUSD:null,realAI:true,fallbackAllowed:false} as const;
  return null;
 }
 // Evidence-only route inventory: route selection is not execution authority.
 export function productionRouteInventory(categoryId:string){
- const operations=categoryId==="website"?["generate_website","generate_website_ai_copy"]:categoryId==="image"?["image_generate"]:[];
+ const operations=categoryId==="website"?["generate_website","generate_website_ai_copy"]:["image","brand_kit","visual_clone","virtual_model_studio"].includes(categoryId)?["image_generate"]:[];
  return {categoryId,routes:operations.map(operation=>({operation,...selectProductionRoute(categoryId,operation)!,executionReady:false as const,requiresExplicitApproval:true as const,requiresVerifiedArtifact:true as const})),executionReady:false as const};
 }
 const quoteInput=z.strictObject({userId:z.string().uuid(),projectId:z.string().uuid(),productionId:z.string().uuid(),planHash:z.string().regex(/^[a-f0-9]{64}$/),packId:z.enum(["landing_page","business_website","website_basic_admin"]),storedCredits:z.number().int().positive(),estimatedCredits:z.number().int().positive()});

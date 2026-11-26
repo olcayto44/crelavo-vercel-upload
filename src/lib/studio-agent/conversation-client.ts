@@ -682,9 +682,13 @@ function setup(){
  // pasted over the reference Canvas artwork.
  const createControl=$('[data-global="create"]');
  if(createControl){
-  createControl.disabled=current.id!=='website';
-  createControl.title=current.id==='website'?'Open Website Builder':'Production not enabled for this category';
-  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:null;
+  const stagedImage=window.__studioB2?.stagedImageWorkspace&&['image','brand_kit','visual_clone','virtual_model_studio'].includes(current.id);
+  createControl.disabled=current.id!=='website'&&!stagedImage;
+  createControl.title=current.id==='website'?'Open Website Builder':stagedImage?'Open staged image production':'Production not enabled for this category';
+  createControl.onclick=current.id==='website'?openFunctionalWebsiteBuilder:stagedImage?()=>{
+   if(session){try{const brief=(project?.messages||[]).filter(m=>m.role==='user').map(m=>m.content).join('\n').slice(-1000);sessionStorage.setItem('crelavo-stage-draft:'+session.userId+':'+current.id,brief);}catch(_error){}}
+   parent.location.href='/dashboard/staged-productions?category='+encodeURIComponent(current.id);
+  }:null;
  }
  $('#website-builder-open')?.remove();
  if(current.id==='website'){

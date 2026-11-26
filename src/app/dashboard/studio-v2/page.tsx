@@ -13,6 +13,7 @@ export default function StudioProductionPage() {
   const encode = (value: unknown) => JSON.stringify(value).replace(/</g, "\\u003c");
   const b2 = {
     websitePaidReady: false,
+    stagedImageWorkspace: true,
     websitePacks: (getCategory("website")?.packs || []).filter(pack => typeof pack.credits === "number").map(pack => ({ id:pack.id, label:pack.label, credits:pack.credits })),
     mockAllowed: false,
     requirements: Object.fromEntries(configuration.categories.map(c => [c.id, getCategoryContract(c.id).fields])),
