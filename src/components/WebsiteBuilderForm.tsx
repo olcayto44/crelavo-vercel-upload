@@ -224,6 +224,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <p><button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.previewUrl, true)}>{t("Open preview")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.zipUrl)}>{t("Download ZIP/source")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.readmeUrl)}>README</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.sourceUrl)}>{t("Source guide")}</button></p>          </div>
           {previewPages.length ? <p>{previewPages.map((page) => <button key={page.path} disabled={contentBusy} type="button" onClick={() => downloadOutput(outputs.previewUrl + "&page=" + encodeURIComponent(page.path), true)}>{page.title}</button>)}</p> : null}
           {previewHtml ? <div className="mini-card"><h2>{t("Sandboxed website preview")}</h2><button type="button" onClick={() => setPreviewHtml("")}>{t("Close preview")}</button><iframe ref={previewFrame} title={t("Website preview")} sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={previewHtml} style={{ width: "100%", height: 650, border: 0 }} /></div> : null}
+          {!outputs.plan?.editableDesign && <>
           <form onSubmit={applyRevision} className="mini-card" style={{ marginTop: "1rem" }}>
             <h2>{t("Revise with natural language")}</h2>
             <textarea rows={3} value={revisionInstruction} onChange={(event) => setRevisionInstruction(event.target.value)} placeholder={t("Example: Change the hero title to Start faster.")} />
@@ -255,6 +256,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <button className="btn" type="submit" disabled={contentBusy}>{contentBusy ? t("Saving...") : t("Save content")}</button>
           </form>
           {history.length > 0 ? <div id="website-version-history" className="mini-card" style={{ marginTop: "1rem" }}><h2>{t("Version history")}</h2>{history.slice().reverse().map((item) => <div key={`${item.revision}-${item.createdAt}`} style={{ display: "flex", justifyContent: "space-between", gap: "1rem", alignItems: "center", marginBottom: ".5rem" }}><span>{t("Version")}{item.revision} - {item.source || "manual"}</span><button className="btn secondary" type="button" disabled={contentBusy} onClick={() => rollback(item.revision)}>{t("Restore")}</button></div>)}</div> : null}
+          </>}
         </>
       ) : null}
     </section>
