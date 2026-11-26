@@ -1,4 +1,6 @@
 import { z } from "zod";
+import {WebsiteRevisionProposal} from "../website-assistant-revision";
+import type {WebsiteRevisionContext,WebsiteAIRevision} from "./website-revision-context";
 import { AdvancedStateSchema } from "./advanced-contract";
 import { CategoryIdSchema, BriefSnapshotSchema, createBriefFieldsSchema } from "./requirements";
 import { IntentSchema } from "./intent";
@@ -26,23 +28,23 @@ export function completionSchema(categoryId: string) {
   return z.strictObject({ categoryId: z.literal(categoryId), intent: IntentSchema,
     briefPatch: createBriefFieldsSchema(categoryId), evidence: z.record(z.string(), z.string().trim().min(1).max(1000)),
     reply: z.string().trim().min(1).max(6000), proposedCategory: CategoryIdSchema.optional(),
-    toolCalls: z.array(ToolActionSchema).max(4).default([]),
+    toolCalls: z.array(ToolActionSchema).max(4).default([]), websiteRevision:WebsiteRevisionProposal.optional(),
     question: z.strictObject({ fieldId: z.string().max(80), text: z.string().trim().min(1).max(400) }).nullable(),
   });
 }
 export const ProviderUsageSchema = z.strictObject({ inputTokens: z.number().int().min(0).max(1000000), outputTokens: z.number().int().min(0).max(1200) });
 export type ProviderCompletion = { output: unknown; usage: z.infer<typeof ProviderUsageSchema>; receipt?: {providerRequestId:string;model:string;policyVersion:string;finishReason:string;cachedInputTokens:number;reasoningTokens:number} };
-export type ProviderInput = { project: ConversationProject; message: string; uiLanguage: z.infer<typeof UILanguageSchema>; acceptedDefaults: string[] };
+export type ProviderInput = { project: ConversationProject; message: string; uiLanguage: z.infer<typeof UILanguageSchema>; acceptedDefaults: string[]; websiteRevisionContext?:WebsiteRevisionContext };
 export interface ConversationProvider { preflight(): void; prepare(input: ProviderInput): { inputUpperBound: number; call(): Promise<ProviderCompletion> }; }
 export type Wallets = { assistant: { balance: number; reserved: number; available: number }; production: { balance: number; reserved: number; available: number } };
 export type TurnResponse = { ok: true; mode: "real" | "mock"; project: ConversationProject; reply: string; requestId: string;
-  chargedCredits: number; chargedAccount: "assistant"; wallets: Wallets; blockedTools: string[]; executionReady: false; nextQuestion: {fieldId:string;question:string} | null; };
+  websiteRevisionProposal?:WebsiteAIRevision; chargedCredits: number; chargedAccount: "assistant"; wallets: Wallets; blockedTools: string[]; executionReady: false; nextQuestion: {fieldId:string;question:string} | null; };
 export type Reservation = { state: "fresh" | "pending" | "result_ready" | "settled" | "released" | "refunded"; response?: TurnResponse };
 export interface ConversationStore {
   load(userId: string, projectId: string, categoryId: string): Promise<ConversationProject>;
   reserve(input: {userId:string;project:ConversationProject;requestId:string;payloadHash:string;reserveCredits:number;tariffVersion:string;message:string;cost?:{policy:import("./cost-policy").CostPolicy;inputBound:number;outputBound:number}}): Promise<Reservation>;
   claim(userId: string, requestId: string): Promise<boolean>;
-  record(userId: string, requestId: string, result: {project:ConversationProject;reply:string;chargedCredits:number;usage:unknown;receipt?:import("./conversation-contract").ProviderCompletion["receipt"];blockedTools:string[];nextQuestion:TurnResponse["nextQuestion"]}): Promise<void>;
+  record(userId: string, requestId: string, result: {project:ConversationProject;reply:string;chargedCredits:number;usage:unknown;receipt?:import("./conversation-contract").ProviderCompletion["receipt"];blockedTools:string[];nextQuestion:TurnResponse["nextQuestion"];websiteRevisionProposal?:WebsiteAIRevision}): Promise<void>;
   settle(userId: string, requestId: string, mode: "real" | "mock"): Promise<TurnResponse>;
   release(userId: string, requestId: string): Promise<void>;
   uncertain(userId: string, requestId: string): Promise<void>;
