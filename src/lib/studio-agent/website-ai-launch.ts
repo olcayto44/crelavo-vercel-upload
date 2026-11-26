@@ -35,7 +35,7 @@ export async function handleWebsiteAILaunch(request:Request,d:Deps){
  const brief=normalizeAssistantWebsiteBrief(a.brief);
  if(p.status!=="pending"||a.phase!=="approved"||a.approvedHash!==a.planHash||brief.locale!=="en"||missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||websitePlanHash(brief,a.packId)!==a.planHash||a.credits!==p.estimated_credits||getCategory("website")?.packs.find(x=>x.id===a.packId)?.credits!==a.credits)return fail(409,"current_supported_approval_required");
  prepareWebsiteAICopy(websiteEngineInput(brief),d.policy);prepareEditableWebsiteBrief(websiteEngineInput(brief));
- const quoteHash=createHash("sha256").update(JSON.stringify(["website-ai-copy-v1",d.userId,p.id,a.planHash,a.packId,a.credits,policyHash])).digest("hex");
+ const quoteHash=createHash("sha256").update(JSON.stringify(["website-ai-copy-v1",d.userId,p.id,a.planHash,a.packId,a.credits,policyHash,Boolean(d.autoMeteredSettlement)])).digest("hex");
  if(v.action==="quote")return reply({ok:true,productionId:p.id,quoteHash,credits:a.credits,packId:a.packId,route:"website-ai-copy-v1",scope:"marketing_website_candidate",requiresReviewedProviderCost:!d.autoMeteredSettlement});
  if(v.quoteHash!==quoteHash||v.approvedCredits!==a.credits)return fail(409,"quote_changed_reload");
  const reserved=await d.rpc("website_ai_approve_enqueue",{p_user:d.userId,p_production:p.id,p_hash:a.planHash,p_policy_version:d.policy.version,p_policy_hash:policyHash,p_credits:a.credits,p_maximum:d.policy.requestMicroUSD,p_brief:a.brief,p_pack:a.packId});

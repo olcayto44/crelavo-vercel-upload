@@ -10,7 +10,7 @@ let browser;
 async function waitServer(){for(let i=0;i<120;i++){if(server.exitCode!==null)throw Error("Next dev exited");try{const r=await fetch(origin+"/website-design-test",{signal:AbortSignal.timeout(5000)});if(r.ok)return;}catch{}await new Promise(r=>setTimeout(r,1000));}throw Error("Editor local server did not become ready");}
 try{
  await waitServer();browser=await chromium.launch();const results=[];
- for(const width of [390,1440]){
+ for(const width of [390,768,1440]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[];
   page.on("pageerror",e=>errors.push(e.message));
   await page.route("**/*",r=>r.request().url().startsWith(origin+"/")?r.continue():r.abort());
@@ -36,6 +36,8 @@ try{
   await page.getByLabel("Zoom",{exact:true}).selectOption("fit");
   await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]");return !!v&&v.dataset.zoom==="fit"&&["clip","hidden"].includes(getComputedStyle(v).overflowX)&&v.scrollWidth<=v.clientWidth+1;});
   await page.waitForFunction(()=>{const v=document.querySelector("[data-preview-viewport]"),f=v?.querySelector("iframe");return !!v&&!!f&&f.getBoundingClientRect().width<=v.clientWidth+1&&v.scrollHeight<=v.clientHeight+1;});
+  await page.getByRole("button",{name:"tablet · 768px",exact:true}).click();
+  await page.waitForFunction(()=>document.querySelector("iframe[title='tablet website preview']")?.offsetWidth===768);
   await page.getByRole("button",{name:"mobile · 390px",exact:true}).click();
   await page.waitForFunction(()=>document.querySelector("iframe[title='mobile website preview']")?.offsetWidth===390);
   await page.getByRole("button",{name:"Site settings",exact:true}).click();
