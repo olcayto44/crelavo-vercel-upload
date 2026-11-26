@@ -1,0 +1,32 @@
+const fs = require("node:fs"), assert = require("node:assert/strict");
+const {load} = require("./studio-agent-test-loader.cjs");
+const {studioSurfaces} = load("src/lib/studio-surfaces.ts");
+const {CATEGORIES} = load("src/lib/crelavo/categoryCatalog.ts");
+assert.equal(CATEGORIES.length,37);
+assert.equal(studioSurfaces.length,4);
+assert.equal(new Set(studioSurfaces.map(s=>s.path)).size,4);
+const read=p=>fs.readFileSync(p,"utf8");
+for(const s of studioSurfaces){
+ assert(s.path.startsWith("/") && !s.path.startsWith("/dashboard"));
+ assert(s.workspace.startsWith("/dashboard/"));
+ assert(fs.existsSync("src/app"+s.path+"/page.tsx"));
+ assert(fs.existsSync("src/app"+s.workspace+"/page.tsx"));
+ assert(s.description && s.limit && s.steps.length===3);
+}
+const categoryBrowser = read("src/components/CategoryGroupBrowser.tsx");
+assert(categoryBrowser.includes("href={categoryPublicPaths[id]}"));
+assert(!categoryBrowser.includes("/dashboard/"));
+const listed = [...categoryBrowser.matchAll(/typeIds: (\[[^\]]+\])/g)].flatMap(match => JSON.parse(match[1]));
+assert.equal(listed.length,37);
+assert.deepEqual([...listed].sort(), CATEGORIES.map(c=>c.id).sort(), "All 37 canonical categories must be visible exactly once");
+assert(read("src/app/dashboard/create/page.tsx").includes("category.id"));
+assert(read("src/app/dashboard/create/page.tsx").includes("/dashboard/assistant-workspace?"));
+for(const p of ["src/app/page.tsx","src/app/tools/page.tsx","src/app/dashboard/page.tsx"])assert(read(p).includes("<StudioDiscovery"));
+assert(read("src/app/categories/page.tsx").includes("<CategoryGroupBrowser"));
+assert(read("src/app/sitemap.ts").includes("studioSurfaces.map"));
+assert(read("src/app/sitemap.ts").includes('"/dashboard"'));
+assert(read("src/app/robots.ts").includes('"/dashboard"'));
+assert(read("src/components/StudioPublicPage.tsx").includes("WebApplication"));
+assert(read("src/components/StudioPublicPage.tsx").includes("BreadcrumbList"));
+assert(!read("src/app/ai-website-builder/page.tsx").includes("redirect("));
+console.log("studio-site-integration-smoke ok: public discovery routes, category links, private workspace separation and SEO contracts");
