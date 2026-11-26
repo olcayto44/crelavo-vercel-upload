@@ -13,7 +13,7 @@ export function productionRouteInventory(categoryId:string){
  const operations=categoryId==="website"?["generate_website","generate_website_ai_copy"]:categoryId==="image"?["image_generate"]:[];
  return {categoryId,routes:operations.map(operation=>({operation,...selectProductionRoute(categoryId,operation)!,executionReady:false as const,requiresExplicitApproval:true as const,requiresVerifiedArtifact:true as const})),executionReady:false as const};
 }
-const quoteInput=z.strictObject({userId:z.string().uuid(),projectId:z.string().uuid(),productionId:z.string().uuid(),planHash:z.string().regex(/^[a-f0-9]{64}$/),packId:z.enum(["landing_page","business_website"]),storedCredits:z.number().int().positive(),estimatedCredits:z.number().int().positive()});
+const quoteInput=z.strictObject({userId:z.string().uuid(),projectId:z.string().uuid(),productionId:z.string().uuid(),planHash:z.string().regex(/^[a-f0-9]{64}$/),packId:z.enum(["landing_page","business_website","website_basic_admin"]),storedCredits:z.number().int().positive(),estimatedCredits:z.number().int().positive()});
 export function websiteProductionQuote(raw:unknown){
  const v=quoteInput.parse(raw);
  const pack=getCategory("website")?.packs.find(p=>p.id===v.packId);

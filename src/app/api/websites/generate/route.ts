@@ -4,6 +4,7 @@ import {requireVerifiedRequestUser,supabaseAdmin} from "@/lib/supabase";
 import {clientIpFromRequest,rateLimit,rateLimitResponse,rejectSuspiciousText} from "@/lib/security";
 import {validateProductionSafety} from "@/lib/content-safety";
 import {normalizeAssistantWebsiteBrief,missingWebsiteBrief,unsupportedWebsiteScope,websitePlanHash} from "@/lib/assistant-work/website-brief";
+import {paidWebsiteScopeAllowed} from "@/lib/website-paid-scope";
 import {websitePageManifest} from "@/lib/website-engine";
 import {executePaidWebsiteProduction,websitePaidProductionEnabled,websitePaidCanaryAllowed} from "@/lib/assistant-work/website-paid-production";
 import {productionCreditCheck} from "@/lib/studio-agent/production-credit-policy";
@@ -37,9 +38,12 @@ export async function POST(request:Request){
  }
  if(body.action!=="quote")return reply({ok:false,code:"quote_required",message:"Review the credit price and confirm production first."},400);
  const brief=normalizeAssistantWebsiteBrief({...body,siteType:body.siteType??body.site_type});
- if(missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||body.site_scope==="website_with_admin"||body.scope==="website_with_admin")return reply({ok:false,code:"website_brief_or_scope_invalid"},422);
+ if(missingWebsiteBrief(brief).length)return reply({ok:false,code:"website_brief_or_scope_invalid"},422);
  const pages=websitePageManifest(brief.pages);
- const packId=pages.length===1?"landing_page":"business_website";
+ const admin=body.site_scope==="website_with_admin"||body.scope==="website_with_admin";
+ const packId=admin?"website_basic_admin":pages.length===1?"landing_page":"business_website";
+ if(admin&&process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED!=="true")return reply({ok:false,code:"website_admin_package_not_enabled"},503);
+ if(unsupportedWebsiteScope(brief,packId).length||!paidWebsiteScopeAllowed(packId,brief.features))return reply({ok:false,code:"website_scope_not_supported"},422);
  if(pages.length>5)return reply({ok:false,code:"website_maximum_five_pages",message:"The Website package supports up to five pages."},422);
  const pack=getCategory("website")?.packs.find(p=>p.id===packId);
  if(!pack||typeof pack.credits!=="number"||pack.credits<=0)return reply({ok:false,code:"website_tariff_unavailable"},503);

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {paidWebsiteScopeAllowed} from "../website-paid-scope";
 import {websitePageManifest} from "../website-engine";
 import {productionCreditCheck} from "../studio-agent/production-credit-policy";
 import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
@@ -71,14 +72,14 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   const credits = pack?.credits;
   const brief = normalizeAssistantWebsiteBrief(state.brief);
   if (!pack || typeof credits !== "number" || !Number.isSafeInteger(credits) || credits <= 0 ||
-      /admin|commerce|checkout/i.test(pack.label) ||
+      (/admin|commerce|checkout/i.test(pack.label)&&state.packId!=="website_basic_admin") ||
       state.credits !== credits || row.estimated_credits !== credits ||
       websitePlanHash(brief, String(state.packId)) !== planHash ||
-      missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
+      missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief,String(state.packId)).length||!paidWebsiteScopeAllowed(state.packId,brief.features)) {
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
   if(state.packId==="landing_page"&&websitePageManifest(brief.pages).length!==1)return reply({ok:false,code:"website_package_page_limit"},422);
-  try{preparePaidWebsiteAI(websiteEngineInput(brief));}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+  try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
   const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
   if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
   const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));

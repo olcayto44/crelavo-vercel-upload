@@ -205,10 +205,11 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       <form onSubmit={submit} className="form-grid">
         <label>{t("Website brief")}<textarea required minLength={20} rows={5} value={fields.brief} onChange={(event) => update("brief", event.target.value)} placeholder={t("What does it offer, what problem does it solve and what should the user do?")} /></label>
         <label>{t("Site type")}<input required value={fields.siteType} onChange={(event) => update("siteType", event.target.value)} /></label>
-        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option></select><small>{t(scopeLabel)}</small></label>
+        <label>{t("Site scope")}<select value={fields.scope} onChange={(event) => update("scope", event.target.value)}><option value="marketing_website">{t("Public static website - no admin panel")}</option><option value="website_with_admin">Website + Basic Admin (self-hosted; no live payments)</option></select><small>{t(scopeLabel)}</small></label>
         <label>{t("Brand / product")}<input required value={fields.brand} onChange={(event) => update("brand", event.target.value)} /></label>
         <label>{t("Target audience")}<input required value={fields.audience} onChange={(event) => update("audience", event.target.value)} /></label>
         <label>{t("Pages")}<small>{t("comma-separated")}</small><input value={fields.pages} onChange={(event) => update("pages", event.target.value)} /></label>
+        <small>Optional features: AI hero image; for Basic Admin: Blog CMS, Product catalog, Order requests, Customer accounts, Booking requests. No live checkout or paid memberships.</small>
         <label>{t("Features")}<small>{t("comma-separated")}</small><input value={fields.features} onChange={(event) => update("features", event.target.value)} /></label>
         <label>Website language<select value={fields.locale} onChange={event=>update("locale",event.target.value)}><option value="en">English</option><option value="tr">Türkçe</option><option value="de">Deutsch</option><option value="fr">Français</option><option value="zh-Hans">中文</option></select></label>
         <label>{t("Style / visual direction")}<input required value={fields.style} onChange={(event) => update("style", event.target.value)} /></label>

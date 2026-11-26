@@ -37,6 +37,6 @@ export async function PUT(request:Request){try{const a=await owned(request);if("
 export async function PATCH(request:Request){try{const a=await owned(request);if("response" in a)return a.response;const p=z.strictObject({version:z.number().int().positive(),restoreVersion:z.number().int().positive()}).parse(await readBoundedWebsiteJson(request,1024));const old=paidDesignHistory(a.row.output_json).find(h=>h.version===p.restoreVersion);if(!old)return out({ok:false,code:"version_not_found"},404);return await save(a,p.version,old.design);}catch{return out({ok:false,code:"restore_unavailable"},422);}}
 export async function POST(request:Request){try{const a=await owned(request);if("response" in a)return a.response;
  if(new URL(request.url).searchParams.has("format"))return out({ok:false,code:"use_saved_delivery"},403);
- const rendered=renderPaidWebsiteDesign(await readBoundedWebsiteJson(request,48000),a.limit,a.row.output_json?.plan?.websiteHeroMedia??[]),css=rendered.files.find(f=>f.path==="styles.css")!.content;
+ const rendered=renderPaidWebsiteDesign(await readBoundedWebsiteJson(request,48000),a.limit,a.row.output_json?.plan?.websiteHeroMedia??[],a.row.output_json?.plan?.approvedIndustryScope??undefined),css=rendered.files.find(f=>f.path==="styles.css")!.content;
  return out({ok:true,pages:rendered.files.filter(f=>f.path.endsWith(".html")).map(f=>({path:f.path,content:f.content.replace('<link rel="stylesheet" href="./styles.css">',()=>"<style>"+css+"</style>")}))});
  }catch{return out({ok:false,code:"invalid_design"},422);}}
