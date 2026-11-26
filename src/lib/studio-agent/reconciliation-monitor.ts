@@ -7,6 +7,11 @@ export const reconciliationMetrics=[
  {id:"website_review",label:"Website — mutabakat gerekli",table:"website_credit_reservations",column:"state",value:"reconcile_required"},
  {id:"website_settled",label:"Website — tahsilat tamamlandı",table:"website_credit_reservations",column:"state",value:"settled"},
  {id:"website_released",label:"Website — rezervasyon serbest",table:"website_credit_reservations",column:"state",value:"released"},
+ {id:"assistant_reserved",label:"Asistan — kredi rezervasyonu açık",table:"studio_agent_requests",column:"state",value:"reserved"},
+ {id:"assistant_dispatched",label:"Asistan — sağlayıcı sonucu bekleniyor",table:"studio_agent_requests",column:"state",value:"dispatched"},
+ {id:"assistant_uncertain",label:"Asistan — mutabakat gerekli",table:"studio_agent_requests",column:"state",value:"uncertain"},
+ {id:"assistant_result_ready",label:"Asistan — sonuç hazır, kredi kapanışı bekliyor",table:"studio_agent_requests",column:"state",value:"result_ready"},
+ {id:"assistant_settled",label:"Asistan — kredi kapanışı tamamlandı",table:"studio_agent_requests",column:"state",value:"settled"},
 ] as const;
 type Metric=typeof reconciliationMetrics[number];
 type CountResult={count:number|null;error:unknown};
