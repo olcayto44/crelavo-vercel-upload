@@ -1,0 +1,16 @@
+const assert=require("node:assert/strict"),fs=require("node:fs"),{load}=require("./studio-agent-test-loader.cjs");
+const {renderPaidWebsiteDesign,paidDesignRevision,paidDesignHistory}=load("src/lib/website-paid-design.ts");
+const {buildDeliveryEntries,buildPreviewHtml,buildDeliveryZip}=load("src/lib/automatic-delivery-builder.ts");
+const design={version:2,brand:"Fixture Studio",language:"en",layout:"editorial",palette:"ink",pages:[{slug:"home",nav:"Home",title:"Fixture Studio",description:"Design services for businesses.",headline:"A considered design practice",lead:"Design services for local businesses.",sections:[{heading:"Services",body:"Visual identity and website design."}],faq:[]}]};
+const built=renderPaidWebsiteDesign(design,1);
+const output={websiteBillingMode:"atomic_v1",websiteBillingPending:false,charged:500,websiteFiles:built.files,plan:{editableDesign:built.design,editableDesignHash:built.hash},pageManifest:built.pageManifest};
+const production={id:"fixture",production_type:"website",title:"Fixture Studio",status:"ready",output_json:output};
+assert(buildPreviewHtml(production).includes("A considered design practice"));
+const entries=buildDeliveryEntries(production);assert(entries.some(e=>e.name==="source/index.html"&&e.content.includes("A considered design practice")));
+assert(entries.some(e=>e.name==="source/robots.txt"));assert(!entries.some(e=>e.name.startsWith("source/app/")));assert(buildDeliveryZip(entries).length>100);
+const next=paidDesignRevision(output,{...design,pages:[{...design.pages[0],headline:"Updated site headline"}]},1,"2026-11-26T20:00:00Z");
+assert.equal(next.websiteDesignVersion,2);assert.equal(next.charged,500);assert.equal(paidDesignHistory(next)[0].design.pages[0].headline,design.pages[0].headline);
+assert(buildPreviewHtml({...production,output_json:next}).includes("Updated site headline"));assert(buildDeliveryEntries({...production,output_json:next}).some(e=>e.name==="source/index.html"&&e.content.includes("Updated site headline")));
+assert.throws(()=>renderPaidWebsiteDesign({...design,pages:[...design.pages,{...design.pages[0],slug:"about",nav:"About",title:"About Fixture Studio",description:"About the studio."}]},1),/scope_changed/);
+const api=fs.readFileSync("src/app/api/studio/website-project/route.ts","utf8");assert(api.includes("websiteCreditDeliveryProof(row,proof)"));assert(api.includes('.eq("user_id",a.actor).eq("status","ready").eq("updated_at",a.row.updated_at)'));assert(api.includes("restoreVersion"));
+console.log("Paid Website design: canonical preview/ZIP, revision history, package limit, owner and settlement guards");
