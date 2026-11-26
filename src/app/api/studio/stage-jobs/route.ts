@@ -3,10 +3,11 @@ import {createHash} from "node:crypto";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {rateLimit,rateLimitResponse,rejectSuspiciousText} from "@/lib/security";
 import {validateProductionSafety} from "@/lib/content-safety";
-import {stageEnvironment,stageEnabled,stageTariff} from "@/lib/studio-agent/stage-environment";
+import {stageEnvironment,stageEnabled,stageEditEnabled,stageTariff} from "@/lib/studio-agent/stage-environment";
 import {StageDraft,buildImageStagePlan,stageLabels} from "@/lib/studio-agent/stage-plan";
+import {EditInput,prepareEditForm} from "@/lib/studio-agent/stage-image-edit";
 import {stageReferenceJpeg} from "@/lib/studio-agent/stage-execution";
-import {stageJob,stageView,listStageJobs,runNextStage} from "@/lib/studio-agent/stage-service";
+import {stageJob,stageView,listStageJobs,runNextStage,loadStageEditSource} from "@/lib/studio-agent/stage-service";
 export const runtime="nodejs";export const dynamic="force-dynamic";export const maxDuration=120;
 const uuid=z.string().uuid(),hash=z.string().regex(/^[a-f0-9]{64}$/);
 const Input=z.discriminatedUnion("action",[z.strictObject({action:z.literal("quote"),draft:StageDraft}),z.strictObject({action:z.literal("create"),draft:StageDraft,planHash:hash,approvedCredits:z.number().int().positive(),confirmProduction:z.literal(true)}),z.strictObject({action:z.literal("resume"),jobId:uuid})]);
@@ -21,7 +22,7 @@ export async function GET(request:Request){
  try{
  const a=await auth(request);if(!a)return out({ok:false,code:"verified_session_or_environment_required"},401);
  const {e,user}=a,url=new URL(request.url),id=url.searchParams.get("jobId");
- if(!id)return out({ok:true,enabled:stageEnabled(e,user),jobs:await listStageJobs(e,user)});
+ if(!id)return out({ok:true,enabled:stageEnabled(e,user),editEnabled:stageEditEnabled(e,user),jobs:await listStageJobs(e,user)});
  if(!uuid.safeParse(id).success)return out({ok:false,code:"invalid_job"},400);
  if(url.searchParams.has("download")){
   const ordinal=Number(url.searchParams.get("download"));if(!Number.isInteger(ordinal)||ordinal<0||ordinal>99)return out({ok:false,code:"invalid_step"},400);
@@ -49,8 +50,12 @@ export async function POST(request:Request){
  const safe=validateProductionSafety([v.draft.title,v.draft.brief]),suspicious=rejectSuspiciousText([v.draft.title,v.draft.brief]);
  if(!safe.ok||!suspicious.ok)return out({ok:false,code:"invalid_brief"},400);
  if(v.draft.referenceJpeg){try{await stageReferenceJpeg(v.draft.referenceJpeg,30000);}catch{return out({ok:false,code:"invalid_reference"},400);}}
+ if(v.draft.operation){
+  if(!stageEditEnabled(e,user))return out({ok:false,code:"edit_provider_not_enabled"},503);
+  try{const input=EditInput.parse({operation:v.draft.operation,prompt:v.draft.brief,source:v.draft.source,referenceJpeg:v.draft.referenceJpeg,mask:v.draft.mask,search:v.draft.search,expand:v.draft.expand});const source=input.source?await loadStageEditSource(e,user,input.source):Buffer.from(input.referenceJpeg!,"base64");await prepareEditForm(input,source);}catch{return out({ok:false,code:"invalid_edit_source_or_mask"},400);}
+ }
  const plan=buildImageStagePlan(v.draft,tariff);
- if(v.action==="quote")return out({ok:true,planHash:plan.planHash,totalCredits:plan.totalCredits,stepCredits:tariff.credits,stepCount:plan.steps.length,scope:stageLabels[plan.category],provider:plan.provider,model:plan.model});
+ if(v.action==="quote")return out({ok:true,planHash:plan.planHash,totalCredits:plan.totalCredits,stepCredits:plan.steps[0].credits,stepCount:plan.steps.length,scope:v.draft.operation??stageLabels[plan.category],provider:plan.provider,model:plan.model});
  if(v.planHash!==plan.planHash||v.approvedCredits!==plan.totalCredits)return out({ok:false,code:"quote_changed"},409);
  const r=await e.db.rpc("studio_stage_create",{p_user:user,p_job:plan.jobId,p_category:plan.category,p_title:plan.title,p_hash:plan.planHash,p_tariff:plan.tariffVersion,p_steps:plan.steps,p_auto:plan.autoResume});
  if(r.error)return out({ok:false,code:"stage_create_unconfirmed"},409);
