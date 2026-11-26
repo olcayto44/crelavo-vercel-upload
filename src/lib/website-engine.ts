@@ -1,4 +1,4 @@
-import { generateDeterministicWebsiteSource, escapeHtml } from "./providers/website-template.ts";
+import { generateDeterministicWebsiteSource, escapeHtml, type WebsiteCopy } from "./providers/website-template.ts";
 import { validateWebsiteQuality, WebsiteQualityError, type WebsiteGenerationInput, type WebsiteGeneratedFile } from "./providers/openai.ts";
 import { createWebsitePlan } from "./website-domain.ts";
 import { websiteContentFromSource } from "./website-content.ts";
@@ -25,9 +25,9 @@ export function validateWebsiteSourceFiles(files: WebsiteGeneratedFile[], scope:
   const quality = validateWebsiteQuality(files, scope); if (!quality.valid) throw new WebsiteQualityError(quality.missing);
 }
 /** Shared artifact engine; callers own authorization, approval, persistence and billing. */
-export async function generateWebsiteArtifact(input: WebsiteEngineInput, projectId: string) {
+export async function generateWebsiteArtifact(input: WebsiteEngineInput, projectId: string, options?: {mode:"local"} | {mode:"validated_copy";copy:Pick<WebsiteCopy,"headline"|"intro"|"eyebrow"|"features"|"faq">}) {
   const pageManifest = websitePageManifest(input.pages);
-  const generated = await generateDeterministicWebsiteSource(input);
+  const generated = await generateDeterministicWebsiteSource(input, options);
   const files = generated.files.map((file) => ({ ...file }));
   const index = files.find((file) => file.path === 'index.html')!;
   const navigation = pageManifest.map((page) => '<a href="./' + page.path + '">' + escapeHtml(page.title) + '</a>').join('');
