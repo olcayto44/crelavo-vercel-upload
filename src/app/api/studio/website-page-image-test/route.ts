@@ -3,11 +3,12 @@ import {z} from "zod";
 import {websiteDesignPilotEnabled} from "@/lib/website-design-pilot-gate";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {isolatedDatabaseTarget} from "@/lib/studio-agent/environment-policy";
-import {websitePilotCanary,websiteImagePilotConnection} from "@/lib/studio-agent/website-pilot-provider";
+import {websitePilotCanary} from "@/lib/studio-agent/website-pilot-provider";
 import {rateLimit} from "@/lib/security";
 import {buildWebsiteMediaPlan} from "@/lib/website-media-art-direction";
 import {handleImageLaunch} from "@/lib/studio-agent/image-launch";
-import {generateSingleMinimaxImage} from "@/lib/studio-agent/image-provider";
+import {websiteImageCandidates,verifyWebsiteOpenAIImageModel} from "@/lib/studio-agent/website-image-routes";
+import {generateSingleMinimaxImage,generateSingleOpenAIWebsiteImage} from "@/lib/studio-agent/image-provider";
 import {optimizeSettledImageForWebsite} from "@/lib/studio-agent/website-settled-image";
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -38,16 +39,30 @@ export async function POST(request:Request){
  const draft=await db.from("website_cms_design_drafts").select("design,version").eq("site_id",v.siteId).maybeSingle();
  if(draft.error||draft.data?.version!==v.version)return fail(409,"project_changed_reload");
  const plan=buildWebsiteMediaPlan(draft.data.design).find(p=>p.pageSlug===v.pageSlug);if(!plan)return fail(404,"page_not_found");
- const {canaryId,apiKey}=websiteImagePilotConnection();
- const enabled=()=>userId===canaryId&&!!apiKey.trim()&&process.env.STUDIO_WEBSITE_IMAGE_PILOT_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true";
- const loadTariff=async()=>{const a=await db.from("studio_image_activation").select("enabled,tariff_version").eq("singleton",true).maybeSingle();if(a.error||!a.data?.enabled)return null;const t=await db.from("studio_image_tariffs").select("version,credits,max_micro_usd,enabled").eq("version",a.data.tariff_version).eq("enabled",true).maybeSingle();if(t.error)throw Error("tariff");return t.data?.version==="website-image-01-pilot-v1"&&t.data.credits===90&&t.data.max_micro_usd===10000?t.data:null;};
+ const canaryId=userId;
+ const enabled=()=>process.env.STUDIO_WEBSITE_IMAGE_PILOT_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true";
+ const candidates=websiteImageCandidates(userId);
+ const cfg=await db.from("studio_image_activation").select("enabled,total_micro_usd").eq("singleton",true).maybeSingle();
+ if(cfg.error)return fail(503,"image_policy_unavailable");
+ const routes=await db.from("studio_website_image_routes").select("version,provider,model,enabled").eq("enabled",true);
+ if(routes.error)return fail(503,"image_policy_unavailable");
+ const tariffs=await db.from("studio_image_tariffs").select("version,credits,max_micro_usd,enabled").eq("enabled",true);
+ if(tariffs.error)return fail(503,"image_policy_unavailable");
+ const budget=await db.from("studio_image_operations").select("max_micro_usd").neq("state","released").limit(1000);
+ if(budget.error)return fail(503,"image_budget_unavailable");
+ const remaining=Math.max(0,(cfg.data?.total_micro_usd??0)-(budget.data??[]).reduce((sum,row)=>sum+row.max_micro_usd,0));
+ const eligible=enabled()&&cfg.data?.enabled?candidates.filter(c=>routes.data?.some(r=>r.version===c.route.version&&r.provider===c.route.provider&&r.model===c.route.model)&&tariffs.data?.some(t=>t.version===c.route.version&&t.credits===c.route.credits&&t.max_micro_usd===c.route.max_micro_usd)&&c.route.max_micro_usd<=remaining):[];
+ let selected=eligible[0];
+ // Free metadata check before quoting or submitting. No provider switch after dispatch.
+ if(v.action==="quote"||v.action==="submit"){for(const c of eligible){if(c.route.provider==="openai"&&!await verifyWebsiteOpenAIImageModel(c.key)){selected=undefined as typeof selected;continue;}selected=c;break;}}
+ const loadTariff=async()=>selected?{version:selected.route.version,credits:selected.route.credits,max_micro_usd:selected.route.max_micro_usd,enabled:true}:null;
  const loadTarget=async()=>{const t=await db.from("studio_website_image_targets").select("request_id,project_id,prompt,placed_media_version").eq("user_id",userId).eq("site_id",v.siteId).eq("design_version",v.version).eq("page_slug",v.pageSlug).maybeSingle();if(t.error)throw Error("target");return t.data;};
  const loadOperation=async(user:string,id:string)=>{const r=await db.from("studio_image_operations").select("request_id,user_id,project_id,state").eq("request_id",id).eq("user_id",user).maybeSingle();if(r.error)throw Error("operation");return r.data;};
  let target=await loadTarget();
  if(v.action==="status"){
- const tariff=enabled()?await loadTariff():null;let op=target?await loadOperation(userId,target.request_id):null;
- if(target&&op?.state==="artifact_cost_pending"&&tariff){await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});op=await loadOperation(userId,target.request_id);}
- return json({ok:true,enabled:enabled()&&!!tariff,code:!enabled()?"image_provider_not_configured":!tariff?"image_tariff_unavailable":null,state:target?.placed_media_version?"placed":op?.state??(target?"prepared":"not_started"),requestId:target?.request_id??null});
+ const tariff=await loadTariff();let op=target?await loadOperation(userId,target.request_id):null;
+ if(target&&op?.state==="artifact_cost_pending"){await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});op=await loadOperation(userId,target.request_id);}
+ return json({ok:true,enabled:enabled()&&!!tariff,code:!enabled()?"image_provider_not_configured":!tariff?"image_tariff_or_budget_unavailable":null,provider:selected?.route.provider??null,state:target?.placed_media_version?"placed":op?.state??(target?"prepared":"not_started"),requestId:target?.request_id??null});
  }
  if(v.action==="quote"){
  if(!enabled()||!await loadTariff())return fail(503,"image_provider_or_tariff_unavailable");
@@ -64,13 +79,13 @@ export async function POST(request:Request){
  if(r.error||typeof r.data!=="number")return fail(409,"image_placement_conflict_reload");
  return json({ok:true,state:"placed",mediaVersion:r.data,requestId:target.request_id});
  }
- if(!enabled())return fail(503,"image_provider_not_configured");
+ if(!enabled()||!selected)return fail(503,"image_provider_not_configured");
  const payload={action:v.action,projectId:target.project_id,requestId:target.request_id,request:{prompt:target.prompt,aspect:plan.aspect},...(v.action==="submit"?{quoteHash:v.quoteHash,approvedCredits:v.approvedCredits,confirmProduction:true}:{})};
- const result=await handleImageLaunch(new Request("https://internal.invalid/image",{method:"POST",body:JSON.stringify(payload)}),{userId,canaryId,enabled,loadTariff,loadOperation,
+ const result=await handleImageLaunch(new Request("https://internal.invalid/image",{method:"POST",body:JSON.stringify(payload)}),{userId,canaryId,enabled:()=>enabled()&&!!selected,loadTariff,loadOperation,route:selected.route,
  loadProject:async(user,id)=>{const r=await db.from("production_requests").select("id,user_id,production_type").eq("id",id).eq("user_id",user).eq("production_type","image").maybeSingle();if(r.error)throw Error("project");return r.data;},
- rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>generateSingleMinimaxImage(input,apiKey)});
- if(v.action==="submit"&&result.ok){const output=await result.clone().json();if(output.state==="artifact_recorded_cost_pending"){const finalized=await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});if(!finalized.error&&["settled","already_settled"].includes(String(finalized.data)))return json({ok:true,state:"settled",requestId:target.request_id,costSource:"published_price_estimate",invoicePending:true,safeToRetryAutomatically:false});}}
- if(v.action==="quote"&&result.ok){const output=await result.json();return json({...output,requiresReviewedProviderCost:false,providerCostEstimateMicroUsd:3500,invoicePending:true});}
+ rpc:async(name,args)=>{const r=await db.rpc(name,args);return {data:r.data,error:r.error};},generate:input=>selected.route.provider==="openai"?generateSingleOpenAIWebsiteImage(input,selected.key):generateSingleMinimaxImage(input,selected.key)});
+ if(v.action==="submit"&&result.ok){const output=await result.clone().json();if(output.state==="artifact_recorded_cost_pending"){const finalized=await db.rpc("studio_website_image_finalize_estimate",{p_user:userId,p_site:v.siteId,p_request:target.request_id});if(!finalized.error&&["settled","already_settled"].includes(String(finalized.data)))return json({ok:true,state:"settled",requestId:target.request_id,costSource:"metered_or_published_price_estimate",invoicePending:true,safeToRetryAutomatically:false});}}
+ if(v.action==="quote"&&result.ok){const output=await result.json();return json({...output,requiresReviewedProviderCost:false,maximumProviderMicroUsd:selected.route.max_micro_usd,invoicePending:true});}
  return result;
  }catch{return fail(503,"website_image_unavailable");}
 }

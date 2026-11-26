@@ -13,7 +13,7 @@ const Project=z.object({id:uuid,user_id:uuid,production_type:z.literal("image")}
 const Tariff=z.object({version:z.string(),credits:z.number().int().positive(),max_micro_usd:z.number().int().positive(),enabled:z.literal(true)});
 const Journal=z.object({request_id:uuid,user_id:uuid,project_id:uuid,state:z.enum(["approved","reserved","claimed","artifact_cost_pending","reconcile_required","released","settled"])});
 type RPC=Parameters<typeof createImageProductionStore>[0];
-type Deps={userId:string;canaryId:string;enabled:()=>boolean;loadProject:(user:string,project:string)=>Promise<unknown>;loadOperation:(user:string,request:string)=>Promise<unknown>;loadTariff:()=>Promise<unknown>;rpc:RPC;generate:(request:ImageRequest)=>Promise<ImageProviderResult>};
+type Deps={route?:{provider:"openai"|"minimax";model:"gpt-image-2.6-flare"|"image-01"};userId:string;canaryId:string;enabled:()=>boolean;loadProject:(user:string,project:string)=>Promise<unknown>;loadOperation:(user:string,request:string)=>Promise<unknown>;loadTariff:()=>Promise<unknown>;rpc:RPC;generate:(request:ImageRequest)=>Promise<ImageProviderResult>};
 export async function handleImageLaunch(request:Request,d:Deps){
  const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"}});
  const fail=(status:number,code:string)=>json({ok:false,code,safeToRetryAutomatically:false},status);
@@ -29,9 +29,9 @@ export async function handleImageLaunch(request:Request,d:Deps){
  if(rawJournal!==null)return fail(409,"image_request_exists_check_status");
  if(!d.enabled())return fail(503,"image_production_disabled");
  const tariff=Tariff.safeParse(await d.loadTariff());if(!tariff.success)return fail(503,"image_tariff_unavailable");
- const plan:ImageProductionPlan=ImagePlanSchema.parse({requestId:v.requestId,userId:d.userId,projectId:v.projectId,categoryId:"image",operation:"image_generate",provider:"minimax",model:"image-01",request:v.request,tariffVersion:tariff.data.version,reservedCredits:tariff.data.credits,maximumProviderMicroUSD:tariff.data.max_micro_usd});
+ const plan:ImageProductionPlan=ImagePlanSchema.parse({requestId:v.requestId,userId:d.userId,projectId:v.projectId,categoryId:"image",operation:"image_generate",provider:d.route?.provider??"minimax",model:d.route?.model??"image-01",request:v.request,tariffVersion:tariff.data.version,reservedCredits:tariff.data.credits,maximumProviderMicroUSD:tariff.data.max_micro_usd});
  const quoteHash=imagePlanDigest(plan);
- if(v.action==="quote")return json({ok:true,requestId:v.requestId,projectId:v.projectId,quoteHash,credits:plan.reservedCredits,scope:"single_image",requiresReviewedProviderCost:true});
+ if(v.action==="quote")return json({ok:true,requestId:v.requestId,projectId:v.projectId,quoteHash,credits:plan.reservedCredits,provider:plan.provider,model:plan.model,scope:"single_image",requiresReviewedProviderCost:true});
  if(v.quoteHash!==quoteHash||v.approvedCredits!==plan.reservedCredits)return fail(409,"quote_changed_reload");
  const reserved=await d.rpc("studio_image_approve_reserve",{p_user:d.userId,p_request:v.requestId,p_hash:quoteHash,p_plan:plan});
  if(reserved.error)return fail(503,"reservation_unconfirmed_check_status");

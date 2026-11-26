@@ -5,10 +5,10 @@ const hash=z.string().regex(/^[a-f0-9]{64}$/);
 const uuid=z.string().uuid();
 export const ImagePlanSchema=z.strictObject({
  requestId:uuid,userId:uuid,projectId:uuid,categoryId:z.literal("image"),operation:z.literal("image_generate"),
- provider:z.literal("minimax"),model:z.literal("image-01"),request:ImageRequestSchema,
+ provider:z.enum(["minimax","openai"]),model:z.enum(["image-01","gpt-image-2.6-flare"]),request:ImageRequestSchema,
  tariffVersion:z.string().regex(/^[A-Za-z0-9._-]{1,64}$/),reservedCredits:z.number().int().positive().max(100000),
  maximumProviderMicroUSD:z.number().int().positive().max(1000000),
-});
+}).refine(p=>p.provider==="minimax"?p.model==="image-01":p.model==="gpt-image-2.6-flare"&&p.request.aspect==="16:9");
 export type ImageProductionPlan=z.infer<typeof ImagePlanSchema>;
 type Plan=ImageProductionPlan;
 const ApprovedSchema=z.strictObject({plan:ImagePlanSchema,planHash:hash,approvalSource:z.literal("persisted_explicit_user_approval"),reservationState:z.literal("reserved"),account:z.literal("production"),costPolicySource:z.literal("reviewed_server_tariff")});
@@ -37,6 +37,7 @@ export async function orchestrateSingleImage(raw:unknown,actor:unknown,deps:{ena
   const generated=await deps.generate(plan.request);
   if(generated.state==="reconciliation_required"){id=generated.providerRequestId;await deps.store.recordUncertain(plan,planHash,generated.code,id);return result("reconciliation_required",generated.code);}
   id=generated.receipt.providerRequestId;
+  if(generated.receipt.provider!==plan.provider||generated.receipt.model!==plan.model)throw Error("image_receipt_route_mismatch");
   if(!await deps.store.recordArtifact(plan,planHash,generated.bytes,generated.receipt))throw Error("artifact_persistence_unconfirmed");
   // Output is recorded, not paid/ready for delivery. Actual provider cost and
   // final credit settlement are deliberately deferred to reconciliation.

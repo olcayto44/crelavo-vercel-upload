@@ -1,0 +1,18 @@
+import {websitePilotScope,websitePilotProviderKey,websiteImagePilotConnection} from "./website-pilot-provider";
+export const websiteImageRoutes=[
+ {provider:"openai",model:"gpt-image-2.6-flare",version:"website-openai-flare-pilot-v1",credits:260,max_micro_usd:40000},
+ {provider:"minimax",model:"image-01",version:"website-image-01-pilot-v1",credits:90,max_micro_usd:10000}
+] as const;
+export type WebsiteImageRoute=typeof websiteImageRoutes[number];
+export function websiteImageCandidates(user:string,env:NodeJS.ProcessEnv=process.env){
+ if(!websitePilotScope(env)||user!==env.STUDIO_WEBSITE_AI_TEST_USER_ID)return [];
+ const minimax=websiteImagePilotConnection(env);
+ const openai=websitePilotProviderKey(env);
+ return websiteImageRoutes.flatMap(route=>{
+ const key=route.provider==="openai"?openai:minimax.canaryId===user?minimax.apiKey:"";
+ return key?[{route,key}]:[];
+ });
+}
+export async function verifyWebsiteOpenAIImageModel(key:string,transport:typeof fetch=fetch){
+ try{const r=await transport("https://api.openai.com/v1/models/gpt-image-2.6-flare",{method:"GET",redirect:"error",signal:AbortSignal.timeout(8000),headers:{Authorization:"Bearer "+key}});if(!r.ok)return false;return (await r.json())?.id==="gpt-image-2.6-flare";}catch{return false;}
+}
