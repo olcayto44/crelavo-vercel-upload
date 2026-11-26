@@ -7,6 +7,7 @@ import type {WebsiteRevisionContext} from "./website-revision-context";
 const QuoteToken=z.string().regex(/^[a-f0-9]{64}\.[0-9]{13}\.[a-f0-9]{64}$/);
 export const WebsiteRevisionRequest=z.discriminatedUnion("action",[
  z.strictObject({action:z.literal("status"),siteId:z.string().uuid(),version:z.number().int().positive()}),
+ z.strictObject({action:z.literal("connect"),siteId:z.string().uuid(),version:z.number().int().positive()}),
  z.strictObject({action:z.literal("quote"),siteId:z.string().uuid(),version:z.number().int().positive(),requestId:z.string().uuid(),message:z.string().trim().min(1).max(1500)}),
  z.strictObject({action:z.literal("submit"),siteId:z.string().uuid(),version:z.number().int().positive(),requestId:z.string().uuid(),message:z.string().trim().min(1).max(1500),quote:QuoteToken,approvedMaxCredits:z.number().int().positive()}),
  z.strictObject({action:z.literal("result"),siteId:z.string().uuid(),version:z.number().int().positive(),requestId:z.string().uuid()})
