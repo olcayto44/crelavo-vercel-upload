@@ -11,9 +11,14 @@ import {applyWebsiteRevision} from "../website-assistant-revision";
 import {issueWebsiteRevisionQuote,verifyWebsiteRevisionQuote,websiteRevisionQuote,WebsiteRevisionRequest} from "./website-revision-quote";
 type DB=ReturnType<typeof supabaseAdmin>;
 const Binding=z.strictObject({siteId:z.string().uuid(),version:z.number().int().positive(),design:z.unknown(),projectId:z.string().uuid().nullable()});
-function output(result:TurnResponse,context:WebsiteRevisionContext){
+async function output(result:TurnResponse,context:WebsiteRevisionContext,db:DB,userId:string){
  const proposal=result.websiteRevisionProposal;
- if(!proposal)return {ok:true,state:"settled",chargedCredits:result.chargedCredits,reply:result.reply,design:null};
+ if(!proposal){
+  if(!result.blockedTools?.some(x=>x==="invalid_model_output"||x==="website_revision_no_proposal"))return {ok:true,state:"settled",chargedCredits:result.chargedCredits,reply:result.reply,design:null};
+  const r=await db.rpc("studio_website_revision_refund",{p_user:userId,p_site:context.siteId,p_request:result.requestId});
+  if(r.error||!["refunded","already_refunded","no_charge"].includes(String(r.data?.state))||r.data?.netCredits!==0||r.data?.refundedCredits!==result.chargedCredits)throw new ConversationError("revision_refund_pending",503,"uncertain");
+  return {ok:true,state:"settled",chargedCredits:0,refundedCredits:r.data.refundedCredits,reply:"Geçerli bir düzenleme önerisi oluşmadı. Siteniz değişmedi; kullanılan krediler iade edildi.",design:null};
+ }
  if(proposal.siteId!==context.siteId||proposal.baseHash!==context.baseHash||proposal.expectedRevision!==context.version)throw new ConversationError("project_changed_reload",409);
  const checked=validateWebsiteAIRevision(context,{expectedRevision:proposal.expectedRevision,commands:proposal.commands});
  if(checked.resultHash!==proposal.resultHash)throw new ConversationError("revision_result_invalid");
@@ -40,12 +45,12 @@ export async function handleWebsiteAssistantRevision(request:Request,deps:{authe
    const {data,error}=await db.from("studio_agent_requests").select("state,response,result").eq("user_id",userId).eq("project_id",binding.projectId).eq("category_id","website").eq("request_id",body.requestId).maybeSingle();
    if(error)throw new ConversationError("studio_storage_unavailable");
    if(!data)return json({ok:true,state:"not_found"});
-   if(data.state==="settled")return json(output(data.response as TurnResponse,context));
+   if(data.state==="settled")return json(await output(data.response as TurnResponse,context,db,userId));
    // Result-only recovery cannot invoke the provider. Settlement requires existing recorded usage.
    if(data.state==="result_ready"){
     const p=data.result?.websiteRevisionProposal;
     if(p&&(p.siteId!==context.siteId||p.baseHash!==context.baseHash||p.expectedRevision!==context.version))throw new ConversationError("project_changed_reload",409);
-    return json(output(await store.settle(userId,body.requestId,"real"),context));
+    return json(await output(await store.settle(userId,body.requestId,"real"),context,db,userId));
    }
    return json({ok:true,state:String(data.state)});
   }
@@ -63,7 +68,7 @@ export async function handleWebsiteAssistantRevision(request:Request,deps:{authe
   verifyWebsiteRevisionQuote(body.quote,quote.fingerprint,secret);
   if(body.approvedMaxCredits!==quote.maxCredits)throw new ConversationError("quote_changed_reload",409);
   const result=await runConversation({userId,projectId:binding.projectId,categoryId:"website",requestId:body.requestId,message:body.message,uiLanguage:"tr",acceptedDefaults:[],websiteRevisionContext:context,approvedMaxCredits:quote.maxCredits,expectedProjectRevision:project.snapshot.revision},{store,provider,tariff,mode:"real"});
-  return json(output(result,context));
+  return json(await output(result,context,db,userId));
  }catch(error){
   const known=error instanceof ConversationError;
   return json({ok:false,code:known?error.code:error instanceof ZodError?"invalid_request":"studio_unavailable",safeToRetryAutomatically:false,billingState:known&&error.outcome==="uncertain"?"reconciliation_required":"not_confirmed"},known?error.status:error instanceof ZodError?400:503);

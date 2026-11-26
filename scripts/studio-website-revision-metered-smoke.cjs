@@ -21,7 +21,7 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  assert.throws(()=>applyCompletion({...input,project},{...patch,expectedRevision:2}));
  assert.throws(()=>applyCompletion({...input,project},{...patch,unexpected:"extra"}));
  assert.throws(()=>applyCompletion({...input,project},{...patch,commands:[{op:"headline",page:"missing",value:"X"}]}));
- assert.equal(applyCompletion({...input,project},{expectedRevision:3,commands:[]}).websiteRevisionProposal,undefined);
+ const unsupported=applyCompletion({...input,project},{expectedRevision:3,commands:[]});assert.equal(unsupported.websiteRevisionProposal,undefined);assert.deepEqual(unsupported.blockedTools,["website_revision_no_proposal"]);
  assert.throws(()=>applyCompletion({project,message:input.message,uiLanguage:"tr",acceptedDefaults:[]},patch));
  console.log("compact website revision: exact version, strict commands, no extra keys, no unauthorized proposal");
  assert.throws(()=>validateWebsiteAIRevision(context,{...patch,expectedRevision:2}));
@@ -53,8 +53,8 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  const again=await runConversation(input,deps);assert.deepEqual(again,result);assert.equal(calls,1);assert.equal(store.wallets.production.balance,0);
  const {handleWebsiteAssistantRevision}=load("src/lib/studio-agent/website-revision-handler.ts");
  const oldEnabled=process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED;process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED="false";
- let boundId=null,storedResponse=result,contextCalls=0;
- const db={rpc:async(name,args)=>{assert.equal(name,"studio_agent_website_context");contextCalls++;assert.equal(args.p_user,actor);if(args.p_site!==siteId)return {error:{message:"project_not_found"}};if(args.p_version!==3)return {error:{message:"project_changed_reload"}};if(args.p_create)boundId=project.id;return {data:{siteId,version:3,design,projectId:boundId}};},from(name){assert.equal(name,"studio_agent_requests");const scopes={};return {select(){return this;},eq(k,v){scopes[k]=v;return this;},async maybeSingle(){assert.deepEqual(scopes,{user_id:actor,project_id:project.id,category_id:"website",request_id:requestId});return {data:{state:"settled",response:storedResponse}};}};}};
+ let boundId=null,storedResponse=result,contextCalls=0,refundCalls=0;
+ const db={rpc:async(name,args)=>{if(name==="studio_website_revision_refund"){assert.deepEqual(args,{p_user:actor,p_site:siteId,p_request:requestId});refundCalls++;return {data:{state:refundCalls===1?"refunded":"already_refunded",refundedCredits:2,netCredits:0}};}assert.equal(name,"studio_agent_website_context");contextCalls++;assert.equal(args.p_user,actor);if(args.p_site!==siteId)return {error:{message:"project_not_found"}};if(args.p_version!==3)return {error:{message:"project_changed_reload"}};if(args.p_create)boundId=project.id;return {data:{siteId,version:3,design,projectId:boundId}};},from(name){assert.equal(name,"studio_agent_requests");const scopes={};return {select(){return this;},eq(k,v){scopes[k]=v;return this;},async maybeSingle(){assert.deepEqual(scopes,{user_id:actor,project_id:project.id,category_id:"website",request_id:requestId});return {data:{state:"settled",response:storedResponse}};}};}};
  const invoke=async(body,authenticate=async()=>({userId:actor,db}))=>{const r=await handleWebsiteAssistantRevision(new Request("https://preview.example.test/api",{method:"POST",body:JSON.stringify(body)}),{authenticate});return {status:r.status,data:await r.json()};};
  const base={siteId,version:3};
  try{
@@ -64,6 +64,7 @@ const {applyWebsiteRevision}=load("src/lib/website-assistant-revision.ts");
  assert.equal((await invoke({action:"quote",...base,requestId,message:input.message})).data.code,"studio_not_ready");
  assert.equal((await invoke({action:"submit",...base,requestId,message:input.message,quote:signed,approvedMaxCredits:quote.maxCredits})).data.code,"studio_not_ready");
  const recovered=await invoke({action:"result",...base,requestId});assert.equal(recovered.status,200);assert.equal(recovered.data.design.palette,"ink");assert.equal(recovered.data.proposalOnly,true);assert.equal(recovered.data.chargedCredits,2);assert.equal(calls,1);
+ const {websiteRevisionProposal:ignored,...failedResult}=result;storedResponse={...failedResult,blockedTools:["website_revision_no_proposal"]};for(let i=0;i<2;i++){const refund=await invoke({action:"result",...base,requestId});assert.equal(refund.status,200);assert.equal(refund.data.chargedCredits,0);assert.equal(refund.data.refundedCredits,2);assert.equal(refund.data.design,null);}assert.equal(refundCalls,2);assert.equal(calls,1);
  storedResponse={...result,websiteRevisionProposal:{...result.websiteRevisionProposal,resultHash:"0".repeat(64)}};assert.equal((await invoke({action:"result",...base,requestId})).data.code,"revision_result_invalid");assert.equal(calls,1);
  console.log("website revision HTTP handler acceptance: free binding, disabled quote and dispatch, invalid owner/version rejected, settled result recovery validates hash without provider call");
  }finally{if(oldEnabled===undefined)delete process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED;else process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED=oldEnabled;}

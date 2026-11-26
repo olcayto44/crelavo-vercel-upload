@@ -48,7 +48,7 @@ export function applyCompletion(input: ProviderInput, raw: unknown):Applied {
     if(!input.websiteRevisionContext||input.project.categoryId!=="website"||proposal.intent!=="edit_content"||Object.keys(proposal.briefPatch).length||Object.keys(proposal.evidence).length||proposal.toolCalls.length||proposal.proposedCategory||proposal.question)throw new ConversationError("website_revision_context_invalid",502);
     const websiteRevisionProposal=proposal.websiteRevision?validateWebsiteAIRevision(input.websiteRevisionContext,proposal.websiteRevision):undefined;
     const reply=websiteRevisionProposal?(input.uiLanguage==="tr"?"Düzenleme önerisi hazır. İnceleyip onaylayabilirsiniz; henüz uygulanmadı.":"Revision proposal ready for review; no changes applied."):(input.uiLanguage==="tr"?"Bu düzenleme mevcut araçlarla önerilemedi. Tasarım değişmedi.":"This edit is not supported by the current revision tools. The design is unchanged.");
-    return {project:{...input.project,snapshot:{...input.project.snapshot,revision:input.project.snapshot.revision+1},messages:[...input.project.messages,{role:"user" as const,content:input.message},{role:"assistant" as const,content:reply}].slice(-50)},reply,blockedTools:[],nextQuestion:null,websiteRevisionProposal};
+    return {project:{...input.project,snapshot:{...input.project.snapshot,revision:input.project.snapshot.revision+1},messages:[...input.project.messages,{role:"user" as const,content:input.message},{role:"assistant" as const,content:reply}].slice(-50)},reply,blockedTools:websiteRevisionProposal?[]:["website_revision_no_proposal"],nextQuestion:null,websiteRevisionProposal};
   }
   for (const [key, value] of Object.entries(proposal.briefPatch)) {
     if (JSON.stringify(value) === JSON.stringify(input.project.snapshot.fields[key])) continue;
@@ -129,7 +129,7 @@ export async function runConversation(input: {
   catch {
     // Known provider usage still incurs Assistant cost; reject unsafe output without changing the brief or executing tools.
     const reply = invalidReply[input.uiLanguage];
-    applied = {project:{...project,snapshot:{...project.snapshot,revision:project.snapshot.revision+1},messages:[...project.messages,{role:"user" as const,content:input.message},{role:"assistant" as const,content:reply}].slice(-50)},reply,blockedTools:["invalid_model_output"],nextQuestion:null};
+    applied = {project:{...project,snapshot:{...project.snapshot,revision:project.snapshot.revision+1},messages:[...project.messages,{role:"user" as const,content:input.message},{role:"assistant" as const,content:reply}].slice(-50)},reply,blockedTools:[input.websiteRevisionContext?"website_revision_no_proposal":"invalid_model_output"],nextQuestion:null};
   }
   const chargedCredits = creditUnits(usage.data.inputTokens,usage.data.outputTokens,deps.tariff);
   try {
