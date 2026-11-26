@@ -824,6 +824,7 @@ function applyWebsiteContent(content: string, production: ProductionLike) {
 }
 function effectiveWebsiteFiles(production: ProductionLike) {
   const files = Array.isArray(production.output_json?.websiteFiles) ? production.output_json.websiteFiles : [];
+  if(production.production_type==="website"&&production.output_json?.websiteBillingMode==="atomic_v1"&&production.output_json?.plan?.editableDesign)return files;
   return files.map((file) => {
     if (!file || typeof file !== "object" || typeof file.content !== "string") return file;
     const item = file as Record<string, unknown>;
@@ -832,6 +833,16 @@ function effectiveWebsiteFiles(production: ProductionLike) {
   });
 }
 export function buildDeliveryEntries(production: ProductionLike): ZipEntry[] {
+  // The paid structured website is the actual site, not a generic app scaffold.
+  if(production.production_type==="website"&&production.output_json?.websiteBillingMode==="atomic_v1"&&production.output_json?.plan?.editableDesign){
+    const files=effectiveWebsiteFiles(production);
+    const entries:ZipEntry[]=[];
+    for(const file of files){
+      if(file&&typeof file.path==="string"&&typeof file.content==="string"&&/^(?:[a-z0-9][a-z0-9-]{0,79}\\.html|styles\\.css|robots\\.txt|design-manifest\\.json|README\\.md)$/.test(file.path))entries.push({name:"source/"+file.path,content:file.content});
+    }
+    if(!entries.some(e=>e.name==="source/index.html")||!entries.some(e=>e.name==="source/styles.css"))throw Error("website_delivery_missing");
+    return [...entries,{name:"README.md",content:"# Your Website\\n\\nOpen source/index.html. Edit the saved project in Website Studio and download the latest version. This source is private and noindex until you review it and configure publication on your own hosting. No Crelavo hosting, domain or SSL service is included.\\n"},{name:"source-design.json",content:JSON.stringify(production.output_json.plan.editableDesign,null,2)}];
+  }
   const manifest = buildDeliveryManifest(production);
   const requirements = manifest.delivery_requirements;
   const entries: ZipEntry[] = [
