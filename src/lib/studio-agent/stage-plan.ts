@@ -21,9 +21,9 @@ export function buildImageStagePlan(raw:unknown,tariff:StageTariff){
  const plan={version:"stage-image-v1",jobId:v.jobId,category:v.category,title:v.title,autoResume:v.autoResume,tariffVersion:t.version,provider:"minimax",model:"image-01",maximumProviderMicroUSD:t.maxMicroUSD*v.count,steps,totalCredits:t.credits*v.count};
  return {...plan,planHash:createHash("sha256").update(JSON.stringify(plan)).digest("hex")};
 }
-export function stageCreditNotice(available:number,nextCost:number,remaining:number,state:string){
- const a=Math.max(0,available),need=Math.max(0,nextCost),total=Math.max(0,remaining);
+export function stageCreditNotice(available:number,nextCost:number,remaining:number,state:string,inFlight=0){
+ const a=Math.max(0,available),need=Math.max(0,nextCost),total=Math.max(0,remaining),held=Math.max(0,inFlight),unreserved=Math.max(0,total-held);
  const active=["queued","running","paused_credits"].includes(state)&&total>0;
  const shortfall=Math.max(0,need-a);
- return {available:a,nextCost:need,remaining:total,shortfall,projectShortfall:Math.max(0,total-a),level:active&&state==="paused_credits"?"paused":active&&a<Math.max(need,Math.ceil(total*.2))?"low":"none",topUpUrl:"/dashboard/payment"};
+ return {available:a,nextCost:need,remaining:total,held,shortfall,projectShortfall:Math.max(0,unreserved-a),level:active&&state==="paused_credits"?"paused":active&&a<Math.max(need,Math.ceil(unreserved*.2))?"low":"none",topUpUrl:"/dashboard/payment"};
 }

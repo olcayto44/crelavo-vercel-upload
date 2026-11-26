@@ -10,7 +10,7 @@ export async function stageView(e:StageEnvironment,user:string,id:string){
  const j=await stageJob(e,user,id);if(!j)return null;
  const [steps,wallet]=await Promise.all([e.db.from("studio_stage_steps").select("ordinal,operation,credits,state,error_code,completed_at").eq("job_id",id).order("ordinal"),e.db.from("credit_balances").select("balance,reserved").eq("user_id",user).maybeSingle()]);
  if(steps.error||wallet.error)throw Error("stage_storage_unavailable");
- const remaining=Number(j.total_credits)-Number(j.spent_credits),next=steps.data?.find(s=>s.state==="pending"),notice=stageCreditNotice(Number(wallet.data?.balance??0)-Number(wallet.data?.reserved??0),Number(next?.credits??0),remaining,j.state);
+ const remaining=Number(j.total_credits)-Number(j.spent_credits),next=steps.data?.find(s=>s.state==="pending"),notice=stageCreditNotice(Number(wallet.data?.balance??0)-Number(wallet.data?.reserved??0),Number(next?.credits??0),remaining,j.state,Number(steps.data?.find(s=>s.state==="claimed")?.credits??0));
  return {id:j.id,title:j.title,category:j.category,state:j.state,totalCredits:j.total_credits,spentCredits:j.spent_credits,autoResume:j.auto_resume,steps:steps.data??[],notice,stale:j.state==="running"&&Date.now()-Date.parse(j.updated_at)>180000,enabled:stageEnabled(e,user)};
 }
 export async function runNextStage(e:StageEnvironment,user:string,id:string){
