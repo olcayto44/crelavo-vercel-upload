@@ -160,6 +160,10 @@ try{
  const accessToken=b64({alg:"HS256",typ:"JWT"})+"."+b64({sub:actor,aud:"authenticated",role:"authenticated",exp:expires,iat:expires-3600,iss:isolated+"/auth/v1",session_id:actor})+"."+Buffer.alloc(32,1).toString("base64url");
  const fixtureSession={access_token:accessToken,refresh_token:"offline-fixture-refresh",token_type:"bearer",expires_in:3600,expires_at:expires,user:fixtureUser};
  let savedVersion=1,loginCount=0,submitCount=0,recoveryCount=0,saveCount=0,pendingId="";
+ const imageRequestId="55555555-5555-4555-8555-555555555555",imageQuoteHash="a".repeat(64);
+ const fixtureMedia={page_slug:"home",image_data:"UklGRkIAAABXRUJQVlA4IDYAAAAQAwCdASogABIAPm0ylkekIyIhKAgAgA2JZwC+SBapagAA/uzjLwbJFNyMrRXS6H4h5n6AAAA=",alt:"A synthetic beige concept image",width:32,height:18,provenance:"owner_uploaded_rights_attested",version:1};
+ let imageState="not_started",imageCalls=0,placeCalls=0,storedMedia=[];
+
  let savedDesign={version:2,brand:"Customer browser fixture",language:"en",layout:"editorial",palette:"sand",pages:[{slug:"home",nav:"Home",title:"Fixture home",description:"Unique fixture home description.",headline:"Original customer headline",lead:"A private fixture for browser acceptance.",sections:[{heading:"Overview",body:"Fixture body text."}],faq:[]},{slug:"contact",nav:"Contact",title:"Fixture contact",description:"Unique fixture contact description.",headline:"Contact our studio",lead:"Contact details are supplied by the owner.",sections:[{heading:"Contact",body:"Private fixture contact."}],faq:[]}]};
  const changed=()=>({...structuredClone(savedDesign),pages:savedDesign.pages.map((p,i)=>i?{...p}:{...p,headline:"Revised customer headline"})});
  const customerErrors=[],fixtureRequests=[];customer.on("pageerror",e=>customerErrors.push(e.message));customer.on("requestfailed",r=>{const u=new URL(r.url());if(u.origin===isolated)console.log("Fixture request failed",u.pathname,r.failure()?.errorText);});customer.on("dialog",d=>d.accept());
@@ -178,6 +182,7 @@ try{
    if(table==="website_cms_members")return json([{site_id:siteId,role:"owner"}]);
    if(table==="website_cms_design_drafts")return json([{design:savedDesign,version:savedVersion}]);
    if(table==="website_cms_design_revisions")return json([{version:savedVersion,created_at:"2026-01-01T00:00:00Z"}]);
+   if(table==="website_cms_hero_media")return json(storedMedia);
    if(table==="rpc/website_cms_save_design"){const body=req.postDataJSON();assert.equal(body.p_site,siteId);assert.equal(body.p_version,savedVersion);assert.equal(body.p_design.pages[0].headline,"Revised customer headline");savedDesign=body.p_design;saveCount++;return json(++savedVersion);}
    return json([]);
   }
@@ -185,6 +190,16 @@ try{
  }
  if(u.origin!==origin)return route.abort();
  if(u.pathname==="/api/studio/conversation")return json({ok:true,projects:[],wallets:{assistant:{available:96},production:{available:500}}});
+ if(u.pathname==="/api/studio/website-page-image-test"){
+  const body=req.postDataJSON();assert.equal(body.siteId,siteId);assert.equal(req.headers().authorization,"Bearer "+accessToken);
+  if(body.action==="status")return json({ok:true,enabled:true,state:imageState,requestId:imageState==="not_started"?null:imageRequestId});
+  assert.equal(body.version,2);assert.equal(body.pageSlug,"home");
+  if(body.action==="quote"){imageState="prepared";return json({ok:true,requestId:imageRequestId,quoteHash:imageQuoteHash,credits:90});}
+  if(body.action==="submit"){assert.equal(body.requestId,imageRequestId);assert.equal(body.quoteHash,imageQuoteHash);assert.equal(body.approvedCredits,90);assert.equal(body.confirmProduction,true);assert.equal(imageCalls++,0);imageState="settled";return json({ok:true,state:"settled",requestId:imageRequestId});}
+  if(body.action==="preview"){assert.equal(imageState,"settled");return json({ok:true,media:fixtureMedia,requiresRightsConfirmation:true});}
+  if(body.action==="place"){assert.equal(body.requestId,imageRequestId);assert.equal(body.rightsConfirmed,true);assert.equal(body.alt,fixtureMedia.alt);assert.equal(placeCalls++,0);storedMedia=[fixtureMedia];imageState="placed";return json({ok:true,state:"placed",mediaVersion:1});}
+  return json({ok:false},400);
+ }
  if(u.pathname==="/api/studio/website-revision-test"){
   const body=req.postDataJSON();assert.equal(body.siteId,siteId);assert.equal(body.version,savedVersion);
   assert.equal(req.headers().authorization,"Bearer "+accessToken);
@@ -220,8 +235,19 @@ try{
  await customer.frameLocator("iframe[title$='website preview']").getByRole("heading",{name:"Revised customer headline",exact:true}).waitFor({timeout:60000});assert.equal(saveCount,0);
  await customer.getByRole("button",{name:"Taslağı kaydet",exact:true}).click();
  await customer.getByText(/Kayıtlı sürüm 2/).waitFor();assert.equal(saveCount,1);
+ await customer.getByText(/Sayfa görselleri \(0\/6\)/).click();
+ await customer.getByRole("button",{name:"Görsel kredisi hesapla",exact:true}).click();assert.equal(imageCalls,0);
+ await customer.getByText("90 üretim kredisi",{exact:true}).waitFor();
+ await customer.getByRole("button",{name:"Onayla ve üret",exact:true}).filter({visible:true}).click();
+ await customer.getByRole("button",{name:"Görseli önizle",exact:true}).click();assert.equal(imageCalls,1);assert.equal(placeCalls,0);
+ await customer.getByLabel("Görselin gerçek alt metni",{exact:true}).fill(fixtureMedia.alt);
+ assert.equal(await customer.getByRole("button",{name:"Sayfaya yerleştir",exact:true}).isEnabled(),false);
+ await customer.getByLabel("Bu konsept görselini kullanma hakkına sahibim.",{exact:true}).check();
+ await customer.getByRole("button",{name:"Sayfaya yerleştir",exact:true}).click();
+ await customer.frameLocator("iframe[title$='website preview']").getByRole("img",{name:fixtureMedia.alt,exact:true}).waitFor({timeout:60000});
+ assert.equal(placeCalls,1);assert.equal(imageCalls,1);
  const customerDownload=customer.waitForEvent("download",{timeout:60000});await customer.getByRole("button",{name:"ZIP indir",exact:true}).click();const customerZip=await customerDownload;assert.equal(customerZip.suggestedFilename(),"crelavo-private-design-draft.zip");
- const customerParts=[];for await(const part of await customerZip.createReadStream())customerParts.push(part);const customerBytes=Buffer.concat(customerParts);assert.equal(customerBytes.readUInt32LE(0),0x04034b50);assert(customerBytes.includes(Buffer.from("Revised customer headline")));
+ const customerParts=[];for await(const part of await customerZip.createReadStream())customerParts.push(part);const customerBytes=Buffer.concat(customerParts);assert.equal(customerBytes.readUInt32LE(0),0x04034b50);assert(customerBytes.includes(Buffer.from("Revised customer headline")));assert(customerBytes.includes(Buffer.from(fixtureMedia.image_data)));
  await customer.getByRole("button",{name:"İşletme yönetimi",exact:true}).click();assert.equal(await customer.getByRole("heading",{name:"Sitenizde neyi değiştirelim?",exact:true}).isVisible(),false);
  await customer.getByRole("button",{name:"Sitelerim",exact:true}).click();await customer.getByRole("heading",{name:"Sitenizde neyi değiştirelim?",exact:true}).waitFor();
  assert.deepEqual(customerErrors,[]);await customer.screenshot({path:"website-design-results/customer-workspace.png",fullPage:true});
