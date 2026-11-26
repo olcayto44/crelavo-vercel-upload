@@ -986,10 +986,12 @@ outputPlan,
       });
     }
 
-    const verifiedEmail = String(authUser.user.email ?? body.user_email ?? "").trim().toLowerCase();
+    const atomicLegacyCreate=process.env.CRELAVO_ATOMIC_LEGACY_CREATE_ENABLED==="true";
+    const verifiedEmail = String(authUser.user.email ?? (atomicLegacyCreate?"":body.user_email) ?? "").trim().toLowerCase();
+    if(atomicLegacyCreate&&!verifiedEmail)return Response.json({error:"verified_email_required"},{status:401});
     const { error: profileError } = await supabase
       .from("profiles")
-      .upsert({ id: userId, email: verifiedEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id" });
+      .upsert({ id: userId, email: verifiedEmail, full_name: String(authUser.user.user_metadata?.full_name ?? "") || null, role: "user" }, { onConflict: "id", ignoreDuplicates: atomicLegacyCreate });
 
     if (profileError) throw profileError;
 
@@ -1007,7 +1009,7 @@ outputPlan,
     // than silently treating the account as having zero production credits.
     let creditBalanceUserId = userId;
     let effectiveBalanceRow = balanceRow;
-    if ((!balanceRow || Number(balanceRow.balance ?? 0) - Number(balanceRow.reserved ?? 0) <= 0) && verifiedEmail) {
+    if (!atomicLegacyCreate&&(!balanceRow || Number(balanceRow.balance ?? 0) - Number(balanceRow.reserved ?? 0) <= 0) && verifiedEmail) {
       const { data: sameEmailProfiles, error: sameEmailProfilesError } = await supabase
         .from("profiles")
         .select("id, email")
@@ -1061,7 +1063,7 @@ outputPlan,
       }, { status: 402 });
     }
 
-    if (reserveCredits > 0) {
+    if (!atomicLegacyCreate&&reserveCredits > 0) {
       const { error: reserveError } = await supabase
         .from("credit_balances")
         .upsert({ user_id: creditBalanceUserId, balance, reserved: reserved + reserveCredits, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
@@ -1130,7 +1132,17 @@ outputPlan,
       admin_notes: dedicatedProviderBlocked ? "Talking/lip-sync provider is not configured. Production record created with no credit reserve; connect provider before real start." : "Automatic production queued. Admin monitors payments, failed jobs, support emails and unusual requests only."
     };
 
-    const { data, removedColumns } = await insertProductionRequestSchemaSafe(supabase, productionInsertPayload);
+    let inserted:{data:any;removedColumns:string[]};
+    if(atomicLegacyCreate){
+      const snapshot=legalAcceptanceSnapshot({productionType,packageId,title,userEmail:verifiedEmail});
+      const r=await supabase.rpc("studio_legacy_create",{p_user:userId,p_payload:postgresSafe({...productionInsertPayload,legal_acceptance_snapshot:snapshot})});
+      if(r.error||!r.data)return Response.json({error:"production_creation_unconfirmed"},{status:503});
+      if(r.data.state==="insufficient"){const available=Number(r.data.available??0);return Response.json({error:"Not enough credits.",required:reserveCredits,available,shortfall:Math.max(0,reserveCredits-available),redirect:"/dashboard/credits"},{status:402});}
+      if(r.data.state==="existing")return Response.json({production:r.data.production,duplicate_request_reused:true,provider_start_requested:false});
+      if(r.data.state!=="created"||!r.data.production)return Response.json({error:"wallet_reconciliation_required"},{status:409});
+      inserted={data:r.data.production,removedColumns:[]};
+    }else inserted=await insertProductionRequestSchemaSafe(supabase,productionInsertPayload);
+    const {data,removedColumns}=inserted;
     if (!data) throw new Error("Production request could not be created.");
 
     const { data: legalAcceptance, error: legalError } = await supabase

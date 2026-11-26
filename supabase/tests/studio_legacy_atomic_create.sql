@@ -1,0 +1,17 @@
+begin;
+do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w credit_balances%rowtype;begin
+ insert into auth.users(id,email) values(u,'legacy-create-'||u||'@example.invalid');
+ insert into profiles(id,email) values(u,'legacy-create-'||u||'@example.invalid') on conflict(id) do nothing;
+ insert into credit_balances(user_id,balance,reserved,topup_credits) values(u,150,0,150) on conflict(user_id) do update set balance=150,reserved=0,topup_credits=150,rolled_over_credits=0,current_subscription_credits=0,bonus_credits=0;
+ payload:=jsonb_build_object('user_id',u,'production_type','image','package_id','image-basic','title','Fixture','prompt','Fixture image','status','queued','generation_status','automation_queued','request_metadata',jsonb_build_object('requestFingerprint','fixture A'),'input_json','{}'::jsonb,'materials_json','[]'::jsonb,'estimated_credits',100,'reserved_credits',100,'output_json','{}'::jsonb,'legal_acceptance_snapshot',jsonb_build_object('accepted',true));
+ a:=studio_legacy_create(u,payload);if a->>'state'<>'created' then raise exception 'create failed %',a;end if;
+ b:=studio_legacy_create(u,payload);if b->>'state'<>'existing' or b#>>'{production,id}'<>a#>>'{production,id}' then raise exception 'duplicate failed';end if;
+ b:=studio_legacy_create(u,jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture B"'));if b->>'state'<>'insufficient' then raise exception 'double reserve';end if;
+ b:=studio_wallet_spend(u,51,'fixture-key-0001','fixture');if b->>'state'<>'insufficient' then raise exception 'hold consumed';end if;
+ b:=studio_wallet_spend(u,20,'fixture-key-0001','fixture');if b->>'state'<>'spent' then raise exception 'spend failed';end if;
+ b:=studio_wallet_spend(u,20,'fixture-key-0001','fixture');if b->>'state'<>'already_spent' then raise exception 'same terms not idempotent';end if;
+ b:=studio_wallet_spend(u,10,'fixture-key-0001','fixture');if b->>'code'<>'idempotency_terms_mismatch' then raise exception 'different terms accepted';end if;
+ b:=studio_wallet_spend(u,20,'fixture-key-0001','other');if b->>'code'<>'idempotency_terms_mismatch' then raise exception 'different action accepted';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>100 or w.topup_credits<>130 then raise exception 'wallet mismatch';end if;
+ if (select count(*) from credit_events where user_id=u and type='reserve')<>1 or (select count(*) from credit_events where user_id=u and type='spend')<>1 then raise exception 'event count';end if;
+end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected' result;rollback;
