@@ -8,7 +8,7 @@ export function minimumPublishedCreditMicroUSD(){
  const rates:number[]=[];
  for(const p of [...packages,...topUpPackages]){
   if("priceUsd" in p&&Number(p.priceUsd)>0&&Number(p.credits)>0)rates.push(Math.floor(Number(p.priceUsd)*1000000/Number(p.credits)));
-  if("yearlyPriceUsd" in p&&"yearlyCredits" in p&&Number(p.yearlyPriceUsd)>0&&Number(p.yearlyCredits)>0)rates.push(Math.floor(Number(p.yearlyPriceUsd)*1000000/Number(p.yearlyCredits)));
+  if("yearlyPriceUsd" in p&&Number(p.yearlyPriceUsd)>0){const yearly="yearlyCredits" in p&&Number(p.yearlyCredits)>0?Number(p.yearlyCredits):Number(p.credits)*12;if(yearly>0)rates.push(Math.floor(Number(p.yearlyPriceUsd)*1000000/yearly));}
  }
  return rates.length?Math.min(...rates):0;
 }
