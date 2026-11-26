@@ -23,6 +23,14 @@ export async function POST(request:Request){
  if(body.action==="generate"){
   const productionId=uuid.parse(body.productionId),planHash=hash.parse(body.planHash);
   if(body.confirmProduction!==true)return reply({ok:false,code:"explicit_production_confirmation_required"},400);
+  const {data:row,error}=await db.from("production_requests").select("output_json,updated_at,status").eq("id",productionId).eq("user_id",userId).eq("production_type","website").maybeSingle();
+  if(error||!row)return reply({ok:false,code:"website_project_not_found"},404);
+  const a=row.output_json?.websiteAssistant;
+  if(a?.planHash!==planHash)return reply({ok:false,code:"website_plan_changed_review_again"},409);
+  if(a.phase==="draft"){
+   const {data:approved,error:approveError}=await db.from("production_requests").update({output_json:{...row.output_json,websiteAssistant:{...a,phase:"approved",approvedHash:planHash,approvedAt:new Date().toISOString()}},updated_at:new Date().toISOString()}).eq("id",productionId).eq("user_id",userId).eq("updated_at",row.updated_at).eq("status","pending").select("id").maybeSingle();
+   if(approveError||!approved)return reply({ok:false,code:"website_plan_changed_review_again"},409);
+  }
   const result=await executePaidWebsiteProduction({productionId,planHash},{id:userId});
   if(result.status!==200)return reply(result.payload,result.status);
   return reply(result.payload);
@@ -43,7 +51,7 @@ export async function POST(request:Request){
  const planHash=websitePlanHash(brief,packId);
  // A quote persists the exact reviewed plan; it never starts production or holds credits.
  // The separate generate request must explicitly confirm and recheck the same owner/hash.
- const {data,error}=await db.from("production_requests").insert({user_id:userId,production_type:"website",package_id:"website_builder",title:brief.brand+" website",prompt:brief.brief,status:"pending",generation_status:"pending",estimated_credits:pack.credits,reserved_credits:0,input_json:{source:"website_builder",websiteBrief:brief},request_metadata:{source:"website_builder",category:"website",engine:"website_builder"},output_json:{websiteAssistant:{brief,messages:[],phase:"approved",packId,credits:pack.credits,planHash,approvedHash:planHash}}}).select("id").single();
+ const {data,error}=await db.from("production_requests").insert({user_id:userId,production_type:"website",package_id:"website_builder",title:brief.brand+" website",prompt:brief.brief,status:"pending",generation_status:"pending",estimated_credits:pack.credits,reserved_credits:0,input_json:{source:"website_builder",websiteBrief:brief},request_metadata:{source:"website_builder",category:"website",engine:"website_builder"},output_json:{websiteAssistant:{brief,messages:[],phase:"draft",packId,credits:pack.credits,planHash,approvedHash:null}}}).select("id").single();
  if(error||!data)return reply({ok:false,code:"website_project_create_failed"},503);
  return reply({ok:true,productionId:data.id,planHash,packId,credits:pack.credits,balance:check.balance,productionStarted:false});
  }catch{return reply({ok:false,code:"website_request_unavailable"},400);}
