@@ -1,7 +1,8 @@
 import { z } from "zod";
+import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
-import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope } from "./website-brief";
+import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope, websiteEngineInput } from "./website-brief";
 import { createWebsiteCreditLedger } from "./website-credit-ledger";
 import { websiteCreditDeliveryProof } from "./website-paid-delivery";
 import { runIsolatedWebsiteGeneration } from "./website-atomic-runner";
@@ -73,6 +74,11 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
       missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief).length) {
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
+  try{preparePaidWebsiteAI(websiteEngineInput(brief));}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+  const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
+  if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
+  const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
+  if(available<credits)return reply({ok:false,code:"insufficient_credits",required:credits,balance:available},402);
   const ledger = createWebsiteCreditLedger(async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     return { data, error };
@@ -90,7 +96,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   try {
     const result = await runIsolatedWebsiteGeneration(
       { userId: user.id, productionId, planHash, credits },
-      { ledger, loadReserved },
+      { ledger, loadReserved, generate:generatePaidWebsiteArtifact, remoteGeneration:true },
     );
     if (result.state === "ready") return reply({
       ok: true, state: "ready", productionId, charged: credits,
