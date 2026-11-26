@@ -1,3 +1,4 @@
+import {isRetiredCategoryPath,activeCategoryHref} from "./retired-categories";
 import { servicePages, type ServicePage } from "@/lib/service-pages";
 import { supabaseAdmin } from "@/lib/supabase";
 
@@ -113,7 +114,7 @@ export function normalizeServicePagesConfig(payload: ServicePagesPayload): Servi
       faqItems: [],
       internalLinks: []
     }));
-  return [...defaults, ...customPages];
+  return [...defaults, ...customPages].filter(p=>!isRetiredCategoryPath('/'+p.slug)&&activeCategoryHref(p.primaryCtaHref));
 }
 
 export async function getConfiguredServicePages(): Promise<ServicePage[]> {

@@ -1,3 +1,4 @@
+import {isRetiredCategoryPath} from "@/lib/retired-categories";
 import {localizedCategoryArt,localizedWebsiteConcepts} from "@/lib/category-localized-art";
 import { studioSurfaces } from "@/lib/studio-surfaces";
 import {publicVideoMetadata} from "@/lib/video-public-metadata";
@@ -134,7 +135,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const globalRoutes=Object.keys(globalCategoryProfiles).filter(id=>categoryRoutes.some(route=>route.path===categoryPublicPaths[id])).flatMap(id=>globalCategoryLocales.map(locale=>({path:globalCategoryPath(id,locale)!,priority:0.78,changeFrequency:"monthly" as const}))); 
   const routes = [...categoryRoutes, ...trCategoryRoutes, ...globalRoutes, ...managedBlogRoutes, ...productionRoutes, ...publicRoutes, ...localizedEuropeRoutes, ...serviceRoutes, ...phaseOneFeatureRoutes, ...showcaseVideoRoutes, ...alternativeRoutes, ...blogGuideRoutes, ...freeToolRoutes, ...infoRoutes] as Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" | "yearly"; lastModified?: string | Date }>;
 
-  const eligible = routes.filter((route, index, all) => !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index);
+  const eligible = routes.filter((route, index, all) => !isRetiredCategoryPath(route.path) && !excludedServicePaths.has(route.path) && !privateRoutePrefixes.some((prefix) => route.path.startsWith(prefix)) && all.findIndex(item => item.path === route.path) === index);
   const eligiblePaths = new Set(eligible.map(route => route.path));
   const languageAlternates = new Map<string, Record<string, string>>();
   // Publish only existing first-party artwork on eligible canonical category pages.

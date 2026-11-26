@@ -1,3 +1,4 @@
+import {isRetiredCategoryPath,activeCategoryHref} from "./retired-categories";
 import { productionTypes } from "@/lib/production";
 
 export type FooterInfoPage = {
@@ -648,7 +649,7 @@ const generatedProductionInfoPages: FooterInfoPage[] = productionTypes
     examples: [`${type.label} production brief`, `${type.label} delivery package`, `${type.label} creative direction`, `${type.label} dashboard request`]
   }));
 
-export const footerInfoPages: FooterInfoPage[] = [...baseFooterInfoPages, ...generatedProductionInfoPages];
+export const footerInfoPages: FooterInfoPage[] = [...baseFooterInfoPages, ...generatedProductionInfoPages].filter(p=>!isRetiredCategoryPath('/products/'+p.slug)&&activeCategoryHref(p.primaryCtaHref)&&activeCategoryHref(p.secondaryCtaHref));
 export const footerInfoPageMap = new Map(footerInfoPages.map((page) => [page.slug, page]));
 
 export function footerInfoHref(slug: string) {

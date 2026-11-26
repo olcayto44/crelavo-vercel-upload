@@ -50,38 +50,38 @@ const categoryGroups = [
   {
     id: "build",
     title: "Build",
-    description: "Create a website, SaaS product, mobile app, ecommerce experience or admin panel.",
-    typeIds: ["website", "saas", "mobile_app", "admin_project"]
+    description: "Create a website, SaaS product, mobile app, or ecommerce experience.",
+    typeIds: ["website","saas","mobile_app"]
   },
   {
     id: "create-media",
     title: "Create Media",
     description: "Create videos, product ads, talking videos, animation, music videos and cinematic content.",
-    typeIds: ["video", "talking_video", "documentary", "animation", "music_video", "drama", "cinematic_video", "video_clipping", "video_tools"]
+    typeIds: ["video","talking_video","animation","music_video","drama","cinematic_video","video_clipping","video_tools"]
   },
   {
     id: "marketing-growth",
     title: "Marketing & Growth",
     description: "Create campaigns, product-link ads, social media systems, localization and performance analysis.",
-    typeIds: ["campaign", "ad_score_checker", "campaign_calendar", "ai_agent", "localization", "cultural_localization", "live_sales_agent"]
+    typeIds: ["campaign","ad_score_checker","ai_agent","localization","cultural_localization","live_sales_agent"]
   },
   {
     id: "avatars-voice",
     title: "Avatars & Voice",
     description: "Create avatars, lip-sync productions, cloned voices and reference-based visual variations.",
-    typeIds: ["avatar", "lip_sync", "voice_clone", "visual_clone", "virtual_model_studio"]
+    typeIds: ["avatar","lip_sync","voice_clone","visual_clone","virtual_model_studio"]
   },
   {
     id: "brand-files",
     title: "Brand & Files",
-    description: "Create images, brand kits, pitch decks, PDFs and reusable source packages.",
-    typeIds: ["image", "brand_kit", "document_pack", "crelavo_academy", "community_showcase"]
+    description: "Create images, brand kits and reusable visual assets.",
+    typeIds: ["image","brand_kit"]
   },
   {
     id: "special-video",
     title: "Special Video",
-    description: "Create anime, animal, nature, space, drone, stickman and studio productions.",
-    typeIds: ["anime_short_film", "animal_video", "nature_video", "planet_space_video", "drone_video", "stickman_animation", "studio"]
+    description: "Create anime, drone, stickman and studio productions.",
+    typeIds: ["anime_short_film","drone_video","stickman_animation","studio"]
   }
 ];
 
@@ -92,8 +92,8 @@ export function CategoryGroupBrowser(){
  const visible=categoryGroups.filter(g=>group==="all"||g.id===group).map(g=>({...g,typeIds:g.typeIds.filter(matches)})).filter(g=>g.typeIds.length);
  const count=visible.reduce((n,g)=>n+g.typeIds.length,0);
  return <div className={styles.browser} id="category-catalog-v4">
-  <div className={styles.controls}><label className={styles.search}><Search size={20} aria-hidden="true"/><input type="search" aria-label="Search production categories" placeholder="Search video, website, avatar, branding…" value={query} onChange={e=>setQuery(e.target.value)} maxLength={100}/></label><div className={styles.filters} role="group" aria-label="Filter categories"><button type="button" aria-pressed={group==="all"} onClick={()=>setGroup("all")}>All <span>37</span></button>{categoryGroups.map(g=><button type="button" key={g.id} aria-pressed={group===g.id} onClick={()=>setGroup(g.id)}>{g.title} <span>{g.typeIds.length}</span></button>)}</div></div>
-  <div className={styles.count} aria-live="polite">{count} of 37 categories{query&&" matching your search"}<span>Explore details without an account</span></div>
+  <div className={styles.controls}><label className={styles.search}><Search size={20} aria-hidden="true"/><input type="search" aria-label="Search production categories" placeholder="Search video, website, avatar, branding…" value={query} onChange={e=>setQuery(e.target.value)} maxLength={100}/></label><div className={styles.filters} role="group" aria-label="Filter categories"><button type="button" aria-pressed={group==="all"} onClick={()=>setGroup("all")}>All <span>{CATEGORIES.length}</span></button>{categoryGroups.map(g=><button type="button" key={g.id} aria-pressed={group===g.id} onClick={()=>setGroup(g.id)}>{g.title} <span>{g.typeIds.length}</span></button>)}</div></div>
+  <div className={styles.count} aria-live="polite">{count} of {CATEGORIES.length} categories{query&&" matching your search"}<span>Explore details without an account</span></div>
   {!count&&<div className={styles.empty}><h2>No categories found</h2><p>Try a different keyword or clear the filter.</p><button type="button" onClick={()=>{setQuery("");setGroup("all")}}>Clear filters</button></div>}
   {visible.map((g,i)=><section key={g.id} className={styles.group} id={"clc-"+g.id} aria-labelledby={"catalog-heading-"+g.id}><header className={styles.groupHead}><div><span className={styles.groupIndex}>{String(categoryGroups.findIndex(x=>x.id===g.id)+1).padStart(2,"0")} / {g.typeIds.length} categories</span><h2 id={"catalog-heading-"+g.id}>{g.title}</h2><p>{g.description}</p></div></header><div className={styles.grid}>{g.typeIds.map(id=>{
     const c=CATEGORIES.find(c=>c.id===id)!;const copy=categoryDiscoveryCopy[id];const Icon=icons[id as keyof typeof icons]||Sparkles;

@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "./retired-categories";
 // Editorial landing pages. Existing route catalogs remain intact.
 export type ProductionSection = "alternatives" | "tools" | "blog";
 export type ProductionLink = { before: string; label: string; href: string; after: string };
@@ -7,7 +8,7 @@ export type ProductionSeoPage = {
  comparisonLabel?: string; comparison?: [string, string, string][];
  faq: { question: string; answer: string }[]; related: string[]; closingLink?: ProductionLink;
 };
-export const productionSeoPages: ProductionSeoPage[] = [
+const allProductionSeoPages: ProductionSeoPage[] = [
 {
   "section": "alternatives",
   "slug": "canva-alternative",
@@ -723,6 +724,7 @@ export const productionSeoPages: ProductionSeoPage[] = [
   ]
 }
 ];
+export const productionSeoPages=allProductionSeoPages.filter(p=>!isRetiredCategory(p.category));
 export function productionPagePath(page: Pick<ProductionSeoPage, "section" | "slug">) { return `/${page.section}/${page.slug}`; }
 export function getProductionSeoPage(section: ProductionSection, slug: string) { return productionSeoPages.find(page => page.section === section && page.slug === slug); }
 export const productionOfferTerms = "Card required. 24-hour Pro preview with one production and no downloads. Then $9.99/month unless cancelled. Downloads open after the paid subscription starts. Usage credits are sold separately.";

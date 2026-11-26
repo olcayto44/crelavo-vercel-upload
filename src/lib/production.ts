@@ -1,3 +1,4 @@
+import {isRetiredCategory} from "./retired-categories.ts";
 import { deliveryRateMap, type DeliveryCreditRatesConfig } from "./delivery-credit-rates.ts";
 import { deliveryPackageForProduction } from "./delivery-package.ts";
 
@@ -12,7 +13,7 @@ export type ProductionPackage = {
   deliverables: string[];
 };
 
-export const productionTypes = [
+const allProductionTypes = [
   {
     id: "campaign",
     label: "Text-to-Campaign",
@@ -236,8 +237,9 @@ export const productionTypes = [
     startingCredits: 3500
   }
 ] as const;
+export const productionTypes=allProductionTypes.filter(item=>!isRetiredCategory(item.id));
 
-export const productionPackages: ProductionPackage[] = [
+const allProductionPackages: ProductionPackage[] = [
   {
     id: "campaign_starter",
     productionType: "campaign",
@@ -944,12 +946,14 @@ export const productionPackages: ProductionPackage[] = [
   }
 ];
 
+export const productionPackages=allProductionPackages.filter(item=>!isRetiredCategory(item.productionType));
+
 export function packagesForType(productionType: string) {
   return productionPackages.filter((item) => item.productionType === productionType);
 }
 
 export function getProductionPackage(packageId: string) {
-  return productionPackages.find((item) => item.id === packageId);
+  return allProductionPackages.find((item) => item.id === packageId); // Historical delivery lookup only; create routes reject retired packages.
 }
 
 export type ProductionCostOptions = {

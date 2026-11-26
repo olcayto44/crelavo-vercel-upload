@@ -1,3 +1,4 @@
+import {isRetiredCategoryPath,activeCategoryHref} from "./retired-categories";
 export type ServicePage = {
   slug: string;
   title: string;
@@ -590,6 +591,6 @@ const programmaticNichePages = coreServicePages
   .filter((page) => nicheBaseSlugs.includes(page.slug))
   .flatMap((page) => nicheTargets.map((target) => buildNichePage(page, target)));
 
-export const servicePages: ServicePage[] = [...coreServicePages, ...strategicSeoPages, ...programmaticNichePages];
+export const servicePages: ServicePage[] = [...coreServicePages, ...strategicSeoPages, ...programmaticNichePages].filter(p=>!isRetiredCategoryPath('/'+p.slug)&&activeCategoryHref(p.primaryCtaHref));
 
 export const servicePageMap = new Map(servicePages.map((page) => [page.slug, page]));

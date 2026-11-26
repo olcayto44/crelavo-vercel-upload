@@ -73,63 +73,6 @@ export const phaseOneFeaturePages: PhaseOneFeaturePage[] = [
       { label: "Campaign category", href: "/categories/campaign", note: "Start a localized campaign request" }
     ]
   },
-  {
-    slug: "ai-campaign-calendar",
-    title: "AI Campaign Calendar",
-    badge: "Campaign Calendar",
-    metaTitle: "AI Campaign Calendar for Ecommerce Marketing | Crelavo",
-    metaDescription: "Plan Black Friday ads, seasonal campaigns, holiday marketing, product launches and ecommerce content reminders with Crelavo AI campaign calendar roadmap.",
-    h1: "AI campaign calendar for ecommerce launches, seasonal ads and product video planning",
-    summary: "The AI Campaign Calendar is a retention feature: it helps sellers plan Black Friday, Valentine’s Day, Ramadan/Eid, New Year, back-to-school, summer sale and product launch campaigns before deadlines arrive.",
-    primaryKeyword: "AI campaign calendar",
-    keywords: ["AI campaign calendar", "ecommerce campaign calendar", "Black Friday ad planner", "seasonal campaign ideas", "holiday marketing calendar", "product launch calendar", "social media campaign calendar", "AI marketing calendar", "ecommerce promotion planner", "campaign reminder tool"],
-    useCases: ["Plan Black Friday product video campaigns", "Prepare holiday hooks and landing page copy", "Create monthly ecommerce content calendars", "Remind users to produce seasonal ads before deadlines"],
-    mvpDeliverables: ["Seasonal campaign brief", "Product launch checklist", "Ad hook calendar", "Free tool preparation links", "Production-ready campaign package request"],
-    creditModel: ["Calendar preview can stay included/free", "Campaign brief opens as a credit-based package", "Seasonal script and asset planning use higher campaign tiers", "Video generation stays separate from planning credits", "Workspace shows the exact credit cost before production starts"],
-    internalLinks: [
-      { label: "AI social media launch plan", href: "/ai-social-media-launch-plan", note: "Turn calendar into social posts" },
-      { label: "AI tool launch distribution plan", href: "/ai-tool-launch-distribution-plan", note: "Distribute campaign pages" },
-      { label: "Free AI tools", href: "/free-tools", note: "Prepare hooks, captions and scripts" }
-    ]
-  },
-  {
-    slug: "crelavo-academy",
-    title: "Crelavo Academy",
-    badge: "AI Creative Academy",
-    metaTitle: "Crelavo Academy for AI Marketing and Ecommerce Ads",
-    metaDescription: "Learn AI product videos, ecommerce ad hooks, Shopify video marketing, UGC ads, AI creative workflows and campaign production with Crelavo Academy.",
-    h1: "Crelavo Academy for AI marketing, ecommerce ads and product video workflows",
-    summary: "Crelavo Academy is a long-term SEO and retention hub for teaching sellers, founders and creators how to use AI for product videos, ecommerce campaigns, UGC ads, hooks, landing pages and creative delivery.",
-    primaryKeyword: "AI creative academy",
-    keywords: ["AI marketing course", "AI product video course", "ecommerce ad course", "UGC ads course", "Shopify video marketing", "AI creative academy", "AI advertising course", "product video training", "AI ecommerce lessons", "creative production course"],
-    useCases: ["Teach Shopify sellers product video workflows", "Explain UGC ad hooks and short-form creative", "Educate users before they spend credits", "Convert SEO learners into production requests"],
-    mvpDeliverables: ["Free academy hub", "Lesson roadmap", "Product video mini course outline", "UGC ads lesson cluster", "Credit CTA after course completion"],
-    creditModel: ["Core lessons can stay free", "Premium templates open as a credit-based package", "Done-with-you creative briefs use a higher guided tier", "Course completion credit bonus remains optional", "Production request after lesson uses normal production credits"],
-    internalLinks: [
-      { label: "Blog", href: "/blog", note: "Connect academy with SEO content" },
-      { label: "Community showcase", href: "/community-showcase", note: "Show examples from lessons" },
-      { label: "AI product video generator", href: "/ai-product-video-generator", note: "Turn learning into production" }
-    ]
-  },
-  {
-    slug: "community-showcase",
-    title: "Community Showcase",
-    badge: "Community Showcase",
-    metaTitle: "Community Showcase for AI Ads, Product Videos and Websites | Crelavo",
-    metaDescription: "Explore a roadmap for Crelavo community showcase pages featuring AI ad examples, ecommerce video examples, UGC ad examples, website examples and reusable templates.",
-    h1: "Community showcase for AI ad examples, ecommerce videos, UGC demos and website projects",
-    summary: "Community Showcase extends existing samples into manually approved public proof. Each approved example now points to a reusable template angle, a similar-style request path and a credit-based AI + human QA production route.",
-    primaryKeyword: "AI ad examples",
-    keywords: ["AI ad examples", "ecommerce video examples", "UGC ad examples", "AI website examples", "product video examples", "AI campaign examples", "community showcase", "AI creative examples", "Crelavo examples", "AI production samples", "AI video templates", "credit-based creative templates"],
-    useCases: ["Show manually approved ecommerce ad examples", "Route visitors from examples into credit-based production requests", "Create reusable template demand from public proof", "Build trust with approved visual examples and clear reuse rules"],
-    mvpDeliverables: ["Public showcase hub", "Manual approval checklist", "Approved sample categories", "Use this style CTA", "Template reuse cards with credit ranges", "Community submission and reward guardrails"],
-    creditModel: ["View examples can stay free", "Use similar style opens as a credit-based package", "Template reuse uses a higher reusable-production tier", "Creator reward later can start with manually approved Crelavo credits", "Workspace shows the exact credit cost before production starts", "Cash payouts wait until rights, payment and attribution checks are live"],
-    internalLinks: [
-      { label: "Explore samples", href: "/showcase/explore-samples", note: "Existing sample hub" },
-      { label: "UGC product demo sample", href: "/samples/ugc-product-demo", note: "Creator-style example" },
-      { label: "AI video template marketplace", href: "/ai-video-template-marketplace", note: "Future template marketplace path" }
-    ]
-  }
 ];
 
 export function getPhaseOneFeature(slug: string) {
