@@ -6,9 +6,9 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  const call=async(name,...args)=>(await db.query("select public."+name+"("+args.map((_,i)=>"$"+(i+1)).join(",")+") as v",args)).rows[0].v;
  const query=(s,args=[])=>db.query(s,args);
  try{
- await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create table public.production_requests(id uuid primary key,user_id uuid,production_type text);create table public.credit_balances(user_id uuid primary key,balance integer,reserved integer);grant select on public.production_requests,public.credit_balances to service_role;");
- for(const file of ["studio-assistant-accounting-isolated.sql","studio-assistant-accounting-hardening-isolated.sql"])await db.exec(fs.readFileSync("docs/"+file,"utf8"));
- await query("insert into auth.users values($1),($2)",[owner,other]);await query("insert into credit_balances values($1,500,20)",[owner]);
+ await db.exec("create role anon;create role authenticated;create role service_role bypassrls;create schema auth;create table auth.users(id uuid primary key);create table public.production_requests(id uuid primary key,user_id uuid,production_type text);create table public.credit_balances(user_id uuid primary key,balance integer,reserved integer);create table public.website_cms_sites(id uuid primary key);create table public.website_cms_members(site_id uuid references public.website_cms_sites(id),user_id uuid references auth.users(id),role text);create table public.website_cms_design_drafts(site_id uuid primary key references public.website_cms_sites(id),design jsonb,version integer);grant select on public.production_requests,public.credit_balances,public.website_cms_sites,public.website_cms_members,public.website_cms_design_drafts to service_role;");
+ for(const file of ["studio-assistant-accounting-isolated.sql","studio-assistant-accounting-hardening-isolated.sql","studio-assistant-website-binding-isolated.sql"])await db.exec(fs.readFileSync("docs/"+file,"utf8"));
+ await query("insert into auth.users values($1),($2)",[owner,other]);await query("insert into credit_balances values($1,500,20)",[owner]);const site=key(90),otherSite=key(91);await query("insert into website_cms_sites values($1),($2)",[site,otherSite]);await query("insert into website_cms_members values($1,$2,\x27owner\x27),($1,$3,\x27viewer\x27),($4,$3,\x27owner\x27)",[site,owner,other,otherSite]);await query("insert into website_cms_design_drafts values($1,\x27{}\x27,1),($2,\x27{}\x27,2)",[site,otherSite]);
  assert.deepEqual(await call("studio_agent_readiness"),{version:"b3-isolated-cost",database:true,accounting:false});
  const create=(user,category="website")=>call("studio_agent_create_project",user,category,"Offline project",null,{},"[]");
  const project=await create(owner),otherProject=await create(other,"image");
@@ -20,6 +20,12 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),{PGlite}=requir
  assert.equal((await call("studio_agent_readiness")).accounting,true);
  await db.exec("set role authenticated");await assert.rejects(call("studio_agent_wallets",owner));await assert.rejects(query("select * from studio_agent_requests"));await db.exec("reset role");
  await db.exec("set role service_role");
+ const bind=(user,target,version,create=false)=>call("studio_agent_website_context",user,target,version,create);
+ assert.equal((await bind(owner,site,1)).projectId,null);
+ await assert.rejects(bind(other,site,1,true),/project_not_found/);await assert.rejects(bind(owner,otherSite,2,true),/project_not_found/);await assert.rejects(bind(owner,site,2,true),/project_changed_reload/);
+ const bound=await bind(owner,site,1,true);assert(bound.projectId);assert.equal((await bind(owner,site,1,true)).projectId,bound.projectId);assert.notEqual(bound.projectId,project);assert.equal((await bind(other,otherSite,2,true)).siteId,otherSite);
+ await db.exec("reset role");await db.exec("set role authenticated");await assert.rejects(bind(owner,site,1,true));await db.exec("reset role");await db.exec("set role service_role");
+ console.log("website assistant binding: owner and exact saved version, viewer/foreign denial, idempotent conversation connection, service-only access");
  await assert.rejects(reserve(1,0,{project:otherProject}),/project_not_found/);
  await assert.rejects(reserve(1,0,{units:2}),/budget_policy_mismatch/);
  await assert.rejects(reserve(1,0,{policy:{...policy,inputRate:1}}),/budget_policy_mismatch/);
