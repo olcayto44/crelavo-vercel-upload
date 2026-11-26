@@ -105,7 +105,7 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   if(selectedProduction&&canvasState==='ready'){
    const readyId=selectedProduction;
    const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(readyId);actions.appendChild(preview);
-   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(readyId);actions.appendChild(zip);
+   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(readyId);actions.appendChild(zip);const editor=node('button','Görsel site editörü');editor.type='button';editor.disabled=busy;editor.onclick=()=>window.open('/dashboard/website-draft?projectId='+encodeURIComponent(readyId),'_blank','noopener,noreferrer');actions.appendChild(editor);
   }
   progress.appendChild(actions);
   messages.appendChild(progress);
@@ -313,7 +313,7 @@ function showAux(view){activeView=view;window.studioWorkspace?.setView(view);doc
    const latest=[...project.messages].reverse().find(item=>item.role==='assistant');
    if(latest){const detail=node('p',latest.content);detail.style.whiteSpace='pre-wrap';root.appendChild(detail);}
    root.appendChild(node('p','Bu plan görüşme taslağıdır. Henüz onaylanmış üretim, kredi hesaplaması, dosya veya medya çıktısı yoktur.'));
-  }if(current.id==='website'){const packs=window.__studioB2?.websitePacks||[];if(packs.length){const pricing=node('section');pricing.appendChild(node('h3','Website Builder paketleri'));for(const pack of packs){const option=node('button',pack.label+' — '+pack.credits+' Production Credits'+(/admin|commerce|checkout/i.test(pack.label)?' (statik üretimde desteklenmiyor)':''));option.type='button';option.disabled=busy||/admin|commerce|checkout/i.test(pack.label);option.setAttribute('aria-pressed',String(websiteSelectedPackId===pack.id));option.onclick=()=>{if(websiteSelectedPackId!==pack.id){websiteSelectedPackId=pack.id;websiteData=null;}showAux('brief');};pricing.appendChild(option);}pricing.appendChild(node('p','Seçilen paket: '+(packs.find(pack=>pack.id===websiteSelectedPackId)?.label||'Henüz seçilmedi')));pricing.appendChild(node('p','Paket seçimi taslak için kullanılır. Açık onay ayrıca alınır; bu ekranda otomatik kredi tahsilatı yapılmaz. Production Credits bakiyesi üst bölümde gösterilir.'));root.appendChild(pricing);}}if(current.id==='website'&&mode==='real'&&project&&!status?.isolatedPreview){const handoff=node('button',selectedProduction?'Website taslağını güncelle':'Website Builder taslağı oluştur');handoff.type='button';handoff.disabled=busy;handoff.onclick=()=>handoffWebsiteDraft();root.appendChild(handoff);root.appendChild(node('p','Taslak kaydı üretim başlatmaz ve kredi harcamaz. Paket seçimi ve açık onay ayrıca gereklidir.'));if(project.productionId){const review=node('button','Website taslağının onay durumunu kontrol et');review.type='button';review.disabled=busy;review.onclick=()=>reviewWebsiteDraft();root.appendChild(review);if(websiteData?.productionId===project.productionId&&websiteData.website){const w=websiteData.website;const summary=node('section');summary.appendChild(node('h3','Website üretim kontrolü'));summary.appendChild(node('p','Durum: '+String(websiteData.status||'bilinmiyor')));summary.appendChild(node('p','Paket: '+String(w.packId||'seçilmedi')+' · Ücret: '+(Number.isFinite(w.credits)?w.credits+' Production Credits':'belirlenmedi')));summary.appendChild(node('p','Onaya hazır: '+(w.review?.ready?'Evet':'Hayır')));if(Array.isArray(w.review?.blockers)&&w.review.blockers.length)summary.appendChild(node('p','Engeller: '+w.review.blockers.join(', ')));summary.appendChild(node('p','Kontrol işlemi salt okunurdur; kredi tahsilatı yapmaz.'));if(w.approvedHash===w.planHash&&w.planHash){summary.appendChild(node('p','Plan onaylandı. Ücretli üretim yalnız ayrıca başlatılır.'));if(websiteData.status==='ready'){summary.appendChild(node('p','Site hazır. Kaydedilen dosyaları açabilir veya ZIP paketini indirebilirsiniz.'));const view=node('button','Site önizlemesini aç');view.type='button';view.disabled=busy;view.onclick=()=>previewWebsite(project.productionId);summary.appendChild(view);const zip=node('button','Kaynak ZIP dosyasını indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(project.productionId);summary.appendChild(zip);}else{const render=node('button','Üretim fiyatını ve bağlantısını kontrol et');render.type='button';render.disabled=busy;render.onclick=()=>renderApprovedWebsite();summary.appendChild(render);const state=node('button','Üretim ve kredi durumunu kontrol et');state.type='button';state.disabled=busy;state.onclick=()=>checkCentralWebsiteStatus();summary.appendChild(state);summary.appendChild(node('p','Fiyat kontrolü kredi harcamaz. Üretim yalnız sunucu izin verirse ve ayrıca onaylanırsa başlar.'));}}else if(w.review?.ready&&w.planHash&&Number.isSafeInteger(w.credits)&&w.credits>0){const approve=node('button','Planı ve '+w.credits+' Production Credits tutarını onayla');approve.type='button';approve.disabled=busy;approve.onclick=()=>approveWebsitePlan();summary.appendChild(approve);}root.appendChild(summary);}}}root.dataset.planState=p.state;const fields=Object.entries(project?.snapshot.fields||{});if(!fields.length){root.appendChild(node('p','Brief henüz oluşmadı. Asistanla konuşarak proje bilgilerini ekleyebilirsin.'));return;}const dl=node('dl');fields.forEach(([k,v])=>dl.append(node('dt',fieldLabel(k)),node('dd',valueLabel(k,v))));root.append(dl,node('p',language==='tr'?'Bu bilgiler proje brief’idir; üretim sonucu değildir.':'These are project requirements, not produced artifacts.'));renderAdvancedPlan(root,p);}
+  }if(current.id==='website'){const packs=window.__studioB2?.websitePacks||[];if(packs.length){const pricing=node('section');pricing.appendChild(node('h3','Website Builder paketleri'));for(const pack of packs){const option=node('button',pack.label+' — '+pack.credits+' Production Credits'+(/admin|commerce|checkout/i.test(pack.label)?' (statik üretimde desteklenmiyor)':''));option.type='button';option.disabled=busy||/admin|commerce|checkout/i.test(pack.label);option.setAttribute('aria-pressed',String(websiteSelectedPackId===pack.id));option.onclick=()=>{if(websiteSelectedPackId!==pack.id){websiteSelectedPackId=pack.id;}showAux('brief');};pricing.appendChild(option);}pricing.appendChild(node('p','Seçilen paket: '+(packs.find(pack=>pack.id===websiteSelectedPackId)?.label||'Henüz seçilmedi')));pricing.appendChild(node('p','Paket seçimi taslak için kullanılır. Açık onay ayrıca alınır; bu ekranda otomatik kredi tahsilatı yapılmaz. Production Credits bakiyesi üst bölümde gösterilir.'));root.appendChild(pricing);}}if(current.id==='website'&&mode==='real'&&project&&!status?.isolatedPreview){const handoff=node('button',selectedProduction?'Website taslağını güncelle':'Website Builder taslağı oluştur');handoff.type='button';handoff.disabled=busy;handoff.onclick=()=>handoffWebsiteDraft();root.appendChild(handoff);root.appendChild(node('p','Taslak kaydı üretim başlatmaz ve kredi harcamaz. Paket seçimi ve açık onay ayrıca gereklidir.'));if(project.productionId){const review=node('button','Website taslağının onay durumunu kontrol et');review.type='button';review.disabled=busy;review.onclick=()=>reviewWebsiteDraft();root.appendChild(review);if(websiteData?.productionId===project.productionId&&websiteData.website){const w=websiteData.website;const summary=node('section');summary.appendChild(node('h3','Website üretim kontrolü'));summary.appendChild(node('p','Durum: '+String(websiteData.status||'bilinmiyor')));summary.appendChild(node('p','Paket: '+String(w.packId||'seçilmedi')+' · Ücret: '+(Number.isFinite(w.credits)?w.credits+' Production Credits':'belirlenmedi')));summary.appendChild(node('p','Onaya hazır: '+(w.review?.ready?'Evet':'Hayır')));if(Array.isArray(w.review?.blockers)&&w.review.blockers.length)summary.appendChild(node('p','Engeller: '+w.review.blockers.join(', ')));summary.appendChild(node('p','Kontrol işlemi salt okunurdur; kredi tahsilatı yapmaz.'));if(w.approvedHash===w.planHash&&w.planHash){summary.appendChild(node('p','Plan onaylandı. Ücretli üretim yalnız ayrıca başlatılır.'));if(websiteData.status==='ready'){summary.appendChild(node('p','Site hazır. Kaydedilen dosyaları açabilir veya ZIP paketini indirebilirsiniz.'));const view=node('button','Site önizlemesini aç');view.type='button';view.disabled=busy;view.onclick=()=>previewWebsite(project.productionId);summary.appendChild(view);const zip=node('button','Kaynak ZIP dosyasını indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(project.productionId);summary.appendChild(zip);}else{const render=node('button','Üretim fiyatını ve bağlantısını kontrol et');render.type='button';render.disabled=busy;render.onclick=()=>renderApprovedWebsite();summary.appendChild(render);const state=node('button','Üretim ve kredi durumunu kontrol et');state.type='button';state.disabled=busy;state.onclick=()=>checkCentralWebsiteStatus();summary.appendChild(state);summary.appendChild(node('p','Fiyat kontrolü kredi harcamaz. Üretim yalnız sunucu izin verirse ve ayrıca onaylanırsa başlar.'));}}else if(w.review?.ready&&w.planHash&&Number.isSafeInteger(w.credits)&&w.credits>0){const approve=node('button','Planı ve '+w.credits+' Production Credits tutarını onayla');approve.type='button';approve.disabled=busy;approve.onclick=()=>approveWebsitePlan();summary.appendChild(approve);}root.appendChild(summary);}}}root.dataset.planState=p.state;const fields=Object.entries(project?.snapshot.fields||{});if(!fields.length){root.appendChild(node('p','Brief henüz oluşmadı. Asistanla konuşarak proje bilgilerini ekleyebilirsin.'));return;}const dl=node('dl');fields.forEach(([k,v])=>dl.append(node('dt',fieldLabel(k)),node('dd',valueLabel(k,v))));root.append(dl,node('p',language==='tr'?'Bu bilgiler proje brief’idir; üretim sonucu değildir.':'These are project requirements, not produced artifacts.'));renderAdvancedPlan(root,p);}
  else root.appendChild(node('p',referenceFile?referenceFile.name+' — '+t(9):'Henüz referans seçilmedi. Dosya seçimi sunucuya yükleme veya üretim başlatmaz.'));
 }
 function planSummary(p){const a=p.advanced;return (p.state==='collecting'?(language==='tr'?'Bilgi toplanıyor · ':'Collecting requirements · ')+p.missing.length+' · ':'')+(language==='tr'?'Brief sürümü ':'Brief version ')+(a?.briefVersion??p.revision)+' · '+(a?.plan?'Plan v'+a.planVersion+' · '+a.planState:(language==='tr'?'Plan oluşturulmadı':'No plan yet'))+' · '+(language==='tr'?'Üretim kapalı':'Production disabled');}
@@ -391,16 +391,13 @@ async function checkCentralWebsiteStatus(){
  const seq=epoch,projectId=project.id,productionId=project.productionId;
  busy=true;uiError='';draw();
  try{
-  const state=await request('/api/studio/production/status?projectId='+encodeURIComponent(projectId));
+  const fresh=await websiteAssistantRequest({action:'website_open',productionId});
   if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-  if(state.projectId!==projectId||state.productionId!==productionId)throw Error('Üretim bağlantısı doğrulanamadı.');
-  uiError='Üretim: '+state.stage+' · Kredi: '+state.creditState;
-  if(state.deliveryAvailable===true&&state.stage==='ready'&&state.creditState==='settled'){
-   const fresh=await websiteAssistantRequest({action:'website_open',productionId});
-   if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-   if(fresh.productionId!==productionId)throw Error('Website proje bağlantısı doğrulanamadı.');
-   websiteData=fresh;selectedProduction=productionId;
-  }
+  if(fresh.productionId!==productionId)throw Error('Website proje bağlantısı doğrulanamadı.');
+  websiteData=fresh;selectedProduction=productionId;
+  uiError='Üretim durumu: '+String(fresh.status||'bilinmiyor');
+  if(fresh.status==='ready')void previewWebsite(productionId);
+
  }catch(error){if(seq===epoch)showError(error);}
  finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
 }
@@ -411,25 +408,21 @@ async function renderApprovedWebsite(){
  const pack=(window.__studioB2?.websitePacks||[]).find(p=>p.id===w.packId&&p.credits===w.credits&&!/admin|commerce|checkout/i.test(p.label));
  if(!pack){uiError='Paket fiyatı değişti. Yeniden onaylayın.';draw();return;}
  const seq=epoch,projectId=project.id,productionId=project.productionId,planHash=w.planHash;
- const binding={categoryId:'website',projectId,planHash};
  busy=true;uiError='';draw();
  try{
-  const quote=await request('/api/studio/production',{...binding,action:'quote'});
+  // Both Website entry points reuse the persisted production plan and prepaid coordinator.
+  // The live Website assistant stores its own production ID; no parallel agent database is required.
+  if(!window.confirm('Bu web sitesinin üretimi '+w.credits+' kredi. Başlatılsın mı?'))return;
+  const result=await request('/api/websites/generate',{user_id:session.userId,action:'generate',productionId,planHash,confirmProduction:true});
   if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-  if(quote.planHash!==planHash||quote.credits!==w.credits||quote.packId!==w.packId||quote.creditAccount!=='production'||typeof quote.quoteHash!=='string'||!/^[a-f0-9]{64}$/.test(quote.quoteHash))throw Error('Sunucu fiyatı doğrulanamadı. Planı yeniden kontrol edin.');
-  if(quote.dispatchEnabled!==true){uiError='Üretim bağlantısı henüz etkin değil. Kredi harcanmadı.';return;}
-  if(!window.confirm('Bu web sitesinin üretimi için '+quote.credits+' Production Credits rezervasyonu yapılacaktır. Üretim başarılı olursa kredi tahsil edilir. Başlatılsın mı?'))return;
-  const result=await request('/api/studio/production',{...binding,action:'dispatch',confirmProduction:true,quoteHash:quote.quoteHash,approvedCredits:quote.credits});
-  if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-  if(!['ready','already_ready'].includes(result.state)||result.productionId!==productionId)throw Error('Teslimat henüz doğrulanmadı. Tekrar üretim başlatmayın; proje durumunu kontrol edin.');
-  const state=await request('/api/studio/production/status?projectId='+encodeURIComponent(projectId));
-  if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-  if(state.projectId!==projectId||state.productionId!==productionId||state.stage!=='ready'||state.creditState!=='settled'||state.deliveryAvailable!==true)throw Error('Teslimat veya kredi durumu doğrulanamadı. Tekrar üretim başlatmayın; proje durumunu kontrol edin.');
+  if(!['ready','already_ready'].includes(result.state)||result.productionId!==productionId)throw Error('Teslimat henüz doğrulanmadı. Proje durumunu kontrol edin.');
   const fresh=await websiteAssistantRequest({action:'website_open',productionId});
   if(seq!==epoch||project?.id!==projectId||project.productionId!==productionId)return;
-  if(fresh.productionId!==productionId)throw Error('Website proje bağlantısı doğrulanamadı.');
+  if(fresh.productionId!==productionId||fresh.status!=='ready')throw Error('Website proje bağlantısı doğrulanamadı.');
   websiteData=fresh;selectedProduction=productionId;
-  uiError='Web sitesi hazır. Kaydedilmiş projeden önizleme ve ZIP teslimatını açabilirsiniz.';
+  uiError='Web sitesi hazır. Önizleme, görsel editör ve ZIP teslimatı kullanılabilir.';
+  void previewWebsite(productionId);
+
  }catch(error){if(seq===epoch)showError(error);}
  finally{if(seq===epoch){busy=false;draw();if(activeView==='brief')showAux('brief');}}
 }
@@ -537,7 +530,7 @@ async function sendMessage(defaults=[]){
  try{
   if(current.id==='website'&&mode==='real'&&!status?.realEnabled){
    const result=await websiteAssistantRequest({action:'revise',prompt:message,
-     ...(websiteData?.website&&websiteData.productionId?{productionId:websiteData.productionId}:{})});
+     ...(websiteSelectedPackId?{packId:websiteSelectedPackId}:{}),...(websiteData?.website&&websiteData.productionId&&websiteData.status!=='ready'?{productionId:websiteData.productionId}:{})});
    if(seq!==epoch)return;
    $('#prompt').value='';pending=null;applyWebsiteChat(result);return;
   }
