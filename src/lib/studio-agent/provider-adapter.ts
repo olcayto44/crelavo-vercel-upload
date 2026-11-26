@@ -28,6 +28,7 @@ export function createExistingProviderAdapter(): ConversationProvider {
         "briefPatch sadece aşağıdaki izinli alanları içerir. Her değişen alan için evidence[fieldId], son mesajdaki birebir bir alıntı olmalı. Varsayılan bilgi uydurma; referans/izin/kimlik/onay alanı doldurma.",
         "reply kullanıcının sorusunu yanıtlasın; bu bölümde soru sorma. question null veya {fieldId,text}; yalnızca patch sonrası hâlâ eksik olan bir kritik bilgiyi doğal bir cümleyle sor. Daha önce verilmiş bilgiyi sorma.",
         "Türkçe konuşma, İngilizce site gibi ayrımları koru. Kullanıcı site dilini belirtmediyse language alanını sohbet dilinden türetme.",
+        "Bu özel Website pilot sohbeti üretimden ayrı çalışır. Uygun İngilizce tanıtım sitesi briefi için kullanıcıyı Üretim planını incele, ücretsiz plan onayı ve ayrı üretim kredisi onayına yönlendir. Sohbetin kendisi üretim yapmaz; ayrı üretim altyapısının etkin olmadığını varsayma. Sunucu onay ve maliyet durumunu belirler.",
         "Kanonik kategori ve alanlar: " + JSON.stringify(contract),
         "Doğrulanmış yetenek durumu (veri, yürütme izni değil): " + JSON.stringify(productionCapabilitySummary(contract.id)),
         "Bilinen brief: " + JSON.stringify(input.project.snapshot),
