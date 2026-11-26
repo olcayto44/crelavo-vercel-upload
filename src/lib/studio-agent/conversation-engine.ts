@@ -5,7 +5,7 @@ import { createHash } from "node:crypto";
 import { assertCreditAccount } from "./billing-policy";
 import { applyModelProposal } from "./intent";
 import { evaluateRequirements, getCategoryContract } from "./requirements";
-import { ConversationError, completionSchema, ProviderUsageSchema, type ConversationProvider, type ConversationStore, type ProviderInput } from "./conversation-contract";
+import { ConversationError, completionSchema, ProviderUsageSchema, type ConversationProvider, type ConversationStore, type ProviderInput, type TurnResponse } from "./conversation-contract";
 
 export type AssistantTariff = { version: string; inputPer1K: number; outputPer1K: number };
 export function readAssistantTariff(): AssistantTariff {
@@ -34,7 +34,8 @@ const disabledReply: Record<string,string> = {
   fr: "Les outils de production, validation et révision ne sont pas encore connectés. Nous pouvons préparer le brief ; aucune production n'a démarré.",
   ar: "أدوات الإنتاج والموافقة والمراجعة غير متصلة بعد. يمكننا مناقشة المتطلبات؛ لم يبدأ أي إنتاج.",
 };
-export function applyCompletion(input: ProviderInput, raw: unknown) {
+type Applied=Pick<TurnResponse,"project"|"reply"|"blockedTools"|"nextQuestion"|"websiteRevisionProposal">;
+export function applyCompletion(input: ProviderInput, raw: unknown):Applied {
   const proposal = completionSchema(input.project.categoryId).parse(raw);
   if(proposal.websiteRevision||input.websiteRevisionContext){
     if(!input.websiteRevisionContext||input.project.categoryId!=="website"||proposal.intent!=="edit_content"||Object.keys(proposal.briefPatch).length||Object.keys(proposal.evidence).length||proposal.toolCalls.length||proposal.proposedCategory||proposal.question)throw new ConversationError("website_revision_context_invalid",502);
@@ -78,6 +79,7 @@ export async function runConversation(input: {
   assertCreditAccount("conversation", "assistant");
   const project = await deps.store.load(input.userId,input.projectId,input.categoryId);
   if (project.userId !== input.userId || project.categoryId !== input.categoryId) throw new ConversationError("project_not_found",404);
+  if(input.websiteRevisionContext&&(input.categoryId!=="website"||input.acceptedDefaults.length!==0))throw new ConversationError("website_revision_context_invalid",400);
   const contract = getCategoryContract(input.categoryId);
   for (const key of input.acceptedDefaults) if (!Object.prototype.hasOwnProperty.call(contract.defaults,key)) throw new ConversationError("unknown_default",400);
   deps.provider.preflight();
