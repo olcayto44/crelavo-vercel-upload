@@ -1,3 +1,4 @@
+import {CustomerNav} from "@/components/CustomerDashboard";
 import { HardReloadLink } from "@/components/HardReloadLink";
 import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 
@@ -5,16 +6,16 @@ import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 const navGroups = [
   {
       title: "Work",
-    href: "/dashboard/assistant-workspace",
+    href: "/dashboard/studio",
     description: "Assistant-led planning, production and delivery",
     items: [
-      ["Work Home", "/dashboard/assistant-workspace"],
+      ["Work Home", "/dashboard/studio"],
       ["Overview Dashboard", "/dashboard"],
-      ["Start Live Production", "/dashboard/create"],
+      ["Start Live Production", "/dashboard/studio"],
       ["Growth Intelligence", "/dashboard/growth-intelligence"],
       ["Live Sales Control", "/dashboard/live-sales-agent"],
       ["Drone Shoot Panel", "/dashboard/drone-shoot"],
-      ["Production Records", "/dashboard/assistant-workspace"],
+      ["My projects", "/dashboard/productions"],
       ["Growth Rewards", "/dashboard/growth"],
       ["Share-to-Earn", "/dashboard/share-to-earn"],
       ["Partner Program", "/dashboard/partners"]
@@ -75,20 +76,7 @@ export function DashboardShell({ children, className = "" }: { children: React.R
         <HardReloadLink className="dashboard-home-link" href="/">Back to main site</HardReloadLink>
       </aside>
       <section className="dashboard-workspace">
-        <nav className="dashboard-topbar button-nav" aria-label="Dashboard quick navigation">
-          <HardReloadLink className="btn secondary" href="/">Home</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/credits">Credits</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/live-sales-agent">Live Control</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/drone-shoot">Drone Shoot</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Assistant</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/growth-intelligence">Growth Intelligence</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/assistant-workspace">Work Studio</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/growth">Growth</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard/partners">Partners</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/dashboard">Dashboard</HardReloadLink>
-          <HardReloadLink className="btn" href="/dashboard/billing">Billing</HardReloadLink>
-          <HardReloadLink className="btn secondary" href="/blog">Blog / Content</HardReloadLink>
-        </nav>
+        <CustomerNav/>
         {children}
       </section>
     </main>

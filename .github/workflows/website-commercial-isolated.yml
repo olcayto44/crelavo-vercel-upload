@@ -8,6 +8,8 @@ on:
       - 'src/app/website-design-test/**'
       - 'src/app/dashboard/website-draft/**'
       - 'src/lib/**'
+      - 'src/components/**'
+      - 'src/app/dashboard/**'
       - 'scripts/*website*'
       - 'scripts/*whop*'
       - 'scripts/admin-main-browser-smoke.cjs'
@@ -32,6 +34,8 @@ jobs:
       - name: Approval, atomic ledger, private project, preview and ZIP
         run: |
           node scripts/website-minimal-release-smoke.cjs
+          node scripts/website-customer-navigation-smoke.cjs
+          npx tsc --noEmit
           node scripts/website-paid-production-gate-smoke.cjs
           node scripts/website-atomic-flow-smoke.cjs
           node scripts/website-production-draft-smoke.cjs

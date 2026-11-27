@@ -1,0 +1,13 @@
+"use client";
+import Link from "next/link";
+import {useEffect,useState} from "react";
+import {requireVerifiedBrowserUser,authHeaders} from "@/lib/auth-guards";
+type Project={id:string;title?:string;production_type?:string;status?:string;created_at?:string};
+export function CustomerProjectList(){
+ const [rows,setRows]=useState<Project[]>([]),[state,setState]=useState<"loading"|"ready"|"error">("loading"),[message,setMessage]=useState(""),[search,setSearch]=useState(""),[reload,setReload]=useState(0);
+ useEffect(()=>{let active=true;setState("loading");setRows([]);void(async()=>{try{const auth=await requireVerifiedBrowserUser();if(!auth.ok)throw Error(auth.message);const response=await fetch("/api/productions?user_id="+encodeURIComponent(auth.user.id),{headers:authHeaders(auth.accessToken),cache:"no-store"});const data=await response.json();if(!response.ok||!Array.isArray(data.productions))throw Error("Projects could not be loaded.");if(active){setRows(Array.from(new Map<string,Project>(data.productions.filter((r:Project)=>typeof r.id==="string"&&/^[a-f0-9-]{36}$/i.test(r.id)).map((r:Project)=>[r.id,r])).values()));setState("ready");}}catch(e){if(active){setMessage(e instanceof Error?e.message:"Projects could not be loaded.");setState("error");}}})();return()=>{active=false;};},[reload]);
+ const visible=rows.filter(r=>([r.title,r.production_type,r.status].join(" ").toLowerCase()).includes(search.toLowerCase()));
+ return <section className="card" style={{display:"grid",gap:12,minWidth:0}}><div style={{display:"flex",justifyContent:"space-between",flexWrap:"wrap",gap:8}}><h2>Saved projects</h2><button className="btn secondary" type="button" onClick={()=>setReload(v=>v+1)}>Refresh</button></div>
+ {state==="loading"?<p role="status">Loading your projects…</p>:state==="error"?<p role="alert">{message}</p>:<><label>Search projects<input style={{display:"block",width:"100%",marginTop:6}} value={search} onChange={e=>setSearch(e.target.value)} placeholder="Title, category or status"/></label>{visible.length===0?<p>{rows.length?"No matching projects.":"You have no saved projects yet."}</p>:visible.map(r=><article key={r.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap",borderTop:"1px solid #344358",padding:"12px 0",overflowWrap:"anywhere"}}><div><strong>{r.title||"Untitled project"}</strong><p style={{margin:0,color:"#b6c5da"}}>{(r.production_type||"Project").replaceAll("_"," ")} · {(r.status||"unknown").replaceAll("_"," ")}</p></div><Link className="btn secondary" href={"/dashboard/productions/"+encodeURIComponent(r.id)}>Open project</Link></article>)}</>}
+ </section>
+}

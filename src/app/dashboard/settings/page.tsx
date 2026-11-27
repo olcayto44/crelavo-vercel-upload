@@ -1,3 +1,4 @@
+import {CustomerNav} from "@/components/CustomerDashboard";
 import { DashboardAccountStyles } from "@/components/DashboardAccountStyles";
 import { DashboardFooter } from "@/components/DashboardFooter";
 import { SettingsAccountPanel } from "@/components/SettingsAccountPanel";
@@ -6,16 +7,7 @@ export default function SettingsPage() {
   return (
     <main className="cdx-full-page">
       <DashboardAccountStyles footer={<DashboardFooter />}>
-        <nav className="cdx-pills" aria-label="Dashboard">
-          <a href="/dashboard">Overview</a>
-          <a href="/dashboard/credits">Credits</a>
-          <a href="/dashboard/billing">Billing</a>
-          <a href="/dashboard/productions">Productions</a>
-          <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
-          <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
-          <a href="/dashboard/partners">Partners</a>
-          <a href="/pricing">Pricing</a>
-        </nav>
+        <CustomerNav active="/dashboard/settings"/>
 
         <nav className="cdx-account" aria-label="Account">
           <a className="is-active" href="/dashboard/settings">Settings</a>
@@ -35,7 +27,7 @@ export default function SettingsPage() {
           <article className="cdx-card">
             <h2>Production defaults</h2>
             <p>Start a new production with quality, format and credits visible before you confirm.</p>
-            <a className="cdx-btn" href="/dashboard/create?type=AI%20Video&category=video">Open production studio</a>
+            <a className="cdx-btn" href="/dashboard/studio/video">Open production studio</a>
           </article>
           <article className="cdx-card">
             <h2>Credits and billing</h2>

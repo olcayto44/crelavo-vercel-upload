@@ -19,7 +19,7 @@ type CreditState = {
   preview?: { remaining?: number; trial_remaining?: number; business_trial_used?: boolean };
 };
 
-export function CreditBalanceCard() {
+export function CreditBalanceCard({compact=false}:{compact?:boolean} = {}) {
   const [credits, setCredits] = useState<CreditState>({ balance: 0, reserved: 0, available: 0, current_subscription_credits: 0, rolled_over_credits: 0, topup_credits: 0, bonus_credits: 0, rollover_cap: 0, subscription_status: "inactive", billing_cycle_ends_at: null, preview: { remaining: 0, trial_remaining: 0, business_trial_used: false } });
   const [mode, setMode] = useState("loading");
 
@@ -59,16 +59,7 @@ export function CreditBalanceCard() {
         .catch(() => setMode("error"));
     }
 
-    function onCreditsUpdated(event: Event) {
-      const detail = (event as CustomEvent<{ available?: number; balance?: number; reserved?: number }>).detail;
-      if (typeof detail?.available === "number") {
-        const available = detail.available;
-        setCredits((current) => ({ ...current, balance: detail.balance ?? available, reserved: detail.reserved ?? 0, available }));
-        setMode("live");
-        return;
-      }
-      void loadCredits();
-    }
+    function onCreditsUpdated() { void loadCredits(); }
 
     loadCredits();
     window.addEventListener("clipora:credits-updated", onCreditsUpdated);
@@ -78,12 +69,12 @@ export function CreditBalanceCard() {
   return (
     <div className="card">
       <span>Credits</span>
-      <strong>{mode === "loading" ? "..." : credits.available}</strong>
+      <strong>{mode === "loading" ? "Loading…" : mode === "live" ? credits.available.toLocaleString() : "Unavailable"}</strong>
       <p>Available balance</p>
        {mode === "live" ? <small>Total: {credits.balance} · Reserved: {credits.reserved}</small> : null}
-       {mode === "live" && credits.billing_status && credits.billing_status !== "active" ? <div style={{ display: "grid", gap: 6, marginTop: 10 }}><strong>Billing: {credits.billing_status}</strong><small>New production and downloads unlock after confirmed payment.</small><a className="btn secondary" href={credits.billing_update_url || "/dashboard/payment"}>Update payment</a></div> : null}
-       {mode === "live" ? <small style={{ display: "block", marginTop: 8 }}>Preview remaining: {credits.preview?.remaining ?? 0} · Trial remaining: {credits.preview?.trial_remaining ?? 0}</small> : null}
-      {mode === "live" ? (
+       {mode === "live" && credits.billing_status && credits.billing_status !== "active" ? <div style={{ display: "grid", gap: 6, marginTop: 10 }}><strong>Billing: {credits.billing_status}</strong><small>Review your billing status before starting a new paid production.</small><a className="btn secondary" href={credits.billing_update_url || "/dashboard/payment"}>Update payment</a></div> : null}
+       {mode === "live" && !compact ? <small style={{ display: "block", marginTop: 8 }}>Preview remaining: {credits.preview?.remaining ?? 0} · Trial remaining: {credits.preview?.trial_remaining ?? 0}</small> : null}
+      {mode === "live" && !compact ? (
         <div style={{ display: "grid", gap: 4, marginTop: 10 }}>
           <small>Monthly: {credits.current_subscription_credits.toLocaleString()} · Rollover: {credits.rolled_over_credits.toLocaleString()}</small>
           <small>Top-up: {credits.topup_credits.toLocaleString()} · Bonus: {credits.bonus_credits.toLocaleString()}</small>
@@ -106,7 +97,7 @@ export function CreditBalanceCard() {
       {mode === "error" ? (
         <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
           <small>Credit data could not be loaded.</small>
-          <a className="btn secondary" href="/dashboard/credits">Open credits page</a>
+          <button className="btn secondary" type="button" onClick={()=>window.location.reload()}>Retry</button>
         </div>
       ) : null}
     </div>

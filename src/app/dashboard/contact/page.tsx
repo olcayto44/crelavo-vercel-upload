@@ -1,3 +1,4 @@
+import {CustomerNav} from "@/components/CustomerDashboard";
 import { DashboardAccountStyles } from "@/components/DashboardAccountStyles";
 import { DashboardFooter } from "@/components/DashboardFooter";
 
@@ -5,16 +6,7 @@ export default function DashboardContactPage() {
   return (
     <main className="cdx-full-page">
       <DashboardAccountStyles footer={<DashboardFooter />}>
-        <nav className="cdx-pills" aria-label="Dashboard">
-          <a href="/dashboard">Overview</a>
-          <a href="/dashboard/credits">Credits</a>
-          <a href="/dashboard/billing">Billing</a>
-          <a href="/dashboard/productions">Productions</a>
-          <a href="/dashboard/create?type=AI%20Video&category=video">Assistant</a>
-          <a href="/dashboard/growth-intelligence">Growth Intelligence</a>
-          <a href="/dashboard/partners">Partners</a>
-          <a href="/pricing">Pricing</a>
-        </nav>
+        <CustomerNav active="/dashboard/contact"/>
 
         <nav className="cdx-account" aria-label="Account">
           <a href="/dashboard/settings">Settings</a>
@@ -39,7 +31,7 @@ export default function DashboardContactPage() {
           <article className="cdx-card">
             <h2>New production brief</h2>
             <p>Start a reviewed brief for sites, apps, campaigns, video, voice, or brand kits.</p>
-            <a className="cdx-btn" href="/dashboard/create?type=AI%20Video&category=video">Start production</a>
+            <a className="cdx-btn" href="/dashboard/studio/video">Start production</a>
           </article>
         </div>
 

@@ -1,16 +1,10 @@
-import { Suspense } from "react";
-import { redirect } from "next/navigation";
+import {Suspense} from "react";
+import {redirect} from "next/navigation";
 import AssistantPage from "@/components/assistant-work/AssistantPage";
-
-export default async function AssistantWorkspacePage({ searchParams }: {
-  searchParams: Promise<{ category?: string | string[]; type?: string | string[]; uiLang?: string | string[] }>;
-}) {
-  const query = await searchParams;
-  const category = Array.isArray(query.category) ? query.category[0] : query.category;
-  const type = Array.isArray(query.type) ? query.type[0] : query.type;
-  if (category === "website" || /website/i.test(type || "")) {
-    const lang = Array.isArray(query.uiLang) ? query.uiLang[0] : query.uiLang;
-    redirect("/dashboard/studio-v2?category=website" + (lang && /^[a-z]{2}$/.test(lang) ? "&uiLang=" + lang : ""));
-  }
-  return <Suspense fallback={null}><AssistantPage /></Suspense>;
+import {customerStudioPath} from "@/lib/customer-studio-route";
+export default async function AssistantWorkspacePage({searchParams}:{searchParams:Promise<Record<string,string|string[]|undefined>>}){
+ const query=await searchParams;
+ // Preserve explicit historical revision handoffs until Studio supports their full context.
+ if(typeof query.requestType==="string"&&query.requestType.trim()&&typeof query.idea==="string"&&query.idea.trim())return <Suspense fallback={null}><AssistantPage/></Suspense>;
+ redirect(customerStudioPath(query));
 }
