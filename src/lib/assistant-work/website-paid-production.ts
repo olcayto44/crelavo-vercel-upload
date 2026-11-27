@@ -3,6 +3,7 @@ import {paidWebsiteScopeAllowed} from "../website-paid-scope";
 import {websitePageManifest} from "../website-engine";
 import {productionCreditCheck} from "../studio-agent/production-credit-policy";
 import {preparePaidWebsiteAI,generatePaidWebsiteArtifact} from "./website-paid-ai";
+import {createWebsiteMediaJournal} from "./website-media-journal";
 import { getCategory } from "@/lib/crelavo/categoryCatalog";
 import { supabaseAdmin } from "@/lib/supabase";
 import { websitePlanHash, normalizeAssistantWebsiteBrief, missingWebsiteBrief, unsupportedWebsiteScope, websiteEngineInput } from "./website-brief";
@@ -94,7 +95,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
   const check=productionCreditCheck(credits,available);
   if(!check.ok)return reply(check,check.status);
-  try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
+  try{const budget=preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);if(budget.pageImageCount){const ready=await db.rpc("website_media_journal_ready");if(ready.error||ready.data!==true)throw Error("website_media_journal_unavailable");}}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
 
   }
   const ledger = createWebsiteCreditLedger(async (name, args) => {
@@ -114,7 +115,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   try {
     const result = await runIsolatedWebsiteGeneration(
       { userId: user.id, productionId, planHash, credits },
-      { ledger, loadReserved, generate:generatePaidWebsiteArtifact, remoteGeneration:true },
+      { ledger, loadReserved, generate:(input,id,pack)=>generatePaidWebsiteArtifact(input,id,pack,createWebsiteMediaJournal({userId:user.id,productionId,planHash},async(name,args)=>{const {data,error}=await db.rpc(name,args);return {data,error};})), remoteGeneration:true },
     );
     if (result.state === "ready") return reply({
       ok: true, state: "ready", productionId, charged: credits,
