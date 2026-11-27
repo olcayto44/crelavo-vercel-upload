@@ -24,4 +24,15 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>0 or w.topup_credits<>130 then raise exception 'refund minted credits or changed buckets';end if;
  if (select count(*) from credit_events where user_id=u and type='refund')<>1 then raise exception 'duplicate refund event';end if;
  if has_function_privilege('anon','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') then raise exception 'refund permission mismatch';end if;
-end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions' result;rollback;
+ payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture expiry"'),'{reserved_credits}','50'),'{estimated_credits}','50');
+ a:=studio_legacy_create(u,payload);if a->>'state' is distinct from 'created' then raise exception 'expiry fixture creation failed';end if;
+ b:=studio_legacy_expire_unstarted((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'early expiry accepted';end if;
+ update production_requests set created_at=now()-interval '25 hours',started_at=now(),automation_status='queued' where id=(a#>>'{production,id}')::uuid;
+ b:=studio_legacy_expire_unstarted((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'started job expired';end if;
+ update production_requests set started_at=null where id=(a#>>'{production,id}')::uuid;
+ b:=studio_legacy_expire_unstarted((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'expired' or (b->>'released_credits')::int<>50 then raise exception 'expiry failed';end if;
+ b:=studio_legacy_expire_unstarted((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'already_expired' or (b->>'released_credits')::int<>0 then raise exception 'duplicate expiry';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>0 or w.topup_credits<>130 then raise exception 'expiry minted credits';end if;
+ if (select count(*) from credit_events where user_id=u and type='refund' and note='legacy-expire:'||(a#>>'{production,id}'))<>1 then raise exception 'duplicate expiry event';end if;
+ if has_function_privilege('anon','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') then raise exception 'expiry permission mismatch';end if;
+end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked' result;rollback;

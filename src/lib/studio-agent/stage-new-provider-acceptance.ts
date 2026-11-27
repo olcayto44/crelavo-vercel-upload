@@ -34,9 +34,16 @@ export async function generateGeminiAcceptance(prompt:string,key:string,referenc
 export async function generateRunwayAcceptance(prompt:string,key:string,onTask:(id:string)=>Promise<void>,transport:typeof fetch=fetch):Promise<Result>{
  const model="gen4_image_turbo",headers={Authorization:"Bearer "+key,"X-Runway-Version":"2024-11-06","Content-Type":"application/json"};let id:string|undefined;
  if(!key.trim())return uncertain("runway_key_missing");
+ if(!prompt.trim()||prompt.length>1000)return uncertain("runway_prompt_invalid");
  try{
   const r=await transport("https://api.dev.runwayml.com/v1/text_to_image",{method:"POST",redirect:"error",signal:AbortSignal.timeout(15000),headers,body:JSON.stringify({model,ratio:"1024:1024",promptText:prompt})});
-  if(!r.ok)return uncertain("runway_http_"+r.status);
+  if(!r.ok){
+   // Do not store provider response text (may contain prompts or secrets).
+   // Classify only known request fields, not arbitrary response values.
+   let field="";
+   try{const body=JSON.parse((await read(r,65536)).toString("utf8"));const issues=Array.isArray(body.issues)?body.issues:[];const allowed=["model","ratio","promptText","referenceImages"];const fields=issues.flatMap((i:any)=>Array.isArray(i?.path)?i.path:[]);field=allowed.find(f=>fields.includes(f))??"";}catch{}
+   return uncertain("runway_http_"+r.status+(field?"_"+field:""));
+  }
   const b=JSON.parse((await read(r,65536)).toString("utf8")),parsed=z.string().uuid().safeParse(b.id);if(!parsed.success)return uncertain("runway_task_id_missing");id=parsed.data;
   await onTask(id); // persist the paid task id before polling; never re-dispatch.
   const deadline=Date.now()+70000;

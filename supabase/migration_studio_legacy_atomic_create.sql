@@ -92,3 +92,34 @@ begin
 end $$;
 revoke all on function public.studio_legacy_refund_reviewed(uuid) from public,anon,authenticated;
 grant execute on function public.studio_legacy_refund_reviewed(uuid) to service_role;
+
+-- Atomic expiry candidate: only a never-started atomic job with its own hold.
+-- Do not enable until provider start/claim and all legacy wallet writers use compatible locks.
+create or replace function public.studio_legacy_expire_unstarted(p_production uuid)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare u uuid; w credit_balances%rowtype; j production_requests%rowtype; a integer; n integer; res jsonb; have_wallet boolean;
+begin
+ if p_production is null then raise exception 'legacy_expiry_invalid';end if;
+ select user_id into u from production_requests where id=p_production;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ select * into w from credit_balances where user_id=u for update;have_wallet:=found;
+ select * into j from production_requests where id=p_production and user_id=u for update;
+ if not found then return jsonb_build_object('state','reconcile_required');end if;
+ if j.status='cancelled' and j.reserved_credits=0 and j.output_json#>>'{creditResolution,atomicLegacyExpiry}'='true' then return jsonb_build_object('state','already_expired','released_credits',0);end if;
+ a:=j.reserved_credits;
+ if j.status is distinct from 'queued' or j.generation_status is null or j.generation_status not in ('automation_queued','waiting_provider_config') or coalesce(j.automation_status,'queued') not in ('queued','waiting_provider_config') or j.created_at>now()-interval '24 hours' or j.started_at is not null or a is null or a<0 or j.request_metadata->'atomicCreateReservedCredits' is distinct from to_jsonb(a) or coalesce(j.output_json,'{}'::jsonb) ?| array['visualJob','renderJob','providerJob','providerJobId','provider_job_id','providerStartDiagnostic','creditResolution','finalImageUrl','finalVideoUrl'] then
+  return jsonb_build_object('state','reconcile_required');
+ end if;
+ if a>0 then
+  if not have_wallet then return jsonb_build_object('state','reconcile_required');end if;
+  select count(*) into n from credit_events where user_id=u and type='reserve' and note='legacy-production:'||p_production::text and amount=a;
+  if n<>1 or exists(select 1 from credit_events where user_id=u and type='refund' and note='legacy-expire:'||p_production::text) or w.reserved<a or w.reserved>w.balance or least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits then return jsonb_build_object('state','reconcile_required');end if;
+  update credit_balances set reserved=reserved-a,updated_at=now() where user_id=u;
+  insert into credit_events(user_id,type,amount,note) values(u,'refund',a,'legacy-expire:'||p_production::text);
+ end if;
+ res:=jsonb_build_object('status','expired_before_provider_start_refunded','reason','provider_not_started_within_24h','spentCredits',0,'refundedCredits',a,'releasedReservedCredits',a,'resolvedAt',now(),'atomicLegacyExpiry',true);
+ update production_requests set status='cancelled',automation_status='expired_before_provider_start',generation_status='expired_no_provider_cost',reserved_credits=0,output_json=coalesce(output_json,'{}'::jsonb)||jsonb_build_object('creditResolution',res,'autoExpiredBeforeProviderStart',true,'autoExpiredAt',now()),admin_notes='Atomically expired unstarted production; no customer spend.',updated_at=now() where id=p_production;
+ return jsonb_build_object('state','expired','released_credits',a);
+end $$;
+revoke all on function public.studio_legacy_expire_unstarted(uuid) from public,anon,authenticated;
+grant execute on function public.studio_legacy_expire_unstarted(uuid) to service_role;

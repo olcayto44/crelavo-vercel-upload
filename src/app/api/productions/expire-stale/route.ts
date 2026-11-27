@@ -58,6 +58,13 @@ async function expireStaleProductions(request: Request) {
     const skipped: Array<{ id: string; reason: string }> = [];
 
     for (const production of productions ?? []) {
+      if (process.env.CRELAVO_ATOMIC_LEGACY_EXPIRY_ENABLED === "true") {
+        const { data: result, error: rpcError } = await supabase.rpc("studio_legacy_expire_unstarted", { p_production: production.id });
+        if (rpcError || !result) { skipped.push({ id: production.id, reason: "atomic_expiry_unconfirmed" }); continue; }
+        if (result.state !== "expired") { skipped.push({ id: production.id, reason: String(result.state ?? "reconcile_required") }); continue; }
+        expired.push({ id: production.id, released_credits: Number(result.released_credits) });
+        continue;
+      }
       const outputJson = objectValue(production.output_json);
       const existingResolution = objectValue(outputJson.creditResolution);
       if (hasProviderStarted(production)) {
