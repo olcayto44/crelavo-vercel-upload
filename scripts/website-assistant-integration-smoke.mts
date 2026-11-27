@@ -50,6 +50,7 @@ const contentRequest = (body: unknown) => new Request('https://local.test', { me
 assert((await editor.GET(new Request('https://local.test?user_id=owner'), params)).status === 409, 'a legacy ready marker without settled proof must not open the editor');
 // Explicit synthetic independent settlement fixture for the actual HTTP handlers.
 // The mocked legacy generator above is not evidence of a real atomic charge.
+assert((await env.call({ action: 'render', render: true, productionId: id, planHash: hash })).status === 200 && env.counts().charges === 1 && env.counts().generates === 1, 'repeat render must be idempotent');
 row.output_json.websiteBillingMode = 'atomic_v1';
 row.reserved_credits = 0;
 env.settledProofs.set(id,{production_id:id,user_id:'owner',state:'settled',credits:1500,plan_hash:hash});
@@ -63,7 +64,7 @@ const entries = buildDeliveryEntries(row);
 for (const page of ['index.html', 'about.html', 'services.html', 'contact.html']) assert(entries.some((entry) => entry.name === 'source/' + page), 'ZIP excludes generated page: ' + page);
 assert(entries.find((e) => e.name === 'source/contact.html')?.content.includes('Revised contact'), 'ZIP and preview must use the same revised production');
 assert(new TextDecoder().decode(buildDeliveryZip(entries)).includes('Revised contact'), 'real ZIP bytes do not contain revision');
-assert((await env.call({ action: 'render', render: true, productionId: id, planHash: hash })).status === 200 && env.counts().charges === 1 && env.counts().generates === 1, 'repeat render must be idempotent');
+assert((await env.call({ action: 'render', render: true, productionId: id, planHash: hash })).status === 409 && env.counts().charges === 1 && env.counts().generates === 1, 'atomic settled projects must reject the legacy render path without another charge');
 assert((await editor.POST(contentRequest({ user_id: 'owner', action: 'rollback', revision: 0 }), params)).status === 200, 'actual rollback must work on assistant-produced files');
 assert(!buildPreviewHtml(env.rows.get(id), 'contact.html').includes('Revised contact'), 'rollback must affect preview and delivery overlays');
 const concurrent = environment(); const cp = await concurrent.prepare(); await concurrent.call({ action: 'website_approve', productionId: cp.id, planHash: cp.hash });
