@@ -1,0 +1,41 @@
+name: Legacy wallet isolated PostgreSQL acceptance
+on:
+  push:
+    branches: [feat/studio-stage-image-20261127]
+    paths:
+      - 'supabase/migration_studio_legacy_atomic_create.sql'
+      - 'supabase/tests/studio_legacy_atomic_create.sql'
+      - 'scripts/studio-wallet-concurrency-fixture.py'
+      - '.github/workflows/studio-wallet-isolated-acceptance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: disposable-fixture-only
+          POSTGRES_DB: crelavo_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d crelavo_fixture"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 12
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGDATABASE: crelavo_fixture
+      PGPASSWORD: disposable-fixture-only
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Run wallet ledger and concurrent transaction fixture
+        run: python3 scripts/studio-wallet-concurrency-fixture.py

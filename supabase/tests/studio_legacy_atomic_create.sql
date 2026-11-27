@@ -98,6 +98,15 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-999',10,'reviewer@example.invalid');if b->>'state' is distinct from 'reconcile_required' then raise exception 'changed refund evidence replay';end if;
  select * into w from credit_balances where user_id=u;if w.balance<>74 or w.reserved<>60 or w.topup_credits<>74 then raise exception 'attested refund wallet mismatch';end if;
  if has_function_privilege('anon','public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text)','EXECUTE') then raise exception 'attestation permission';end if;
+ begin
+  alter table credit_events add constraint legacy_fixture_event_failure check(note is distinct from 'fixture-force-rollback');
+  perform studio_wallet_spend(u,5,'fixture-failure-key','fixture-force-rollback');
+  raise exception 'forced event failure did not occur';
+ exception when check_violation then null;
+ end;
+ select * into w from credit_balances where user_id=u;
+ if w.balance<>74 or w.reserved<>60 or w.topup_credits<>74 or exists(select 1 from credit_events where user_id=u and stripe_session_id='fixture-failure-key') then raise exception 'event failure did not roll back wallet';end if;
+ if (select coalesce(sum(reserved_credits),0) from production_requests where user_id=u)<>w.reserved then raise exception 'integrated hold ledger mismatch';end if;
 end $test$;
 set local role anon;
 do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'anonymous access';end if;end $deny$;
@@ -105,4 +114,4 @@ reset role;
 set local role authenticated;
 do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'authenticated direct access';end if;end $deny$;
 reset role;
-select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched, private storage identity enforced, manual zero cost attestation atomic and replay protected' result;rollback;
+select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched, private storage identity enforced, manual zero cost attestation atomic and replay protected, ledger total and event failure rollback verified' result;rollback;
