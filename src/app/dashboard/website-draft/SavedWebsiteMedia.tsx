@@ -1,0 +1,22 @@
+"use client";
+import {useEffect,useRef,useState} from "react";
+import {WebsiteHeroMediaList,type WebsiteHeroMediaInput} from "@/lib/website-hero-media";
+type ImageDraft=Pick<WebsiteHeroMediaInput,"image_data"|"width"|"height">;
+async function optimize(file:File):Promise<ImageDraft>{
+ if(!["image/png","image/jpeg","image/webp"].includes(file.type)||file.size>10000000)throw Error("PNG, JPEG veya WebP; en fazla 10 MB.");
+ const bitmap=await createImageBitmap(file);
+ try{if(bitmap.width*bitmap.height>40000000)throw Error("Görsel çok büyük.");
+ for(const cap of [1440,1200,960,720,480]){const ratio=Math.min(1,cap/Math.max(bitmap.width,bitmap.height)),width=Math.max(1,Math.round(bitmap.width*ratio)),height=Math.max(1,Math.round(bitmap.height*ratio)),canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d");if(!ctx)throw Error();ctx.drawImage(bitmap,0,0,width,height);
+ for(const quality of [.85,.75,.65,.55]){const url=canvas.toDataURL("image/webp",quality);if(!url.startsWith("data:image/webp;base64,"))throw Error("WebP desteklenmiyor.");const image_data=url.slice(23);if(image_data.length<=180000)return {image_data,width,height};}}throw Error("Görsel boyut sınırına sığmadı.");
+ }finally{bitmap.close();}
+}
+export function SavedWebsiteMedia({endpoint,token,version,pageSlug,disabled,onReload,onBusy}:{endpoint:string;token:string;version:number;pageSlug:string;disabled:boolean;onReload:()=>void;onBusy:(busy:boolean)=>void}){
+ const [media,setMedia]=useState<WebsiteHeroMediaInput[]>([]),[alt,setAlt]=useState(""),[draft,setDraft]=useState<ImageDraft|null>(null),[rights,setRights]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
+ const lock=useRef(false),epoch=useRef(0);const url=endpoint+(endpoint.includes("?")?"&":"?")+"operation=media";
+ const current=media.find(m=>m.page_slug===pageSlug);
+ useEffect(()=>{const c=new AbortController(),n=++epoch.current;setDraft(null);setRights(false);setMedia([]);setAlt("");setMessage("Görsel yükleniyor…");
+ void(async()=>{try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({action:"list"}),signal:c.signal}),v=await r.json();if(!r.ok||!v.ok||v.version!==version)throw Error();const items=WebsiteHeroMediaList.parse(v.media);if(n===epoch.current){setMedia(items);setAlt(items.find(m=>m.page_slug===pageSlug)?.alt??"");setMessage("");}}catch{if(n===epoch.current&&!c.signal.aborted)setMessage("Görsel yüklenemedi.");}})();return()=>{epoch.current++;c.abort();};},[url,token,version,pageSlug]);
+ async function pick(file:File){const n=epoch.current;try{setDraft(null);setRights(false);const d=await optimize(file);if(n===epoch.current)setDraft(d);}catch(e){if(n===epoch.current)setMessage(e instanceof Error?e.message:"Görsel hazırlanamadı.");}}
+ async function save(){if(lock.current||disabled||!alt.trim()||(!draft&&!current)||draft&&!rights)return;lock.current=true;setBusy(true);onBusy(true);try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body:JSON.stringify({version,pageSlug,alt:alt.trim(),...(draft?{action:"replace",imageData:draft.image_data,width:draft.width,height:draft.height,rightsConfirmed:true}:{action:"alt"})})}),v=await r.json();if(!r.ok||!v.ok)throw Error(r.status===409?"Sürüm değişti. Güncel siteyi açın.":"Görsel kaydedilemedi.");onReload();}catch(e){setMessage(e instanceof Error?e.message:"Görsel kaydedilemedi.");}finally{lock.current=false;setBusy(false);onBusy(false);}}
+ return <section style={{display:"grid",gap:10,padding:12}}><h3>Sayfa görseli</h3><p>{pageSlug}</p>{(draft||current)&&<img alt={alt||"Sayfa görseli"} src={"data:image/webp;base64,"+(draft??current)!.image_data} style={{width:"100%",height:"auto",borderRadius:8}}/>}<label>Görseli değiştir<input type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled||busy} onChange={e=>{const f=e.target.files?.[0];if(f)void pick(f);}}/></label><label>Görsel açıklaması (alt metin)<textarea maxLength={160} value={alt} disabled={disabled||busy} onChange={e=>setAlt(e.target.value)}/></label>{draft&&<label><input type="checkbox" checked={rights} onChange={e=>setRights(e.target.checked)}/>Bu görseli kullanma hakkına sahibim.</label>}<button type="button" disabled={disabled||busy||!alt.trim()||(!draft&&!current)||Boolean(draft&&!rights)} onClick={()=>void save()}>Görseli kaydet (0 ek kredi)</button><p role="status">{message}</p></section>;
+}

@@ -1,4 +1,7 @@
 import {z} from "zod";
+import {changeSavedWebsiteMedia} from "@/lib/website-saved-media";
+import {WebsiteHeroMediaList} from "@/lib/website-hero-media";
+
 import {buildWebsiteAdminPreview} from "@/lib/website-admin-preview";
 import {parsePaidCMS,websitePaidCMSModules} from "@/lib/website-paid-cms";
 import {buildWebsiteSelfHostedBundle} from "@/lib/website-selfhost-bundle";
@@ -45,6 +48,15 @@ export async function POST(request:Request){try{const a=await owned(request);if(
  if(new URL(request.url).searchParams.get("operation")==="admin-preview"){return out({ok:true,pages:buildWebsiteAdminPreview(a.design)});}
  if(new URL(request.url).searchParams.has("format"))return out({ok:false,code:"use_saved_delivery"},403);
  const operation=new URL(request.url).searchParams.get("operation");
+ if(operation==="media"){
+ const output=a.row.output_json,version=Number(output.websiteDesignVersion??1),raw=await readBoundedWebsiteJson(request,190000) as any;
+ if(raw?.action==="list")return out({ok:true,version,media:WebsiteHeroMediaList.parse(output.plan.websiteHeroMedia??[])});
+ if(raw?.version!==version)return out({ok:false,code:"version_conflict"},409);
+ const now=new Date().toISOString(),next=await changeSavedWebsiteMedia(output,raw,a.limit,now);
+ if(Buffer.byteLength(JSON.stringify(next))>7000000)return out({ok:false,code:"project_size_limit"},413);
+ const r=await a.db.from("production_requests").update({output_json:next,updated_at:now}).eq("id",a.row.id).eq("user_id",a.actor).eq("status","ready").eq("updated_at",a.row.updated_at).select("id").maybeSingle();
+ return r.error?out({ok:false,code:"storage_unavailable"},503):!r.data?out({ok:false,code:"version_conflict"},409):out({ok:true,version:next.websiteDesignVersion});
+ }
  if(operation==="cms"){
   const p=z.strictObject({version:z.number().int().nonnegative(),cms:z.unknown()}).parse(await readBoundedWebsiteJson(request,700000));
   const output=a.row.output_json,scope=output.plan?.approvedIndustryScope;

@@ -1,5 +1,8 @@
 import {createClient} from "@supabase/supabase-js";
 import {z} from "zod";
+import {changeSavedWebsiteMedia} from "@/lib/website-saved-media";
+import {WebsiteHeroMediaList} from "@/lib/website-hero-media";
+
 import {prepareWebsiteRevisionContext,paidRevisionPrompt,proposePaidWebsiteRevision,applySavedPaidRevision} from "@/lib/website-paid-revision";
 import {rejectSuspiciousText} from "@/lib/security";
 import {websitePilotProviderKey,websitePilotCanary,websitePilotScope} from "@/lib/studio-agent/website-pilot-provider";
@@ -27,6 +30,15 @@ async function owned(request:Request){
 const revisionEnabled=()=>process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_REAL_AI_ENABLED==="true"&&process.env.STUDIO_AGENT_PROVIDER_VERIFIED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true"&&Boolean(websitePilotProviderKey());
 export async function GET(request:Request){try{const a=await owned(request);return out({ok:true,version:a.version,design:WebsiteDesignSpec.parse(a.output.plan.editableDesign),revisionAvailable:revisionEnabled()&&!a.output.websiteAIRevision,revisionProposal:a.output.websiteAIRevision?.state==="proposed"?a.output.websiteAIRevision.proposal:null});}catch{return out({ok:false,code:"review_unavailable"},403);}}
 export async function POST(request:Request){try{const a=await owned(request);const operation=new URL(request.url).searchParams.get("operation");
+ if(operation==="media"){
+ const raw=await readBoundedWebsiteJson(request,190000) as any;
+ if(raw?.action==="list")return out({ok:true,version:a.version,media:WebsiteHeroMediaList.parse(a.output.plan.websiteHeroMedia??[])});
+ if(raw?.version!==a.version)return out({ok:false,code:"version_conflict"},409);
+ const now=new Date().toISOString(),next=await changeSavedWebsiteMedia(a.output,raw,WebsiteDesignSpec.parse(a.output.plan.editableDesign).pages.length,now);
+ if(Buffer.byteLength(JSON.stringify(next))>7000000)return out({ok:false,code:"project_size_limit"},413);
+ const r=await a.db.from("production_requests").update({output_json:next,updated_at:now}).eq("id",a.row.id).eq("user_id",a.actor).eq("status","ready").eq("updated_at",a.row.updated_at).select("id").maybeSingle();
+ return r.error?out({ok:false,code:"storage_unavailable"},503):!r.data?out({ok:false,code:"version_conflict"},409):out({ok:true,version:next.websiteDesignVersion});
+ }
  if(operation==="revision"||operation==="revision-preview")return await revision(a,request,operation);
  if(operation)return out({ok:false,code:"operation_unavailable"},400);
  const next=renderPremiumReview(a.output,await readBoundedWebsiteJson(request,50000));const css=next.files.find(f=>f.path==="styles.css")!.content;
