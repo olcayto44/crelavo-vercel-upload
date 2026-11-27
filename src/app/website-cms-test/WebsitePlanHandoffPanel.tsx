@@ -35,7 +35,6 @@ export function WebsitePlanHandoffPanel({db,onApproved,onWallets}:{db:SupabaseCl
  }
  async function call(action:"list"|"quote"|"approve"){
  if(lock.current||action==="quote"&&!selected||action==="approve"&&!quote)return;
- if(action==="approve"&&!window.confirm("Bu kayıtlı brief ve paket planını onaylıyor musunuz? Şu anda üretim veya kredi harcaması başlamaz."))return;
  lock.current=true;setBusy(true);setNotice("");
  try{
  const s=await db.auth.getSession();if(s.error||!s.data.session?.access_token)throw Error();

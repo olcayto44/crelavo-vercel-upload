@@ -20,3 +20,7 @@
 
 /* The page thumbnail itself and its label select the same real page. */
 .pageSelect::after{content:"";position:absolute;inset:0;cursor:pointer}.pageTile[draggable=true] .pageSelect::after{cursor:grab}.pageTile:focus-within{outline:2px solid #e3d9ff;outline-offset:1px}
+
+/* Keep the actual page canvas large; optional expanded thumbnails do not replace it. */
+.modeTabs{grid-template-columns:repeat(3,minmax(0,1fr))}.galleryActions,.canvasTools{display:flex;gap:5px;align-items:center;flex-shrink:0}.root .galleryActions button,.root .canvasTools button{font-size:11px;min-height:26px;padding:3px 7px}.canvasTools{justify-content:flex-end;margin-bottom:4px}.pageGallery[data-gallery-size=large] .pageTile{flex-basis:216px}.pageGallery[data-gallery-size=large] .pageMini{height:118px}.pageGallery[data-gallery-size=large] .pageMini iframe{transform:scale(.21)}.pageGallery[data-gallery-size=hidden]{margin-bottom:3px}.pageGallery[data-gallery-size=hidden] .pageGalleryHead{margin-bottom:0}
+@media(min-width:901px){.customerMode:not(.expanded) .grid>aside,.customerMode:not(.expanded) .grid>.workspace{height:clamp(740px,calc(100dvh + 90px),1400px)}.customerMode .workspace .scroll{min-height:480px}.customerMode.expanded .workspace .scroll{min-height:0}}@media(max-width:900px){.customerMode .grid>.workspace{height:clamp(590px,88dvh,850px)}.customerMode.expanded .grid>.workspace{height:clamp(480px,70dvh,760px)}.galleryActions{flex-wrap:wrap}}

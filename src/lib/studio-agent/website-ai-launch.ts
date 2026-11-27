@@ -34,7 +34,7 @@ export async function handleWebsiteAILaunch(request:Request,d:Deps){
  if(!d.enabled()||!d.apiKey.trim()||!await d.policyMatches())return fail(503,"website_ai_disabled");
  const brief=normalizeAssistantWebsiteBrief(a.brief);
  if(p.status!=="pending"||a.phase!=="approved"||a.approvedHash!==a.planHash||brief.locale!=="en"||missingWebsiteBrief(brief).length||unsupportedWebsiteScope(brief).length||websitePlanHash(brief,a.packId)!==a.planHash||a.credits!==p.estimated_credits||getCategory("website")?.packs.find(x=>x.id===a.packId)?.credits!==a.credits)return fail(409,"current_supported_approval_required");
- prepareWebsiteAICopy(websiteEngineInput(brief),d.policy);prepareEditableWebsiteBrief(websiteEngineInput(brief));
+ try{prepareWebsiteAICopy(websiteEngineInput(brief),d.policy);prepareEditableWebsiteBrief(websiteEngineInput(brief));}catch{return fail(422,"website_page_or_copy_budget_unsupported");}
  const quoteHash=createHash("sha256").update(JSON.stringify(["website-ai-copy-v1",d.userId,p.id,a.planHash,a.packId,a.credits,policyHash,Boolean(d.autoMeteredSettlement)])).digest("hex");
  if(v.action==="quote")return reply({ok:true,productionId:p.id,quoteHash,credits:a.credits,packId:a.packId,route:"website-ai-copy-v1",scope:"marketing_website_candidate",requiresReviewedProviderCost:!d.autoMeteredSettlement});
  if(v.quoteHash!==quoteHash||v.approvedCredits!==a.credits)return fail(409,"quote_changed_reload");
