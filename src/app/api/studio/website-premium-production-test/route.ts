@@ -2,6 +2,7 @@ import {createClient} from "@supabase/supabase-js";
 import {createHash} from "node:crypto";
 import {z} from "zod";
 import {websitePilotCanary,websitePilotProviderKey,websitePilotScope} from "@/lib/studio-agent/website-pilot-provider";
+import {websiteCommercialAcceptanceBranch} from "@/lib/website-pilot-branches";
 import {bearerTokenFromRequest} from "@/lib/supabase";
 import {prepareWebsiteHandoff} from "@/lib/studio-agent/website-plan-handoff";
 import {normalizeAssistantWebsiteBrief,websitePlanHash,websiteEngineInput} from "@/lib/assistant-work/website-brief";
@@ -25,7 +26,7 @@ const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"};
 export async function POST(request:Request){
  const reply=(v:unknown,status=200)=>Response.json(v,{status,headers});
  const fail=(status:number,code:string)=>reply({ok:false,code,safeToRetryAutomatically:false},status);
- if(!websitePilotScope())return fail(404,"not_found");
+ if(!websitePilotScope()||process.env.VERCEL_GIT_COMMIT_REF!==websiteCommercialAcceptanceBranch)return fail(404,"not_found");
  const token=bearerTokenFromRequest(request);if(!token)return fail(401,"sign_in");
  try{
  const db=createClient("https://bwzxdxqgrgbsvndinmrv.supabase.co",process.env.STUDIO_AGENT_TEST_SERVICE_KEY!,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
@@ -55,11 +56,11 @@ export async function POST(request:Request){
  if(v.action!=="quote"&&v.action!=="submit")return fail(400,"invalid_action");
  const sourceRow=await db.from("studio_agent_projects").select("id,user_id,category_id,revision,production_id,brief").eq("id",v.projectId).eq("user_id",actor).eq("category_id","website").maybeSingle();
  if(sourceRow.error||!sourceRow.data)return fail(404,"project_not_found");
- const h=prepareWebsiteHandoff(sourceRow.data,actor);
+ let h;try{h=prepareWebsiteHandoff(sourceRow.data,actor);}catch{return fail(422,"complete_english_marketing_brief_without_references_required");}
  if(h.brief.features.length>11)return fail(422,"feature_limit");
  const brief=normalizeAssistantWebsiteBrief({...h.brief,features:[...h.brief.features.filter(x=>!/^(ai hero image|ai page images)$/i.test(x.trim())),"AI page images"]});
- const env={OPENAI_API_KEY:websitePilotProviderKey(),CRELAVO_WEBSITE_AI_HERO_ENABLED:"true",CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED:"true"};
- const budget=preparePaidWebsiteAI(websiteEngineInput(brief),env,h.packId);
+ const env:NodeJS.ProcessEnv={NODE_ENV:process.env.NODE_ENV,OPENAI_API_KEY:websitePilotProviderKey(),CRELAVO_WEBSITE_AI_HERO_ENABLED:"true",CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED:"true"};
+ let budget;try{budget=preparePaidWebsiteAI(websiteEngineInput(brief),env,h.packId);}catch{return fail(422,"premium_page_scope_or_budget_unsupported");}
  const planHash=websitePlanHash(brief,h.packId);
  const quoteHash=createHash("sha256").update(JSON.stringify([source,actor,h.row.id,h.row.revision,planHash,h.credits,budget.maximumMicroUSD,budget.pageImageCount])).digest("hex");
  const w=await db.from("credit_balances").select("balance,reserved").eq("user_id",actor).maybeSingle();
