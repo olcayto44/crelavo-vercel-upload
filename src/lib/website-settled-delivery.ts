@@ -4,7 +4,7 @@ import {renderWebsiteDesignCandidate} from "./website-design-candidate";
 import {buildWebsiteSelfHostedBundle} from "./website-selfhost-bundle";
 import {websiteCreditDeliveryProof} from "./assistant-work/website-paid-delivery";
 const id=z.string().uuid(),hash=z.string().regex(/^[a-f0-9]{64}$/);
-const Rows=z.array(z.object({productionId:id,designHash:hash,design:z.unknown(),heroMedia:WebsiteHeroMediaList.optional()})).length(1);
+const Rows=z.array(z.object({productionId:id,designHash:hash,design:z.unknown(),heroMedia:WebsiteHeroMediaList.optional(),revision:z.number().int().positive().optional()})).length(1);
 // Input must originate from the authenticated owner-only settled-artifact RPC.
 // No arbitrary caller payload is proof of settlement.
 export function buildSettledWebsiteCandidate(raw:unknown,productionId:string){
@@ -12,7 +12,7 @@ export function buildSettledWebsiteCandidate(raw:unknown,productionId:string){
  if(row.productionId!==productionId)throw Error("production_mismatch");
  const rendered=renderWebsiteDesignCandidate(row.design,row.heroMedia??[]);
  if(rendered.manifest.designHash!==row.designHash)throw Error("design_hash_mismatch");
- return buildWebsiteSelfHostedBundle({design:row.design,revision:1,catalog:[],articles:[],heroMedia:row.heroMedia??[]});
+ return buildWebsiteSelfHostedBundle({design:row.design,revision:row.revision??1,catalog:[],articles:[],heroMedia:row.heroMedia??[]});
 }
 
 const DirectJob=z.object({production_id:id,user_id:id,plan_hash:hash,state:z.literal("settled"),credits:z.number().int().positive(),maximum_micro_usd:z.number().int().positive(),receipt:z.object({requestId:z.string().min(1),estimatedMicroUSD:z.number().int().positive().optional()}),reviewed_cost:z.discriminatedUnion("source",[z.object({source:z.literal("reviewed_provider_usage"),requestId:z.string().min(1),actualMicroUSD:z.number().int().positive()}),z.object({source:z.literal("metered_policy_estimate"),requestId:z.string().min(1),estimatedMicroUSD:z.number().int().positive(),invoicePending:z.literal(true)})]),artifact:z.object({editableDesign:z.unknown(),editableDesignHash:hash})});

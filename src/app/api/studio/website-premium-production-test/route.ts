@@ -46,7 +46,7 @@ export async function POST(request:Request){
   const r=await db.from("website_credit_reservations").select("production_id,user_id,state,credits,plan_hash").eq("production_id",p.id).eq("user_id",actor).maybeSingle();
   const plan=p.output_json?.plan,media=WebsiteHeroMediaList.parse(plan?.websiteHeroMedia),design=WebsiteDesignSpec.parse(plan?.editableDesign);
   if(r.error||!r.data||r.data.plan_hash!==p.output_json?.websiteAssistant?.planHash||!websiteCreditDeliveryProof(p,r.data)||media.length!==plan?.websitePageMediaCoverage?.required||media.length!==plan?.websitePageMediaCoverage?.delivered)return fail(409,"settled_delivery_required");
-  const rows=[{productionId:p.id,designHash:plan.editableDesignHash,design,heroMedia:media}];
+  const rows=[{productionId:p.id,designHash:plan.editableDesignHash,design,heroMedia:media,revision:Number(p.output_json.websiteDesignVersion??1)}];
   if(v.action==="admin")return reply({ok:true,pages:buildWebsiteAdminPreview(design)});
   if(v.action==="preview")return reply({ok:true,...buildSettledWebsitePreview(rows,p.id)});
   const zip=buildSettledWebsiteCandidate(rows,p.id).zip;
