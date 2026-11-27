@@ -56,6 +56,13 @@ export async function POST(request:Request){try{const a=await owned(request);if(
   const {data,error}=await a.db.from("production_requests").update({output_json:next,updated_at:new Date().toISOString()}).eq("id",a.row.id).eq("user_id",a.actor).eq("status","ready").eq("updated_at",a.row.updated_at).select("id").maybeSingle();
   return error?out({ok:false,code:"storage_unavailable"},503):!data?out({ok:false,code:"version_conflict"},409):out({ok:true,cms,cmsVersion:p.version+1});
  }
+ if(operation==="revision-preview"){
+  const p=z.strictObject({version:z.number().int().positive()}).parse(await readBoundedWebsiteJson(request,1024));
+  if(p.version!==Number(a.row.output_json.websiteDesignVersion??1))return out({ok:false,code:"version_conflict"},409);
+  const output=a.row.output_json,context=prepareWebsiteRevisionContext({siteId:a.row.id,version:p.version,design:a.design});
+  const design=applySavedPaidRevision(context,output.websiteAIRevision),rendered=renderPaidWebsiteDesign(design,a.limit,output.plan?.websiteHeroMedia??[],output.plan?.approvedIndustryScope??undefined),css=rendered.files.find(f=>f.path==="styles.css")!.content;
+  return out({ok:true,pages:rendered.files.filter(f=>f.path.endsWith(".html")).map(f=>({path:f.path,content:f.content.replace('<link rel="stylesheet" href="./styles.css">',()=>"<style>"+css+"</style>")}))});
+ }
  if(operation==="revision"){
   const p=z.discriminatedUnion("action",[z.strictObject({action:z.literal("propose"),version:z.number().int().positive(),instruction:z.string().trim().min(3).max(1500),confirmIncludedRevision:z.literal(true)}),z.strictObject({action:z.literal("apply"),version:z.number().int().positive()})]).parse(await readBoundedWebsiteJson(request,6000));
   const output=a.row.output_json,version=Number(output.websiteDesignVersion??1);

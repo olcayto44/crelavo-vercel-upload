@@ -100,12 +100,15 @@ function planning(){if(project&&serverPlanning?.projectId===project.id&&serverPl
   if(Array.isArray(w?.missing)&&w.missing.length)
     progress.appendChild(node('small','Eksik bilgiler: '+w.missing.slice(0,5).join(', ')));
   const actions=node('div');actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
-  const brief=node('button','Brief & Plan');brief.type='button';brief.disabled=busy;brief.onclick=()=>showAux('brief');actions.appendChild(brief);
-  const builder=node('button','Website oluştur');builder.type='button';builder.disabled=busy;builder.onclick=openFunctionalWebsiteBuilder;actions.appendChild(builder);
   if(selectedProduction&&canvasState==='ready'){
    const readyId=selectedProduction;
-   const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(readyId);actions.appendChild(preview);
-   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(readyId);actions.appendChild(zip);const editor=node('button','Görsel site editörü');editor.type='button';editor.disabled=busy;editor.onclick=()=>window.open('/dashboard/website-draft?projectId='+encodeURIComponent(readyId),'_blank','noopener,noreferrer');actions.appendChild(editor);
+   const editor=node('button',language==='tr'?'Siteyi incele ve düzenle':'Review and edit website');editor.type='button';editor.disabled=busy;editor.onclick=()=>window.open('/dashboard/website-draft?projectId='+encodeURIComponent(readyId),'_blank','noopener,noreferrer');actions.appendChild(editor);
+   const legacy=node('details');legacy.appendChild(node('summary',language==='tr'?'Diğer teslimat seçenekleri':'Other delivery options'));
+   const preview=node('button','Canvas önizleme');preview.type='button';preview.disabled=busy;preview.onclick=()=>previewWebsite(readyId);legacy.appendChild(preview);
+   const zip=node('button','ZIP indir');zip.type='button';zip.disabled=busy;zip.onclick=()=>downloadWebsiteZip(readyId);legacy.appendChild(zip);actions.appendChild(legacy);
+  }else{
+   const brief=node('button','Brief & Plan');brief.type='button';brief.disabled=busy;brief.onclick=()=>showAux('brief');actions.appendChild(brief);
+   const builder=node('button',language==='tr'?'Üretim planını incele':'Review production plan');builder.type='button';builder.disabled=busy;builder.onclick=openFunctionalWebsiteBuilder;actions.appendChild(builder);
   }
   progress.appendChild(actions);
   messages.appendChild(progress);

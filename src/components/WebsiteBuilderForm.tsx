@@ -199,7 +199,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
         <h2>{t("Open a saved website")}</h2>
         <button className="btn secondary" type="button" disabled={contentBusy} onClick={listProjects}>{t("Load my websites")}</button>
         {savedProjects.length > 0 ? <label>{t("Saved projects")}<select value={projectId} onChange={(event) => setProjectId(event.target.value)}><option value="">{t("Select a website")}</option>{savedProjects.map((project) => <option key={project.id} value={project.id}>{project.title} — {t(project.status)}</option>)}</select></label> : null}
-        <label>{t("Project ID")}<input value={projectId} onChange={(event) => setProjectId(event.target.value)} placeholder={t("Existing website production ID")} /></label>
+        <details><summary>{t("Advanced")}</summary><label>{t("Project ID")}<input value={projectId} onChange={(event) => setProjectId(event.target.value)} placeholder={t("Existing website production ID")} /></label></details>
         <button className="btn" type="button" disabled={contentBusy || !projectId.trim()} onClick={() => openProject(projectId)}>{t("Open website")}</button>
       </div>
       <form onSubmit={submit} className="form-grid">
@@ -217,9 +217,10 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
       </form>
       </> : null}
       {status ? <p role="status" style={{ marginTop: "1rem" }}>{t(status, statusVariables)}</p> : null}
-      {outputs?.plan?.editableDesign && outputs.plan.projectId ? <p><a className="btn" href={"/dashboard/website-draft?projectId="+encodeURIComponent(outputs.plan.projectId)}>{t("Open visual website editor")}</a></p> : null}
+      {outputs?.plan?.editableDesign && outputs.plan.projectId ? <p><a className="btn" href={"/dashboard/website-draft?projectId="+encodeURIComponent(outputs.plan.projectId)}>{t("Review and edit website")}</a></p> : null}
       {outputs ? (
         <>
+          <details open={!outputs.plan?.editableDesign}><summary>{t("Delivery details")}</summary>
           <div className="mini-card" style={{ marginTop: "1.5rem" }}>
             <h2>{t("Website outputs")}</h2>
             <p>{t("Scope:")}{outputs.scope === "website_with_admin" ? t("Public website + admin starter") : t("Public static website")}</p>
@@ -227,6 +228,7 @@ export function WebsiteBuilderForm({ initialProjectId, editorOnly = false, onCon
             <p><button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.previewUrl, true)}>{t("Open preview")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.zipUrl)}>{t("Download ZIP/source")}</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.readmeUrl)}>README</button> <button type="button" className="btn secondary" disabled={contentBusy} onClick={() => downloadOutput(outputs.sourceUrl)}>{t("Source guide")}</button></p>          </div>
           {previewPages.length ? <p>{previewPages.map((page) => <button key={page.path} disabled={contentBusy} type="button" onClick={() => downloadOutput(outputs.previewUrl + "&page=" + encodeURIComponent(page.path), true)}>{page.title}</button>)}</p> : null}
           {previewHtml ? <div className="mini-card"><h2>{t("Sandboxed website preview")}</h2><button type="button" onClick={() => setPreviewHtml("")}>{t("Close preview")}</button><iframe ref={previewFrame} title={t("Website preview")} sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={previewHtml} style={{ width: "100%", height: 650, border: 0 }} /></div> : null}
+          </details>
           {!outputs.plan?.editableDesign && <>
           <form onSubmit={applyRevision} className="mini-card" style={{ marginTop: "1rem" }}>
             <h2>{t("Revise with natural language")}</h2>
