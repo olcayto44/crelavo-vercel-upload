@@ -1,5 +1,8 @@
 import { websiteCreditDeliveryProof } from '../src/lib/assistant-work/website-paid-delivery.ts';
-import { stripTypeScriptTypes } from "node:module";
+import { stripTypeScriptTypes, createRequire } from "node:module";
+import { websiteHasAdminPackage, websiteDeliveryVersion, websiteDeliveryVersionMatches } from '../src/lib/website-customer-delivery.ts';
+const require = createRequire(import.meta.url);
+const buildWebsiteSelfHostedBundle = (raw: unknown) => require('./studio-agent-test-loader.cjs').load('src/lib/website-selfhost-bundle.ts').buildWebsiteSelfHostedBundle(raw);
 import { sanitizeWebsiteContent, validateWebsiteSettings, websiteContentFromSource, websiteVersionHistory } from "../src/lib/website-content.ts";
 import { readFileSync } from 'node:fs';
 import { handleWebsiteAssistant } from '../src/lib/assistant-work/website.ts';
@@ -97,8 +100,8 @@ assert((await paused.call({ action: 'website_retry', productionId: interrupted.i
 const workRoute = readFileSync('src/app/api/assistant-work/route.ts', 'utf8');
 assert(workRoute.indexOf('handleWebsiteAssistant(body') < workRoute.indexOf('if (body.render !== true)'), 'website must be dispatched before generic plan echo/local engine');
 const deliverySource = readFileSync("src/app/api/productions/[id]/delivery/route.ts", "utf8").replace(/^import .*;\r?\n/gm, "").replace(/export async function /g, "async function ");
-const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", "websiteCreditDeliveryProof", stripTypeScriptTypes(deliverySource) + "; return GET;");
-const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, ( ) => env.db, async () => ({ status: "active" }), websiteCreditDeliveryProof);
+const deliveryFactory = new Function("buildDeliveryEntries", "buildDeliveryManifest", "buildDeliveryReadme", "buildDeliveryZip", "buildPreviewHtml", "buildSourceGuide", "isAdminRequest", "requireVerifiedRequestUser", "supabaseAdmin", "billingAccess", "websiteCreditDeliveryProof", "websiteHasAdminPackage", "websiteDeliveryVersionMatches", "buildWebsiteSelfHostedBundle", stripTypeScriptTypes(deliverySource) + "; return GET;");
+const deliveryGet = deliveryFactory(buildDeliveryEntries, () => ({}), () => "README", buildDeliveryZip, buildPreviewHtml, () => "Source", () => false, async (request: Request) => request.headers.get("authorization") === "Bearer owner" ? { ok: true } : { ok: false, response: Response.json({}, { status: 401 }) }, ( ) => env.db, async () => ({ status: "active" }), websiteCreditDeliveryProof, websiteHasAdminPackage, websiteDeliveryVersionMatches, buildWebsiteSelfHostedBundle);
 const deliveryRequest = (query: string, token = "owner") => new Request("https://local.test/api/productions/" + id + "/delivery?" + query, { headers: { Authorization: "Bearer " + token } });
 const contactResponse = await deliveryGet(deliveryRequest("file=preview&page=contact.html"), params);
 assert(contactResponse.status === 200 && (await contactResponse.text()).includes("id=\"contact\""), "actual delivery API must select the requested page");
@@ -107,7 +110,10 @@ assert((await deliveryGet(deliveryRequest("file=zip", "stranger"), params)).stat
 const storedRow = env.rows.get(id); storedRow.output_json.websiteBillingPending = true;
 for (const file of ["preview", "zip", "source", "readme"]) assert((await deliveryGet(deliveryRequest("file=" + file), params)).status === 409, "unpaid website delivery leaked: " + file);
 storedRow.output_json.websiteBillingPending = false;
-const zipResponse = await deliveryGet(deliveryRequest("file=zip"), params);
+const currentDeliveryVersion = websiteDeliveryVersion(storedRow.output_json);
+assert((await deliveryGet(deliveryRequest("file=zip&version=" + (currentDeliveryVersion.version + 1) + "&cmsVersion=" + currentDeliveryVersion.cmsVersion), params)).status === 409, "stale design version must block ZIP");
+assert((await deliveryGet(deliveryRequest("file=zip&version=" + currentDeliveryVersion.version + "&cmsVersion=" + (currentDeliveryVersion.cmsVersion + 1)), params)).status === 409, "stale CMS version must block ZIP");
+const zipResponse = await deliveryGet(deliveryRequest("file=zip&version=" + currentDeliveryVersion.version + "&cmsVersion=" + currentDeliveryVersion.cmsVersion), params);
 assert(zipResponse.status === 200 && new TextDecoder().decode(await zipResponse.arrayBuffer()).includes("source/contact.html"), "actual delivery API ZIP must contain generated subpages");
 const cleared = environment(); const clearPlan = await cleared.prepare();
 const clearedReply = await cleared.call({ action: 'revise', productionId: clearPlan.id, prompt: 'Please review the brief.', uiAction: true, packId: '' });
