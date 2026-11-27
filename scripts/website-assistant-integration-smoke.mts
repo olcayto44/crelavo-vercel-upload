@@ -11,13 +11,14 @@ delete process.env.OPENAI_API_KEY;
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
 const brief = { brand: 'Ortak Marka', brief: 'Small business providing reliable team scheduling services.', audience: 'Small business teams', siteType: 'Business website', style: 'Clean and minimal', pages: ['Home', 'About', 'Services', 'Contact'], features: ['Responsive layout', 'FAQ'], locale: 'en' };
 function environment() {
-  const rows = new Map<string, any>(); const ledger = new Set<string>(); let balance = 2000; let generates = 0; let charges = 0; let failGeneration = false; let failPayment = false; let failFinalize = false; let packageCredits = 1500;
+  const rows = new Map<string, any>(); const ledger = new Set<string>(); const settledProofs = new Map<string, any>(); let balance = 2000; let generates = 0; let charges = 0; let failGeneration = false; let failPayment = false; let failFinalize = false; let packageCredits = 1500;
   const db = { from: (_table: string) => {
     let insert: any; let patch: any; const filters: Array<[string, unknown]> = [];
     const read = (row: any, path: string) => path.split(/->>?/).reduce((value, key) => value?.[key], row);
     const query: any = { select: () => query, eq: (key: string, value: unknown) => { filters.push([key, value]); return query; }, insert: (value: any) => { insert = value; return query; }, update: (value: any) => { patch = value; return query; }, single: async () => query.maybeSingle(), maybeSingle: async () => {
       if (insert) { const row = { ...structuredClone(insert), id: 'website-' + (rows.size + 1), updated_at: 'initial' }; rows.set(row.id, row); return { data: structuredClone(row), error: null }; }
-      const row = Array.from(rows.values()).find((r) => filters.every(([key, value]) => read(r, key) === value));
+      const sourceRows = _table === "website_credit_reservations" ? settledProofs : rows;
+      const row = Array.from(sourceRows.values()).find((r) => filters.every(([key, value]) => read(r, key) === value));
       if (!row) return { data: null, error: null };
       if (patch?.status === 'ready' && failFinalize) { failFinalize = false; return { data: null, error: { message: 'forced finalization failure' } }; }
       const next = patch ? { ...row, ...structuredClone(patch) } : row; rows.set(row.id, next); return { data: structuredClone(next), error: null };
@@ -26,7 +27,7 @@ function environment() {
   const deps = { db, pack: (id: string) => id === 'business' ? { label: 'Business Website', credits: packageCredits } : undefined, balance: async () => balance, spend: async (amount: number, session: string) => { if (ledger.has(session)) return { ok: true, balance, charged: 0 }; if (failPayment) return { ok: false, balance, error: 'forced_payment_failure' }; if (balance < amount) return { ok: false, balance, error: 'insufficient_credits' }; ledger.add(session); balance -= amount; charges++; return { ok: true, balance, charged: amount }; }, generate: async (...args: Parameters<typeof generateWebsiteArtifact>) => { generates++; if (failGeneration) throw new Error('forced_generation_failure'); return generateWebsiteArtifact(...args); } };
   const call = (body: Record<string, unknown>, user = 'owner') => handleWebsiteAssistant({ category: 'website', type: 'Website', packId: 'business', ...body }, { id: user }, deps);
   const prepare = async () => { const draft = await call({ action: 'revise', prompt: 'Please prepare our business website.', websiteBrief: brief }); assert(draft.status === 200, 'brief preparation failed'); const id = draft.payload.productionId!; const hash = (draft.payload as any).website.planHash; return { id, hash, draft }; };
-  return { rows, db, call, prepare, counts: () => ({ generates, charges, balance }), controls: { price: (n: number) => packageCredits = n, balance: (n: number) => balance = n, generation: (value: boolean) => failGeneration = value, payment: (value: boolean) => failPayment = value, finalize: () => failFinalize = true } };
+  return { rows, settledProofs, db, call, prepare, counts: () => ({ generates, charges, balance }), controls: { price: (n: number) => packageCredits = n, balance: (n: number) => balance = n, generation: (value: boolean) => failGeneration = value, payment: (value: boolean) => failPayment = value, finalize: () => failFinalize = true } };
 }
 const env = environment(); const { id, hash, draft } = await env.prepare();
 assert(env.counts().charges === 0 && env.counts().generates === 0, 'conversation must not charge or generate');
@@ -46,6 +47,12 @@ const contentFactory = new Function('requireVerifiedRequestUser', 'supabaseAdmin
 const editor = contentFactory(async () => ({ ok: true }), () => env.db, () => ({ ok: true }), () => 'local', () => ({ allowed: true }), () => Response.json({}, { status: 429 }), sanitizeWebsiteContent, validateWebsiteSettings, websiteContentFromSource, websiteVersionHistory, websiteCreditDeliveryProof);
 const params = { params: Promise.resolve({ id }) };
 const contentRequest = (body: unknown) => new Request('https://local.test', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+assert((await editor.GET(new Request('https://local.test?user_id=owner'), params)).status === 409, 'a legacy ready marker without settled proof must not open the editor');
+// Explicit synthetic independent settlement fixture for the actual HTTP handlers.
+// The mocked legacy generator above is not evidence of a real atomic charge.
+row.output_json.websiteBillingMode = 'atomic_v1';
+row.reserved_credits = 0;
+env.settledProofs.set(id,{production_id:id,user_id:'owner',state:'settled',credits:1500,plan_hash:hash});
 assert((await editor.POST(contentRequest({ user_id: 'owner', action: 'revision', instruction: 'Hakkımızda başlığını Birleşik hakkında olarak değiştir.' }), params)).status === 200, 'assistant project must use the actual revision API');
 assert((await editor.PUT(contentRequest({ user_id: 'owner', content: { contactTitle: 'Revised contact' } }), params)).status === 200, 'assistant project must use the shared manual editor');
 const reopened = await (await editor.GET(new Request('https://local.test?user_id=owner'), params)).json();
