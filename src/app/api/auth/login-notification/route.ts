@@ -1,3 +1,5 @@
+import {bearerTokenFromRequest,supabaseAdmin} from "@/lib/supabase";
+import {rateLimit,rateLimitResponse} from "@/lib/security";
 function cleanText(value: unknown, maxLength: number) {
   return String(value ?? "").trim().slice(0, maxLength);
 }
@@ -7,9 +9,11 @@ function isEmail(value: string) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => ({}));
-  const email = cleanText(body.email, 180).toLowerCase();
-  const fullName = cleanText(body.fullName, 140) || "Crelavo user";
+  const token=bearerTokenFromRequest(request);
+  if(!token)return Response.json({error:"Sign in required."},{status:401});
+  let email="",fullName="Crelavo user",uid="";
+  try{const {data,error}=await supabaseAdmin().auth.getUser(token);const user=data.user;if(error||!user?.id||!user.email||!(user.email_confirmed_at||user.confirmed_at))return Response.json({error:"Verified session required."},{status:401});email=cleanText(user.email,180).toLowerCase();uid=user.id;fullName=cleanText(user.user_metadata?.full_name,140)||fullName;}catch{return Response.json({error:"Session verification unavailable."},{status:503});}
+  const limit=rateLimit({key:"login-notice:"+uid,limit:3,windowMs:3600000});if(!limit.allowed)return rateLimitResponse(limit.resetAt);
 
   if (!isEmail(email)) {
     return Response.json({ error: "Valid email is required." }, { status: 400 });

@@ -1,7 +1,7 @@
 name: Website commercial isolated acceptance
 on:
   push:
-    branches: [feat/studio-stage-image-20261127]
+    branches: [feat/studio-stage-image-20261127, feat/crelavo-premium-v3-20261128]
     paths:
       - 'src/app/api/**'
       - 'src/app/website-cms-test/**'
@@ -11,6 +11,9 @@ on:
       - 'src/components/**'
       - 'src/app/dashboard/**'
       - 'scripts/*website*'
+      - 'scripts/premium-*'
+      - 'src/app/auth/**'
+      - 'src/app/page.tsx'
       - 'scripts/*whop*'
       - 'scripts/admin-main-browser-smoke.cjs'
       - 'supabase/**'
@@ -37,6 +40,7 @@ jobs:
           node scripts/website-customer-navigation-smoke.cjs
           node scripts/website-customer-account-security-smoke.cjs
           node scripts/dashboard-signin-smoke.cjs
+          node scripts/premium-auth-protection-smoke.cjs
           npx tsc --noEmit
           node scripts/website-paid-production-gate-smoke.cjs
           node scripts/website-atomic-flow-smoke.cjs
