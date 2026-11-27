@@ -163,3 +163,24 @@ begin
 end $$;
 revoke all on function public.studio_legacy_cancel_unstarted(uuid,uuid) from public,anon,authenticated;
 grant execute on function public.studio_legacy_cancel_unstarted(uuid,uuid) to service_role;
+
+-- No balance changes on ambiguous failure. Preserve any real provider evidence.
+create or replace function public.studio_legacy_hold_failed_start(p_user uuid,p_production uuid,p_reason text,p_known_job boolean)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare j production_requests%rowtype; o jsonb; resolution jsonb; local_block boolean;
+begin
+ if p_user is null or p_production is null or p_known_job is null or p_reason is null or p_reason not in ('talking_start','ecommerce_pipeline','frame_extraction','missing_reference','image_pipeline','presenter_route_block','video_no_job','unexpected_start_failure') then raise exception 'legacy_failure_review_invalid';end if;
+ select * into j from production_requests where id=p_production and user_id=p_user for update;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ o:=coalesce(j.output_json,'{}'::jsonb);
+ if j.status in ('ready','completed','cancelled','deleted') then return jsonb_build_object('state','closed');end if;
+ if p_known_job or o ?| array['providerJob','providerJobId','provider_job_id','renderJob','visualJob','finalImageUrl','finalVideoUrl'] then return jsonb_build_object('state','provider_poll_required');end if;
+ if o#>>'{creditResolution,status}' in ('provider_outcome_unconfirmed','admin_review_required') then return jsonb_build_object('state','already_in_review');end if;
+ if o ? 'creditResolution' then return jsonb_build_object('state','reconcile_required');end if;
+ local_block:=p_reason in ('missing_reference','presenter_route_block') and j.started_at is null and j.status='queued' and j.generation_status in ('automation_queued','waiting_provider_config') and coalesce(j.automation_status,'queued') in ('queued','waiting_provider_config');
+ resolution:=jsonb_build_object('status',case when local_block then 'admin_review_required' else 'provider_outcome_unconfirmed' end,'reason',p_reason,'reservedCredits',j.reserved_credits,'recordedAt',now(),'automaticRefundAllowed',false);
+ update production_requests set status='failed',automation_status='admin_recovery_required',generation_status='provider_outcome_reconciliation_required',output_json=o||jsonb_build_object('creditResolution',resolution),admin_notes='Provider outcome requires verification. Reservation retained; no automated credit mutation.',error_message='Production requires review before settlement.',updated_at=now() where id=p_production;
+ return jsonb_build_object('state','review_required');
+end $$;
+revoke all on function public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean) from public,anon,authenticated;
+grant execute on function public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean) to service_role;

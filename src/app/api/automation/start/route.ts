@@ -79,16 +79,11 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
   return postgresSafe(productionRequestUpdatePayload(payload)) as T;
 }
 
-async function releaseReservedCredits(supabase: ReturnType<typeof supabaseAdmin>, production: { user_id?: string | null; reserved_credits?: number | null }, note: string, existingOutput?: Record<string, unknown>) {
-  const existingResolution = existingOutput?.creditResolution && typeof existingOutput.creditResolution === "object" ? existingOutput.creditResolution as Record<string, unknown> : null;
-  if (["refunded_reserved", "refunded_reserved_no_provider_cost", "expired_before_provider_start_refunded"].includes(String(existingResolution?.status ?? ""))) return { amount: 0, alreadyResolved: true, creditResolution: existingResolution };
-  const amount = Number(production.reserved_credits ?? 0) || 0;
-  if (!amount || !production.user_id) return { amount: 0, alreadyResolved: false, creditResolution: null };
-  const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).maybeSingle();
-  if (!balanceRow) return { amount: 0, alreadyResolved: false, creditResolution: null };
-  await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
-  return { amount, alreadyResolved: false, creditResolution: { status: "refunded_reserved", refundedCredits: amount, releasedReservedCredits: amount, resolvedAt: new Date().toISOString(), reason: "provider_not_created" } };
+async function holdFailedStart(supabase: ReturnType<typeof supabaseAdmin>, production: { id: string; user_id?: string | null }, reason: string, knownJob = false) {
+  if (!production.user_id) return Response.json({ error: "production_owner_unconfirmed" }, { status: 409 });
+  const { data, error } = await supabase.rpc("studio_legacy_hold_failed_start", { p_user: production.user_id, p_production: production.id, p_reason: reason, p_known_job: knownJob });
+  if (error || !data) return Response.json({ error: "provider_outcome_unconfirmed", automatic_retry: false, credits_released: 0 }, { status: 503 });
+  return Response.json({ error: "provider_outcome_reconciliation_required", state: data.state, automatic_retry: false, credits_released: 0, production_id: production.id }, { status: 409 });
 }
 
 function pokeAutomationWorker(request: Request, productionId: string) {
@@ -510,6 +505,7 @@ const productionType = ["talking_video_basic", "talking_video_multi_person", "ta
 export async function POST(request: Request) {
   let productionId = "";
   let providerJobCreated = false;
+  let verifiedOwner: string | null = null;
   try {
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
     if (!isAdminRequest(request, body) && !hasValidProductionDispatch(body)) return Response.json(productionDispatchError(), { status: 409 });
@@ -541,6 +537,8 @@ export async function POST(request: Request) {
      const access = await requireAutomationAccess(request, body, currentProduction);
 
     if (!access.ok) return access.response;
+    verifiedOwner = String(currentProduction.user_id ?? "") || null;
+    if (currentProduction.generation_status === "provider_outcome_reconciliation_required") return Response.json({ error: "provider_outcome_reconciliation_required", automatic_retry: false }, { status: 409 });
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
     const existingVisualJob = existingOutput.visualJob && typeof existingOutput.visualJob === "object" ? existingOutput.visualJob as Record<string, unknown> : null;
     const existingHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingVisualJob?.id && !String(existingVisualJob.id).startsWith("pending-"));
@@ -782,29 +780,7 @@ if (talkingProviderType) {
      providerJobCreated = hasRealProviderJob(providerJob);
    } catch (error) {
      const failureMessage = errorMessage(error, "MiniMax provider job could not be started.");
-     const creditRecovery = await releaseReservedCredits(
-       supabase,
-       currentProduction,
-       `Released reserved credits because MiniMax provider start failed before provider job creation: ${failureMessage}`,
-       existingOutput
-     );
-     const failedOutput = {
-       ...startRequestedOutput,
-       automationStatus: "provider_start_failed",
-       providerStatus: "provider_start_failed_no_job",
-       providerJobCreated: false,
-       providerErrors: { minimax: failureMessage },
-       creditResolution: creditRecovery.creditResolution,
-       currentStep: "MiniMax provider start failed before provider job id was created"
-     };
-     const { data: failedProduction, error: failedUpdateError } = await supabase
-       .from("production_requests")
-       .update(safeUpdate({ status: "failed", automation_status: "provider_start_failed", generation_status: "provider_start_failed_no_job", reserved_credits: 0, output_json: failedOutput, admin_notes: `MiniMax start failed before provider job id; reserved credits released: ${failureMessage}`, error_message: failureMessage, updated_at: now }))
-       .eq("id", productionId)
-       .select("*")
-       .single();
-     if (failedUpdateError) throw new Error(`minimax_start_failed_update: ${errorMessage(failedUpdateError, "DB update failed")}; original: ${failureMessage}`);
-     return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });
+     return await holdFailedStart(supabase, currentProduction, "talking_start", providerJobCreated);
    }
        const providerTaskId = "task_id" in providerJob ? providerJob.task_id : providerJob.id;
        const talkingOutput = {
@@ -1105,50 +1081,7 @@ providerStatus: providerJob.provider === "minimax" && useMiniMaxVideoAgent ? "mi
         return Response.json({ job_id: jobId, production: completedProduction, provider_result: result });
       } catch (providerError) {
         const message = errorMessage(providerError, "Provider pipeline failed");
-        const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
-        if (reservedCredits > 0) {
-          const { data: balanceRow } = await supabase.from("credit_balances").select("balance, reserved").eq("user_id", currentProduction.user_id).maybeSingle();
-          if (balanceRow) {
-            await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-            await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because the real ecommerce provider pipeline did not start: ${message}` });
-          }
-        }
-        const providerNote = `Real provider pipeline failed; no demo output was created: ${message}`;
-        const failedOutput = {
-          ...existingOutput,
-          automationMode: "fully_automatic",
-          automationStatus: "provider_required",
-          providerStatus: "provider_required",
-          providerPreflight,
-          providerErrors: { ecommerce_ad: message },
-          automaticDeliveryLinks: deliveryLinks,
-          outputRegistry: buildOutputRegistry({ ...outputRegistryBase, output_json: existingOutput }),
-          finalVideoUrl: null,
-          previewUrl: null,
-          deliveryLink: null,
-          deliveryZipUrl: null
-        };
-        const { data: failedProduction, error: failedError } = await supabase
-          .from("production_requests")
-          .update({
-            status: "queued",
-            automation_status: "waiting_provider_config",
-            generation_status: "provider_required",
-            preview_url: null,
-            delivery_link: null,
-            delivery_zip_url: null,
-            reserved_credits: 0,
-            output_json: failedOutput,
-            admin_notes: providerNote,
-            error_message: message,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", productionId)
-          .select("*")
-          .single();
-
-        if (failedError) throw failedError;
-        return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, provider_required: true, error: message }, { status: 424 });
+        return await holdFailedStart(supabase, currentProduction, "ecommerce_pipeline", providerJobCreated);
       }
     }
 
@@ -1192,11 +1125,7 @@ if (isImageProduction) {
        return Response.json({ job_id: jobId, production: frameProduction, provider_started: true, provider_result: { provider: "ffmpeg", imageUrl: finalImageUrl, sourceVideoUrl, timestampSeconds: frameTimestampSeconds ?? 2.5 } });
      } catch (error) {
        const failureMessage = errorMessage(error, "Video frame extraction failed.");
-       await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because uploaded video frame extraction failed: ${failureMessage}`);
-       const failedOutput = { ...existingOutput, automationMode: "fully_automatic", automationStatus: "failed", providerStatus: "ffmpeg_frame_extraction_failed", requiredPipeline: "video_frame_extraction", sourceType: "uploaded_video_frame", generatedImage: false, frameExtraction: { mode: "ffmpeg", sourceVideoUrl }, providerError: failureMessage, deliveryReady: false };
-       const { data: failedProduction, error: failedError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_failed", output_json: failedOutput, error_message: failureMessage, admin_notes: failureMessage, updated_at: now })).eq("id", productionId).select("*").single();
-       if (failedError) throw failedError;
-       return Response.json({ job_id: jobId, production: failedProduction, provider_started: false, error: failureMessage }, { status: 502 });
+       return await holdFailedStart(supabase, currentProduction, "frame_extraction", providerJobCreated);
      }
    }
    const imagePromptCandidates = [
@@ -1224,10 +1153,7 @@ if (isImageProduction) {
      : "";
    if (productionType === "visual_clone" && !cloneReferenceUrl) {
      const message = "Visual Clone requires an uploaded reference image. No placeholder image was created.";
-     await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because Visual Clone reference image is missing: ${message}`);
-     const { data: waitingProduction, error: waitingError } = await supabase.from("production_requests").update(safeUpdate({ status: "queued", automation_status: "waiting_provider_config", generation_status: "waiting_reference_image", reserved_credits: 0, preview_url: null, delivery_link: null, delivery_zip_url: null, output_json: { ...existingOutput, automationStatus: "waiting_provider_config", providerStatus: "waiting_reference_image", providerRequired: ["reference_image"], finalImageUrl: null }, admin_notes: message, error_message: message, updated_at: now })).eq("id", productionId).select("*").single();
-     if (waitingError) throw waitingError;
-     return Response.json({ job_id: jobId, production: waitingProduction, provider_started: false, waiting_provider_config: true, missing_input: "reference_image", error: message }, { status: 424 });
+     return await holdFailedStart(supabase, currentProduction, "missing_reference", providerJobCreated);
    }
     const imagePrompt = linkedinBanner
      ? `${imagePromptBase}\nSTRICT LINKEDIN BANNER BACKGROUND RULES: create one clean wide horizontal banner background only. Do not render any text, letters, logo, portrait, profile photo, device mockup, browser window, dashboard, button, LinkedIn interface or watermark. Keep the entire left third calm and leave the center-right area clear for deterministic Crelavo typography added after generation. Output exactly one static image in the requested aspect ratio.`
@@ -1291,61 +1217,12 @@ if (isImageProduction) {
     return Response.json({ job_id: jobId, production: imageProduction, provider_started: true, provider_result: imageResult });
   } catch (error) {
     const failureMessage = errorMessage(error, "Image provider job could not be started.");
-    await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because image provider failed before a usable output was created: ${failureMessage}`);
-    const failedOutput = {
-      ...existingOutput,
-      automationMode: "fully_automatic",
-      automationStatus: "failed",
-      providerStatus: "image_provider_failed",
-      currentStep: "Image provider failed",
-      providerErrors: { image: failureMessage },
-      workflowState: buildProductionWorkflowState({ ...currentProduction, status: "failed", automation_status: "failed", generation_status: "image_provider_failed", output_json: { ...existingOutput } })
-    };
-    const { data: failedProduction, error: failedUpdateError } = await supabase
-      .from("production_requests")
-      .update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "image_provider_failed", reserved_credits: 0, output_json: failedOutput, admin_notes: failureMessage, error_message: failureMessage, updated_at: now }))
-      .eq("id", productionId)
-      .select("*")
-      .single();
-    if (failedUpdateError) throw failedUpdateError;
-    return Response.json({ error: failureMessage, production: failedProduction, provider_started: false, provider_start_failed: true }, { status: 502 });
+    return await holdFailedStart(supabase, currentProduction, "image_pipeline", providerJobCreated);
   }
 }
 if (!isDroneProduction && hasMinimaxPresenterIntent(productionDetectionText) && String(providerPreflight.provider ?? "").toLowerCase() !== "minimax") {
   const blockMessage = "Generic video provider blocked: presenter/UGC/talking video must start through MiniMax, not Replicate/FAL/Runway.";
-  const reservedCredits = Number(currentProduction.reserved_credits ?? 0) || 0;
-  if (reservedCredits > 0) {
-    const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", currentProduction.user_id).single();
-    if (balanceRow) {
-      await supabase.from("credit_balances").upsert({ user_id: currentProduction.user_id, balance: Number(balanceRow.balance ?? 0) + reservedCredits, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - reservedCredits), updated_at: now }, { onConflict: "user_id" });
-      await supabase.from("credit_events").insert({ user_id: currentProduction.user_id, type: "refund", amount: reservedCredits, note: `Released reserved credits because generic provider was blocked for presenter job: ${blockMessage}` });
-    }
-  }
-  const blockedOutput = {
-    ...existingOutput,
-    ...demoOutput,
-    automationStatus: "provider_start_failed",
-    providerStatus: "generic_provider_blocked_for_presenter",
-    providerErrors: { generic_video: blockMessage },
-    currentStep: "Generic provider blocked before job creation",
-    providerReadiness,
-    routeGuard: {
-      status: "blocked",
-      blockedAt: now,
-      requiredProvider: "minimax",
-      blockedProviders: ["replicate", "fal", "runway", "generic_video"],
-      reason: blockMessage
-    },
-    workflowState: buildProductionWorkflowState({ ...currentProduction, status: "queued", automation_status: "provider_start_failed", generation_status: "generic_provider_blocked_for_presenter", output_json: { ...existingOutput, providerReadiness } })
-  };
-  const { data: blockedProduction, error: blockedUpdateError } = await supabase
-    .from("production_requests")
-    .update(safeUpdate({ status: "queued", automation_status: "provider_start_failed", generation_status: "generic_provider_blocked_for_presenter", reserved_credits: 0, output_json: blockedOutput, admin_notes: blockMessage, error_message: blockMessage, updated_at: now }))
-    .eq("id", productionId)
-    .select("*")
-    .single();
-  if (blockedUpdateError) throw new Error(`generic_provider_block_update: ${errorMessage(blockedUpdateError, "DB update failed")}`);
-  return Response.json({ error: blockMessage, production: blockedProduction, provider_started: false, provider_start_failed: true, provider_blocked: true }, { status: 409 });
+  return await holdFailedStart(supabase, currentProduction, "presenter_route_block", providerJobCreated);
 }
     const providerTestMode = Boolean(providerPreflight.testMode);
     const requestedDuration = providerTestMode ? 5 : Math.min(60, Math.max(5, Number(providerPreflight.durationSeconds) || 15));
@@ -1434,11 +1311,7 @@ const clippingRun = requiredPipeline === "video_clipping"
         };
         const { error: diagnosticError } = await supabase.from("production_requests").update(safeUpdate({ output_json: diagnosticOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId);
         if (diagnosticError) throw new Error(`provider_start_diagnostic_update: ${errorMessage(diagnosticError, "DB update failed")}`);
-        const creditRecovery = await releaseReservedCredits(supabase, currentProduction, recoveryMessage, diagnosticOutput);
-        const recoveryOutput = { ...diagnosticOutput, creditResolution: creditRecovery.creditResolution };
-       const { data: recoveredProduction, error: recoveryError } = await supabase.from("production_requests").update(safeUpdate({ status: "failed", automation_status: "failed", generation_status: "provider_start_failed_no_job", reserved_credits: 0, output_json: recoveryOutput, admin_notes: recoveryMessage, error_message: recoveryMessage, updated_at: now })).eq("id", productionId).select("*").single();
-       if (recoveryError) throw recoveryError;
-       return Response.json({ error: recoveryMessage, production: recoveredProduction, provider_started: false, provider_start_failed: true, provider_job_created: false, credits_released: creditRecovery.amount }, { status: 502 });
+        return await holdFailedStart(supabase, currentProduction, "video_no_job", providerJobCreated);
     }
 
     const aiVideoProviderChain = clippingRun
@@ -1548,42 +1421,11 @@ const providerNote = requiredPipeline === "talking_lip_sync" && genericRun
   } catch (error) {
     const failureMessage = errorMessage(error, "Could not start automation job");
     console.error("Internal Crash Log:", failureMessage, error);
-    if (productionId) {
+    if (productionId && verifiedOwner) {
       try {
-        const supabase = supabaseAdmin();
-        const { data: currentProduction } = await selectProductionForAutomation(supabase, productionId);
-        if (currentProduction) {
-          const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});
-           const outputHasProviderJob = Boolean(existingOutput.providerJob || existingOutput.renderJob || existingOutput.providerJobId || existingOutput.provider_job_id || existingOutput.visualJob && typeof existingOutput.visualJob === "object" && String((existingOutput.visualJob as Record<string, unknown>).id ?? "").trim() && !String((existingOutput.visualJob as Record<string, unknown>).id).startsWith("pending-"));
-           const noProviderJob = !providerJobCreated && !outputHasProviderJob;
-           const release = noProviderJob
-             ? await releaseReservedCredits(supabase, currentProduction, `Released reserved credits because automation start failed before provider job creation: ${failureMessage}`, existingOutput)
-             : { amount: 0, alreadyResolved: false, creditResolution: null };
-           const failureOutput = {
-             ...existingOutput,
-             automationStatus: "provider_start_failed",
-             providerStatus: noProviderJob ? "provider_start_failed_no_job" : "provider_start_failed",
-             providerJobCreated: !noProviderJob,
-             providerErrors: { ...(existingOutput.providerErrors && typeof existingOutput.providerErrors === "object" ? existingOutput.providerErrors as Record<string, unknown> : {}), automation_start: failureMessage },
-             ...(release.creditResolution ? { creditResolution: release.creditResolution } : {}),
-             errorMessage: failureMessage
-           };
-           await supabase
-             .from("production_requests")
-             .update(safeUpdate({
-               status: noProviderJob ? "queued" : "in_production",
-               automation_status: "provider_start_failed",
-               generation_status: noProviderJob ? "provider_start_failed_no_job" : "provider_start_failed",
-               ...(noProviderJob ? { reserved_credits: 0 } : {}),
-               output_json: failureOutput,
-               error_message: failureMessage,
-               admin_notes: noProviderJob ? `Automation start failed before provider job creation; reserved credits released: ${failureMessage}` : `Automation start persistence failed after provider job creation: ${failureMessage}`,
-               updated_at: new Date().toISOString()
-             }))
-             .eq("id", productionId);
-        }
+        return await holdFailedStart(supabaseAdmin(), { id: productionId, user_id: verifiedOwner }, "unexpected_start_failure", providerJobCreated);
       } catch (logError) {
-        console.error("automation:start failure logging failed", logError);
+        console.error("automation:start failure review failed", logError);
       }
     }
     return Response.json({ error: failureMessage, production_id: productionId || null, provider_started: false, provider_start_failed: true }, { status: 500 });
