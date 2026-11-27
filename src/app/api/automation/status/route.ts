@@ -1,4 +1,4 @@
-import { readBoundedVideo, verifyMp4Bytes } from "@/lib/verified-mp4";
+import { persistPrivateFinalVideo, privateVideoDeliveryPath, PRIVATE_FINAL_BUCKET } from "@/lib/private-final-video";
 import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -55,21 +55,10 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
 
 async function settleVerifiedLegacyVideo(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, finalUrl: string, output: Record<string, any>) {
   if (process.env.CRELAVO_ATOMIC_LEGACY_VIDEO_SETTLEMENT_ENABLED !== "true") return Response.json({ error: "atomic_video_settlement_not_enabled", charged: 0 }, { status: 409 });
-  const bucket = process.env.SUPABASE_PROVIDER_ASSETS_BUCKET || "provider-assets";
-  const prefix = "/storage/v1/object/public/" + bucket + "/";
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
-  let object = "";
-  try {
-    const url = new URL(finalUrl);
-    if (!base || url.origin !== new URL(base).origin || url.search || url.hash || !url.pathname.startsWith(prefix)) throw Error("storage_origin");
-    object = url.pathname.slice(prefix.length);
-  } catch { return Response.json({ error: "delivery_storage_unverified", charged: 0 }, { status: 409 }); }
-  let mediaProof;
-  try {
-    const bytes = await readBoundedVideo(await fetch(finalUrl, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000) }));
-    mediaProof = await verifyMp4Bytes(bytes, assertFfmpegAvailable());
-  } catch { return Response.json({ error: "delivery_media_decode_unverified", charged: 0 }, { status: 409 }); }
-  const { data, error } = await supabase.rpc("studio_legacy_settle_video", { p_user: production.user_id, p_job: production.id, p_stamp: production.updated_at, p_bucket: bucket, p_object: object, p_url: finalUrl, p_output: postgresSafe({ ...output, mediaProof }) });
+  const privateVideo = output.finalAssetMirror?.privateVideo;
+  const mediaProof = output.finalAssetMirror?.mediaProof;
+  if (finalUrl !== privateVideoDeliveryPath(production.id) || privateVideo?.bucket !== PRIVATE_FINAL_BUCKET || !mediaProof) return Response.json({ error: "private_video_storage_unverified", charged: 0 }, { status: 409 });
+  const { data, error } = await supabase.rpc("studio_legacy_settle_video", { p_user: production.user_id, p_job: production.id, p_stamp: production.updated_at, p_bucket: privateVideo.bucket, p_object: privateVideo.object, p_url: finalUrl, p_output: postgresSafe({ ...output, privateVideo, mediaProof }) });
   if (error || !data) return Response.json({ error: "video_settlement_unconfirmed", automatic_retry: false }, { status: 503 });
   if (!["settled", "already_settled"].includes(data.state)) return Response.json({ error: "wallet_reconciliation_required", state: data.state, charged: 0 }, { status: 409 });
   return Response.json({ production: data.production, charged: data.charged, idempotent: data.state === "already_settled" });
@@ -701,16 +690,12 @@ export async function POST(request: Request) {
 
       if (finalAssemblyPoll.finalAssemblyPollStatus === "ready" && finalAssemblyPoll.finalVideoUrl) {
         const providerFinalUrl = finalAssemblyPoll.finalVideoUrl;
+        if (process.env.CRELAVO_ATOMIC_LEGACY_VIDEO_SETTLEMENT_ENABLED !== "true") return Response.json({ error: "atomic_video_settlement_not_enabled", charged: 0 }, { status: 409 });
         let finalUrl = providerFinalUrl;
         let finalAssetMirror: Record<string, unknown> = { status: "not_attempted" };
         try {
-          const storedUrl = await mirrorProviderAsset({
-            productionId,
-            sourceUrl: providerFinalUrl,
-            filenameBase: "character-dialogue-final-render",
-            fallbackContentType: "video/mp4"
-          });
-          finalAssetMirror = { status: "mirrored_provider_url_primary", providerUrl: providerFinalUrl, storedUrl };
+          const privateAsset = await persistPrivateFinalVideo(String(production.user_id), productionId, providerFinalUrl);
+          finalAssetMirror = { status: "private_verified_video", ...privateAsset };
         } catch (mirrorError) {
           finalAssetMirror = { status: "fallback_provider_url", providerUrl: providerFinalUrl, error: errorMessage(mirrorError, "Dedicated final render could not be mirrored to storage") };
         }
@@ -735,7 +720,7 @@ export async function POST(request: Request) {
           readySceneClipUrls: i2vPoll.readySceneClipUrls
         };
         const readyGate = productionReadyGate({ ...production, preview_url: finalUrl, delivery_link: finalUrl, delivery_zip_url: finalUrl, output_json: dedicatedReadyOutputCandidate }, dedicatedReadyOutputCandidate);
-        if (!readyGate.passed || finalAssetMirror.status !== "mirrored_provider_url_primary" || typeof finalAssetMirror.storedUrl !== "string") return Response.json({ error: "delivery_quality_unverified", charged: 0 }, { status: 409 });
+        if (!readyGate.passed || finalAssetMirror.status !== "private_verified_video" || typeof finalAssetMirror.storedUrl !== "string") return Response.json({ error: "delivery_quality_unverified", charged: 0 }, { status: 409 });
         finalUrl = finalAssetMirror.storedUrl;
         const creditResolution = null;
         const finalizedReservedCredits = 0;
@@ -1154,6 +1139,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
         return Response.json({ production: data, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, ready_gate: readyGate, quality_blocked: true });
       }
       if (!readyGate.passed) return Response.json({ error: "delivery_quality_unverified", charged: 0 }, { status: 409 });
+      if (process.env.CRELAVO_ATOMIC_LEGACY_VIDEO_SETTLEMENT_ENABLED !== "true") return Response.json({ error: "atomic_video_settlement_not_enabled", charged: 0 }, { status: 409 });
       const creditResolution = null;
       const finalizedReservedCredits = 0;
 
@@ -1161,14 +1147,9 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
       let finalUrl = providerFinalUrl;
       let finalAssetMirror: Record<string, unknown> = { status: "not_attempted" };
       try {
-        const storedUrl = await mirrorProviderAsset({
-          productionId,
-          sourceUrl: providerFinalUrl,
-          filenameBase: successfulStatus.provider === "shotstack" ? "final-render" : "provider-visual",
-          fallbackContentType: "video/mp4"
-        });
-         finalUrl = storedUrl;
-         finalAssetMirror = { status: "mirrored_provider_url_primary", providerUrl: providerFinalUrl, storedUrl };
+        const privateAsset = await persistPrivateFinalVideo(String(production.user_id), productionId, providerFinalUrl);
+         finalUrl = privateAsset.storedUrl;
+         finalAssetMirror = { status: "private_verified_video", ...privateAsset };
        } catch (mirrorError) {
          const deliveryError = errorMessage(mirrorError, "Provider asset could not be mirrored to storage");
          const deliveryFailureOutput: Record<string, any> = outputWithWorkflow(production, outputWithRenderJob, {

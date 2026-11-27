@@ -1,3 +1,4 @@
+import { PRIVATE_FINAL_BUCKET, privateVideoObject } from "@/lib/private-final-video";
 import {buildWebsiteSelfHostedBundle} from "@/lib/website-selfhost-bundle";
 import { websiteCreditDeliveryProof } from "@/lib/assistant-work/website-paid-delivery";
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
@@ -128,7 +129,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const safeTitle = String(data.title ?? "crelavo-delivery").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "crelavo-delivery";
   const previewAccess = previewAccessForDelivery(data);
-  const downloadFiles = new Set(["readme", "source", "zip", "video", "mp4", "image", "png", "jpg", "jpeg", "audio", "subtitles", "score-json", "score-markdown"]);
+  const downloadFiles = new Set(["readme", "source", "zip", "video", "mp4", "video-access", "image", "png", "jpg", "jpeg", "audio", "subtitles", "score-json", "score-markdown"]);
 
   // A reservation exists before the final atomic_v1 marker is written.
   // Check the owner-scoped ledger even during generation/settlement to prevent
@@ -176,6 +177,25 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
      const providerResponse = await fetch(subtitleUrl, { cache: "no-store" });
      if (!providerResponse.ok || !providerResponse.body) return Response.json({ error: `Subtitle download failed: ${providerResponse.status}` }, { status: 502 });
      return new Response(providerResponse.body, { headers: { "Content-Type": "application/x-subrip", "Content-Disposition": `attachment; filename="${safeTitle}-subtitles.srt"`, "Cache-Control": "no-store, max-age=0" } });
+   }
+
+   // Private settled videos never fall back to a public provider URL.
+   if (output.privateVideo || objectValue(output.creditResolution).atomicLegacyVideoSettlement === true || file === "video-access") {
+     if (["video","mp4","video-access"].includes(file)) {
+       const privateVideo = objectValue(output.privateVideo), proof = objectValue(output.mediaProof), resolution = objectValue(output.creditResolution);
+       if (data.status !== "ready" || data.reserved_credits !== 0 || resolution.atomicLegacyVideoSettlement !== true || resolution.status !== "spent_reserved" || proof.status !== "decoded_mp4" || privateVideo.bucket !== PRIVATE_FINAL_BUCKET || privateVideo.sha256 !== proof.sha256) return Response.json({ error: "private_video_not_settled" }, { status: 409, headers: {"Cache-Control":"no-store"} });
+       let object: string;
+       try { object = privateVideoObject(String(data.user_id),id,String(proof.sha256)); } catch { return Response.json({ error:"private_video_identity_invalid" },{status:409}); }
+       if (privateVideo.object !== object) return Response.json({error:"private_video_identity_invalid"},{status:409});
+       const db = supabaseAdmin();
+       const bucket = await db.storage.getBucket(PRIVATE_FINAL_BUCKET);
+       if (bucket.error || bucket.data?.public !== false) return Response.json({error:"private_video_bucket_unverified"},{status:503});
+       const signed = await db.storage.from(PRIVATE_FINAL_BUCKET).createSignedUrl(object,60,file === "video-access" ? undefined : {download:safeTitle+"-final-video.mp4"});
+       if (signed.error || !signed.data?.signedUrl) return Response.json({error:"private_video_link_unavailable"},{status:503});
+       const headers = {"Cache-Control":"private, no-store, max-age=0","Referrer-Policy":"no-referrer","X-Content-Type-Options":"nosniff"};
+       if (file === "video-access") return Response.json({url:signed.data.signedUrl,expires_in:60},{headers});
+       return new Response(null,{status:303,headers:{...headers,Location:signed.data.signedUrl}});
+     }
    }
 
    if (file === "video" || file === "mp4") {

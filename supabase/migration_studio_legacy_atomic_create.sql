@@ -1,3 +1,11 @@
+
+-- Dedicated final video bucket, server-only access. Legacy public files unchanged.
+insert into storage.buckets(id,name,public) values('studio-final-private','studio-final-private',false) on conflict(id) do nothing;
+do $private_bucket$ begin
+ if not exists(select 1 from storage.buckets where id='studio-final-private' and public=false) then raise exception 'private_final_bucket_not_private';end if;
+end $private_bucket$;
+drop policy if exists studio_final_private_deny_client on storage.objects;
+create policy studio_final_private_deny_client on storage.objects as restrictive for all to anon,authenticated using (bucket_id<>'studio-final-private') with check (bucket_id<>'studio-final-private');
 -- Legacy production creation: reserve and persist the job in one transaction.
 -- This is a service-only candidate. Enable the route only after legacy settlement writers are migrated.
 create or replace function public.studio_legacy_create(p_user uuid,p_payload jsonb)
@@ -191,8 +199,10 @@ returns jsonb language plpgsql security invoker set search_path=public,pg_temp a
 declare w credit_balances%rowtype; j production_requests%rowtype; a int; n int; rem int; r int; c int; b int; t int; take int;
 begin
  if p_user is null or p_job is null or p_stamp is null or p_bucket is null or p_object is null or p_url is null or p_output is null then raise exception 'invalid_settlement'; end if;
- if p_bucket !~ '^[a-zA-Z0-9_-]{1,100}$' or p_object !~ ('^'||p_job::text||'/(final-render|provider-visual|character-dialogue-final-render)[.]mp4$') then raise exception 'invalid_object'; end if;
- if p_url !~ '^https://' or right(p_url,length('/storage/v1/object/public/'||p_bucket||'/'||p_object)) <> '/storage/v1/object/public/'||p_bucket||'/'||p_object then raise exception 'invalid_delivery_url'; end if;
+ if not exists(select 1 from production_requests where id=p_job and user_id=p_user) then return jsonb_build_object('state','not_found');end if;
+ if p_bucket is distinct from 'studio-final-private' or p_object !~ ('^'||p_user::text||'/'||p_job::text||'/[0-9a-f]{64}[.]mp4$') then raise exception 'invalid_object'; end if;
+ if not exists(select 1 from storage.buckets where id=p_bucket and public=false) then return jsonb_build_object('state','private_bucket_unverified');end if;
+ if p_url is distinct from '/api/productions/'||p_job::text||'/delivery?file=video' then raise exception 'invalid_delivery_url'; end if;
  if not exists(select 1 from production_requests where id=p_job and user_id=p_user) then return jsonb_build_object('state','not_found'); end if;
  select * into w from credit_balances where user_id=p_user for update;
  if not found then return jsonb_build_object('state','reconcile_required'); end if;
@@ -206,9 +216,10 @@ begin
  if j.updated_at is distinct from p_stamp or j.status not in ('queued','in_production') or coalesce(j.output_json,'{}'::jsonb) ? 'creditResolution' or a is null or a<=0 then return jsonb_build_object('state','reconcile_required'); end if;
  if (j.request_metadata->'atomicCreateReservedCredits') is distinct from to_jsonb(a) then return jsonb_build_object('state','reconcile_required'); end if;
  if (p_output#>>'{readyGate,passed}') is distinct from 'true' or (p_output#>'{readyGate,missing}') is distinct from '[]'::jsonb or (p_output#>>'{qualityGate,status}') is distinct from 'passed' then return jsonb_build_object('state','quality_unverified'); end if;
- if (p_output#>>'{finalAssetMirror,status}') is distinct from 'mirrored_provider_url_primary' or (p_output#>>'{finalAssetMirror,storedUrl}') is distinct from p_url or (p_output->>'finalVideoUrl') is distinct from p_url or coalesce(p_output->>'providerStatus','') !~ '_succeeded$' then return jsonb_build_object('state','artifact_unverified'); end if;
+ if (p_output#>>'{finalAssetMirror,status}') is distinct from 'private_verified_video' or (p_output#>>'{finalAssetMirror,storedUrl}') is distinct from p_url or (p_output->>'finalVideoUrl') is distinct from p_url or coalesce(p_output->>'providerStatus','') !~ '_succeeded$' then return jsonb_build_object('state','artifact_unverified'); end if;
  if (p_output#>>'{mediaProof,status}') is distinct from 'decoded_mp4' or coalesce(p_output#>>'{mediaProof,sha256}','') !~ '^[0-9a-f]{64}$' or coalesce(p_output#>>'{mediaProof,byteLength}','') !~ '^[0-9]{1,8}$' or coalesce(p_output#>>'{mediaProof,durationSeconds}','') !~ '^[0-9]{1,3}([.][0-9]{1,6})?$' then return jsonb_build_object('state','media_unverified');end if;
  if (p_output#>>'{mediaProof,byteLength}')::bigint not between 32 and 67108864 or (p_output#>>'{mediaProof,durationSeconds}')::numeric<=0 or (p_output#>>'{mediaProof,durationSeconds}')::numeric>600 then return jsonb_build_object('state','media_unverified');end if;
+ if p_output#>>'{privateVideo,bucket}' is distinct from p_bucket or p_output#>>'{privateVideo,object}' is distinct from p_object or p_output#>>'{privateVideo,sha256}' is distinct from p_output#>>'{mediaProof,sha256}' or p_object is distinct from p_user::text||'/'||p_job::text||'/'||(p_output#>>'{mediaProof,sha256}')||'.mp4' then return jsonb_build_object('state','private_artifact_unverified');end if;
  if not exists(select 1 from storage.objects where bucket_id=p_bucket and name=p_object and metadata->>'mimetype'='video/mp4' and (case when metadata->>'size' ~ '^[0-9]{1,12}$' then (metadata->>'size')::bigint=(p_output#>>'{mediaProof,byteLength}')::bigint else false end)) then return jsonb_build_object('state','artifact_missing'); end if;
  select count(*) into n from credit_events where user_id=p_user and type='reserve' and note='legacy-production:'||p_job::text and amount=a;
  if n<>1 or exists(select 1 from credit_events where user_id=p_user and note='legacy-video-spend:'||p_job::text) or w.reserved<a or w.reserved>w.balance or least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits then return jsonb_build_object('state','reconcile_required'); end if;

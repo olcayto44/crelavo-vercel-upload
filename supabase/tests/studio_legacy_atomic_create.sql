@@ -60,11 +60,11 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture settlement"'),'{reserved_credits}','30'),'{estimated_credits}','30');
  a:=studio_legacy_create(u,payload);if a->>'state' is distinct from 'created' then raise exception 'settlement fixture';end if;
  jid:=(a#>>'{production,id}')::uuid;select updated_at into stamp from production_requests where id=jid;
- bucket:='fixture-'||u::text;obj:=jid::text||'/final-render.mp4';url:='https://example.invalid/storage/v1/object/public/'||bucket||'/'||obj;
- evidence:=jsonb_build_object('readyGate',jsonb_build_object('passed',true,'missing','[]'::jsonb),'qualityGate',jsonb_build_object('status','passed'),'finalAssetMirror',jsonb_build_object('status','mirrored_provider_url_primary','storedUrl',url),'finalVideoUrl',url,'providerStatus','shotstack_succeeded','mediaProof',jsonb_build_object('status','decoded_mp4','sha256',repeat('a',64),'byteLength',12345,'durationSeconds',1));
+ bucket:='studio-final-private';obj:=u::text||'/'||jid::text||'/'||repeat('a',64)||'.mp4';url:='/api/productions/'||jid::text||'/delivery?file=video';
+ evidence:=jsonb_build_object('readyGate',jsonb_build_object('passed',true,'missing','[]'::jsonb),'qualityGate',jsonb_build_object('status','passed'),'finalAssetMirror',jsonb_build_object('status','private_verified_video','storedUrl',url),'finalVideoUrl',url,'providerStatus','shotstack_succeeded','privateVideo',jsonb_build_object('bucket',bucket,'object',obj,'sha256',repeat('a',64)),'mediaProof',jsonb_build_object('status','decoded_mp4','sha256',repeat('a',64),'byteLength',12345,'durationSeconds',1));
  b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence);if b->>'state' is distinct from 'artifact_missing' then raise exception 'missing artifact accepted %',b;end if;
- insert into storage.buckets(id,name,public) values(bucket,bucket,true);
  insert into storage.objects(bucket_id,name,metadata) values(bucket,obj,jsonb_build_object('mimetype','video/mp4','size',12345));
+ b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence-'privateVideo');if b->>'state' is distinct from 'private_artifact_unverified' then raise exception 'missing private proof accepted';end if;
  b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence-'mediaProof');if b->>'state' is distinct from 'media_unverified' then raise exception 'missing media proof accepted';end if;
  b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,jsonb_set(evidence,'{mediaProof,byteLength}','12346'));if b->>'state' is distinct from 'artifact_missing' then raise exception 'size mismatch accepted';end if;
  b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,jsonb_set(evidence,'{readyGate,passed}','false'));if b->>'state' is distinct from 'quality_unverified' then raise exception 'bad quality accepted';end if;
@@ -86,4 +86,11 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  b:=studio_legacy_refund_reviewed(jid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'terminal observation released hold';end if;
  select * into w from credit_balances where user_id=u;if w.balance<>74 or w.reserved<>70 or w.topup_credits<>74 then raise exception 'terminal observation wallet changed';end if;
  if has_function_privilege('anon','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') then raise exception 'terminal privilege mismatch';end if;
-end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched' result;rollback;
+end $test$;
+set local role anon;
+do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'anonymous access';end if;end $deny$;
+reset role;
+set local role authenticated;
+do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'authenticated direct access';end if;end $deny$;
+reset role;
+select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched, private storage identity enforced' result;rollback;
