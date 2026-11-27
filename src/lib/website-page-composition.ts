@@ -56,6 +56,6 @@ body.visual-wellness .sections article{border-radius:18px}
  body.composition-story .hero-media,body.composition-story .hero-copy{grid-row:auto;grid-column:auto}
  body.composition-story .hero-media img,body.composition-signature .hero-media img{aspect-ratio:16/10}
  body[class] main .sections{grid-template-columns:minmax(0,1fr)}
- body .hero h1{font-size:clamp(28px,8vw,48px)}
+ /* Preserve the customer's explicit per-device heading size. */
 }
 `;
