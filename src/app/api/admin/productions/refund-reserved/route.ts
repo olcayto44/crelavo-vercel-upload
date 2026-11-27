@@ -28,6 +28,16 @@ export async function POST(request: Request) {
     if (!productionId) return Response.json({ error: "production_id is required." }, { status: 400 });
 
     const supabase = supabaseAdmin();
+    // Separate release gate; all competing legacy wallet writers must be migrated first.
+    if (process.env.CRELAVO_ATOMIC_LEGACY_REFUND_ENABLED === "true") {
+      if (allowCostAware || hideAfterRefund) return Response.json({ error: "atomic_refund_manual_reconciliation_required" }, { status: 409 });
+      const { data: result, error: rpcError } = await supabase.rpc("studio_legacy_refund_reviewed", { p_production: productionId });
+      if (rpcError || !result) return Response.json({ error: "atomic_refund_unconfirmed" }, { status: 503 });
+      if (result.state === "not_found") return Response.json({ error: "Production not found." }, { status: 404 });
+      if (!["refunded", "already_refunded"].includes(result.state)) return Response.json({ error: "wallet_reconciliation_required" }, { status: 409 });
+      return Response.json({ production: result.production, balance: result.balance, refunded_credits: result.refunded_credits, spent_credits: 0, idempotent: result.state === "already_refunded" });
+    }
+
     const { data: production, error: productionError } = await supabase
       .from("production_requests")
       .select("id, user_id, title, status, generation_status, reserved_credits, estimated_credits, output_json")

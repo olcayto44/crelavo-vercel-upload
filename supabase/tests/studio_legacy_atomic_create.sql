@@ -17,4 +17,11 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  b:=studio_wallet_spend(u,20,'fixture-key-0001','other');if b->>'code'<>'idempotency_terms_mismatch' then raise exception 'different action accepted';end if;
  select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>100 or w.topup_credits<>130 then raise exception 'wallet mismatch';end if;
  if (select count(*) from credit_events where user_id=u and type='reserve')<>1 or (select count(*) from credit_events where user_id=u and type='spend')<>1 then raise exception 'event count';end if;
-end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected' result;rollback;
+ b:=studio_legacy_refund_reviewed((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'active job refunded';end if;
+ update production_requests set status='failed',output_json=jsonb_build_object('creditResolution',jsonb_build_object('status','admin_review_required')) where id=(a#>>'{production,id}')::uuid;
+ b:=studio_legacy_refund_reviewed((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'refunded' or (b->>'refunded_credits')::int<>100 then raise exception 'reviewed refund failed';end if;
+ b:=studio_legacy_refund_reviewed((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'already_refunded' or (b->>'refunded_credits')::int<>0 then raise exception 'duplicate refund';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>0 or w.topup_credits<>130 then raise exception 'refund minted credits or changed buckets';end if;
+ if (select count(*) from credit_events where user_id=u and type='refund')<>1 then raise exception 'duplicate refund event';end if;
+ if has_function_privilege('anon','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_refund_reviewed(uuid)','EXECUTE') then raise exception 'refund permission mismatch';end if;
+end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions' result;rollback;

@@ -59,3 +59,36 @@ begin
 end $$;
 revoke all on function public.studio_wallet_spend(uuid,integer,text,text) from public,anon,authenticated;
 grant execute on function public.studio_wallet_spend(uuid,integer,text,text) to service_role;
+
+-- Candidate: only an explicitly reviewed failed job with an attributable atomic hold.
+-- Keep the route disabled until all competing legacy writers are migrated.
+create or replace function public.studio_legacy_refund_reviewed(p_production uuid)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare u uuid; w credit_balances%rowtype; j production_requests%rowtype; a integer; proof_count integer; res jsonb;
+begin
+ if p_production is null then raise exception 'legacy_refund_invalid';end if;
+ select user_id into u from production_requests where id=p_production;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ select * into w from credit_balances where user_id=u for update;
+ if not found then return jsonb_build_object('state','reconcile_required');end if;
+ select * into j from production_requests where id=p_production and user_id=u for update;
+ if not found then return jsonb_build_object('state','reconcile_required');end if;
+ if j.status='failed' and j.reserved_credits=0 and j.output_json#>>'{creditResolution,status}'='refunded_reserved' and j.output_json#>>'{creditResolution,atomicLegacyRefund}'='true' then
+  return jsonb_build_object('state','already_refunded','production',to_jsonb(j),'balance',jsonb_build_object('balance',w.balance,'reserved',w.reserved),'refunded_credits',0,'spent_credits',0);
+ end if;
+ a:=j.reserved_credits;
+ if j.status is distinct from 'failed' or j.output_json#>>'{creditResolution,status}' is distinct from 'admin_review_required' or a is null or a<=0 or j.request_metadata->'atomicCreateReservedCredits' is distinct from to_jsonb(a) then
+  return jsonb_build_object('state','reconcile_required');
+ end if;
+ select count(*) into proof_count from credit_events where user_id=u and type='reserve' and note='legacy-production:'||p_production::text and amount=a;
+ if proof_count<>1 or exists(select 1 from credit_events where user_id=u and type='refund' and note='legacy-refund:'||p_production::text) or w.reserved<a or w.reserved>w.balance or least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits then
+  return jsonb_build_object('state','reconcile_required');
+ end if;
+ res:=coalesce(j.output_json->'creditResolution','{}'::jsonb)||jsonb_build_object('status','refunded_reserved','refundedCredits',a,'releasedReservedCredits',a,'spentCredits',0,'resolvedAt',now(),'atomicLegacyRefund',true);
+ update credit_balances set reserved=reserved-a,updated_at=now() where user_id=u returning * into w;
+ insert into credit_events(user_id,type,amount,note) values(u,'refund',a,'legacy-refund:'||p_production::text);
+ update production_requests set reserved_credits=0,output_json=jsonb_set(coalesce(output_json,'{}'::jsonb),'{creditResolution}',res,true),admin_notes='Reserved credits released atomically after admin review.',updated_at=now() where id=p_production returning * into j;
+ return jsonb_build_object('state','refunded','production',to_jsonb(j),'balance',jsonb_build_object('balance',w.balance,'reserved',w.reserved),'refunded_credits',a,'spent_credits',0);
+end $$;
+revoke all on function public.studio_legacy_refund_reviewed(uuid) from public,anon,authenticated;
+grant execute on function public.studio_legacy_refund_reviewed(uuid) to service_role;
