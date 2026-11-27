@@ -37,3 +37,14 @@ export function whopLegacyPurchaseState(rows:{user_id?:unknown;type?:unknown;amo
  if(!rows.length)return "new";
  return rows.length===1&&rows[0].user_id===expected.userId&&rows[0].type==="purchase"&&rows[0].amount===expected.credits&&String(rows[0].note??"").split(" | ")[0]===key?"already_processed":"conflict";
 }
+
+// Strict first-release refund policy: only a verified full one-time USD refund.
+export function whopFullTopupRefund(payment:Record<string,unknown>,expected:{paymentId:string;planId:string;email:string;priceUsd:number}){
+ const obj=(v:unknown)=>v&&typeof v==="object"&&!Array.isArray(v)?v as Record<string,unknown>:{};
+ const cents=(v:unknown)=>typeof v==="number"&&Number.isFinite(v)&&v>0?Math.round(v*100):null;
+ const total=cents(payment.total),refunded=cents(payment.refunded_amount),subtotal=cents(payment.subtotal),price=cents(expected.priceUsd);
+ return payment.id===expected.paymentId&&obj(payment.plan).id===expected.planId&&String(obj(payment.user).email??"").trim().toLowerCase()===expected.email.trim().toLowerCase()&&
+ payment.status==="paid"&&["refunded","auto_refunded"].includes(String(payment.substatus))&&payment.billing_reason==="one_time"&&payment.currency==="usd"&&
+ price!==null&&subtotal===price&&total!==null&&total>=price&&refunded===total&&typeof payment.refunded_at==="string"&&Number.isFinite(Date.parse(payment.refunded_at))&&
+ Array.isArray(payment.disputes)&&payment.disputes.length===0&&payment.dispute_alerted_at===null&&payment.promo_code===null;
+}

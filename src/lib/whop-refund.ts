@@ -1,0 +1,30 @@
+import "server-only";
+import {supabaseAdmin} from "@/lib/supabase";
+import {whopProductForPlanId} from "@/lib/whop";
+import {findPaymentProduct} from "@/lib/data";
+import {whopFullTopupRefund} from "@/lib/whop-payment-state";
+import {recordCreditLedger} from "@/lib/admin-operations";
+export async function applyVerifiedWhopRefund(paymentId:string|null){
+ if(process.env.VERCEL_ENV!=="production"||process.env.STUDIO_WHOP_ATOMIC_PURCHASE_ENABLED!=="true"||process.env.STUDIO_WHOP_REFUND_ENABLED!=="true"||process.env.STUDIO_AGENT_ISOLATED_PREVIEW==="true")return "disabled";
+ if(!paymentId||!/^pay_[A-Za-z0-9_-]{3,156}$/.test(paymentId))return "review_required";
+ const key=process.env.WHOP_API_KEY?.trim();if(!key)return "review_required";
+ const db=supabaseAdmin();
+ const {data:row,error}=await db.from("payment_fulfillments").select("user_id,plan_id,credits,status,kind").eq("whop_payment_id",paymentId).maybeSingle();
+ if(error)throw Error("whop_refund_storage_unconfirmed");
+ if(!row?.user_id||row.kind!=="credits"||!["fulfilled","reversed"].includes(row.status))return "review_required";
+ const mapped=whopProductForPlanId(row.plan_id),product=mapped&&findPaymentProduct(mapped.productId);
+ if(!mapped||mapped.billing!=="one_time"||product?.planType!=="topup"||row.credits!==product.credits)return "review_required";
+ const auth=await db.auth.admin.getUserById(row.user_id);
+ if(auth.error||!auth.data.user?.email)return "review_required";
+ const response=await fetch("https://api.whop.com/api/v1/payments/"+encodeURIComponent(paymentId),{method:"GET",redirect:"error",cache:"no-store",signal:AbortSignal.timeout(15000),headers:{Authorization:"Bearer "+key,Accept:"application/json"}});
+ if(!response.ok)return "review_required";
+ const p=await response.json();
+ if(!p||!whopFullTopupRefund(p,{paymentId,planId:row.plan_id,email:auth.data.user.email,priceUsd:product.priceUsd}))return "review_required";
+ const result=await db.rpc("studio_whop_reverse_unused_topup",{p_payment:paymentId,p_user:row.user_id,p_credits:row.credits,p_product:product.id});
+ if(result.error)throw Error("whop_refund_storage_unconfirmed");
+ if(!["reversed","already_reversed"].includes(result.data))return "review_required";
+ await recordCreditLedger({userId:row.user_id,delta:-row.credits,reason:"reverse",paymentId,note:"Verified full unused top-up refund"});
+ const updated=await db.from("payment_fulfillments").update({status:"reversed",updated_at:new Date().toISOString()}).eq("whop_payment_id",paymentId).eq("user_id",row.user_id).eq("credits",row.credits).in("status",["fulfilled","reversed"]).select("id").single();
+ if(updated.error)throw Error("whop_refund_audit_unconfirmed");
+ return result.data;
+}

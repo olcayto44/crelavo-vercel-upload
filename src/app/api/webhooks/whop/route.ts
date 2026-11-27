@@ -2,6 +2,7 @@ import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio
 import {findWhopLegacyPurchase} from "@/lib/whop-legacy-purchase";
 import {whopPaymentHasReversal,whopCreditFulfillment,whopOriginalPaymentId,whopSubscriptionExpiryAllowed} from "@/lib/whop-payment-state";
 import {recordWhopReversalNotice,whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
+import {applyVerifiedWhopRefund} from "@/lib/whop-refund";
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
@@ -739,6 +740,7 @@ export async function POST(request: Request) {
 
     if (["payment.failed", "membership.deactivated", "refund.created", "dispute.created"].includes(event)) {
       if(event==="refund.created"||event==="dispute.created")await recordWhopReversalNotice(webhookId,event,whopOriginalPaymentId(eventData(payload)));
+      if(event==="refund.created")await applyVerifiedWhopRefund(whopOriginalPaymentId(eventData(payload)));
       const adminPaymentNotificationResult = await handleAttentionEvent(event, payment, webhookId);
       console.warn("Whop attention event", { event, adminPaymentNotificationResult });
       return Response.json({ received: true, adminPaymentNotificationResult });

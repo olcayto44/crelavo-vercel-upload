@@ -61,6 +61,9 @@ jobs:
         run: |
           node scripts/studio-whop-recovery-adapter-smoke.cjs
           node scripts/studio-whop-atomic-purchase-smoke.cjs
+          node scripts/studio-whop-refund-smoke.cjs
+          node scripts/admin-owner-authorization-release-smoke.cjs
+          node scripts/studio-reconciliation-monitor-smoke.cjs
           node scripts/studio-admin-wallet-atomic-candidate-smoke.cjs
           node scripts/studio-assistant-accounting-local-smoke.cjs
       - name: Evidence boundary
