@@ -26,6 +26,8 @@ const {load}=require('./studio-agent-test-loader.cjs');
   await db.exec(fs.readFileSync('supabase/migration_credit_rollover_policy.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migration_website_atomic_credits_isolated.sql','utf8'));
   await db.exec(fs.readFileSync('docs/website-page-media-journal-candidate.sql','utf8'));
+  await db.exec(fs.readFileSync('docs/website-premium-pilot-single-attempt.sql','utf8'));
+  assert.equal((await db.query('select public.website_premium_pilot_ready() as ready')).rows[0].ready,true);
   await db.query('insert into auth.users(id) values($1)',[owner]);
   await db.query("insert into profiles(id,email) values($1,'offline@example.test')",[owner]);
   await db.query('insert into credit_balances(user_id,balance,current_subscription_credits,topup_credits) values($1,100,60,40)',[owner]);
@@ -112,6 +114,10 @@ const {load}=require('./studio-agent-test-loader.cjs');
   assert.equal((await db.query("select output_json->'websiteAssistant'->>'phase' phase from production_requests where id=$1",[p])).rows[0].phase,"generating");
   assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,2);
   console.log("website durable per-page journal: exact owner/reservation, no replay, estimate and partial evidence; incomplete delivery blocked");
+  await db.query("update production_requests set request_metadata=jsonb_build_object('source','studio_premium_pilot_v1') where id=$1",[p]);
+  await assert.rejects(()=>db.query("update production_requests set request_metadata=jsonb_build_object('source','studio_premium_pilot_v1') where id=$1",[pending]),/unique|duplicate/i);
+  assert.equal((await db.query("select count(*)::int n from production_requests where request_metadata->>'source'='studio_premium_pilot_v1'")).rows[0].n,1);
+  console.log("premium pilot: single-attempt database fence prevents concurrent or repeated new projects");
 
   console.log('website-atomic-flow-smoke ok: isolated owner-scoped approved brief -> atomic reserve -> one claim -> persisted files -> one spend -> verified preview and delivery links. No real provider, multi-session DB or browser payment.');
  }finally{await db.close();}

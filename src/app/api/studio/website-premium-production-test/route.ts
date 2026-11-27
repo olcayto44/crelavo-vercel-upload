@@ -79,6 +79,6 @@ export async function POST(request:Request){
   const a=r.data.output_json?.websiteAssistant;
   return {productionId:r.data.id,userId:r.data.user_id,phase:a?.phase,planHash:a?.planHash,approvedHash:a?.approvedHash,packId:a?.packId,credits:a?.credits,brief:a?.brief};
  }});
- return reply({ok:result.state==="ready",state:result.state,productionId,safeToRetryAutomatically:false},result.state==="ready"?200:409);
+ return reply({ok:result.state==="ready",state:result.state,productionId,completedImages:result.state==="ready"?budget.pageImageCount:undefined,safeToRetryAutomatically:false},result.state==="ready"?200:409);
  }catch{return fail(503,"premium_pilot_outcome_unconfirmed");}
 }

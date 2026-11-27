@@ -18,10 +18,10 @@ export function PremiumWebsitePilot({db,projectId}:{db:SupabaseClient;projectId:
  const r=await fetch("/api/studio/website-premium-production-test",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+s.data.session.access_token},body:JSON.stringify(body)});
  if(action==="zip"&&r.ok&&r.headers.get("content-type")?.includes("application/zip")){const url=URL.createObjectURL(await r.blob()),a=document.createElement("a");a.href=url;a.download="crelavo-premium-website-pilot.zip";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);return;}
  const v=await r.json();
- if(!r.ok||!v.ok){setMessage("İşlem doğrulanamadı: "+String(v.code||v.state||"unavailable")+". Tekrar üretim başlatmayın; durumu kontrol edin.");return;}
+ if(!r.ok||!v.ok){if(action==="submit")setStatus(null);setMessage("İşlem doğrulanamadı: "+String(v.code||v.state||"unavailable")+". Tekrar üretim başlatmayın; durumu kontrol edin.");return;}
  if(action==="status")setStatus(v);
  if(action==="quote")setQuote(v);
- if(action==="submit"){setStatus({enabled:true,state:"ready",completedImages:0});setMessage("Üretim kaydedildi ve test kredisi kapatıldı. Önizleyebilir veya ZIP indirebilirsiniz.");}
+ if(action==="submit"){setStatus({enabled:true,state:"ready",completedImages:Number(v.completedImages)});setMessage("Üretim kaydedildi ve test kredisi kapatıldı. Önizleyebilir veya ZIP indirebilirsiniz.");}
  if(action==="preview"){setPages(v.pages);setPage(v.pages[0]?.path??"");}
  }catch{setMessage("Bağlantı sonucu doğrulanamadı. Durumu kontrol edin.");}finally{lock.current=false;setBusy(false);}
  }
