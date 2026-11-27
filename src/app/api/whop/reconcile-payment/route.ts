@@ -6,7 +6,7 @@ import {whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
 import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
-import { supabaseAdmin } from "@/lib/supabase";
+import { bearerTokenFromRequest, supabaseAdmin } from "@/lib/supabase";
 import { whopProductForPlanId } from "@/lib/whop";
 import { recordWhopAnalytics } from "@/lib/whop-analytics";
 
@@ -172,52 +172,33 @@ async function retrieveWhopPayment(paymentIdValue: string) {
   return payload as WhopObject;
 }
 
-async function profileByEmail(email: string, customerNameValue?: string | null) {
+type VerifiedPaymentOwner = { id: string; email: string };
+async function profileForVerifiedOwner(owner: VerifiedPaymentOwner, customerNameValue?: string | null) {
   const supabase = supabaseAdmin();
-  const normalizedEmail = email.trim().toLowerCase();
-
   const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select("id, email")
-    .eq("email", normalizedEmail)
-    .maybeSingle();
-
+    .from("profiles").select("id, email").eq("id", owner.id).maybeSingle();
   if (profileError) throw profileError;
-  if (profile) return profile;
-
-  const { data: usersData, error: usersError } = await supabase.auth.admin.listUsers();
-  if (usersError) throw usersError;
-  const authUser = usersData.users.find((user) => user.email?.toLowerCase() === normalizedEmail);
-  if (!authUser?.email) return null;
-
+  if (profile) {
+    if (profile.id !== owner.id || clean(profile.email).toLowerCase() !== owner.email) throw new Error("payment_owner_profile_mismatch");
+    return profile;
+  }
   const { data: createdProfile, error: createProfileError } = await supabase
-    .from("profiles")
-    .upsert({
-      id: authUser.id,
-      email: authUser.email.toLowerCase(),
-      full_name: clean(authUser.user_metadata?.full_name) || clean(customerNameValue) || null,
-      role: "user"
-    }, { onConflict: "id" })
-    .select("id, email")
-    .single();
-
+    .from("profiles").insert({ id: owner.id, email: owner.email, full_name: clean(customerNameValue) || null, role: "user" })
+    .select("id, email").single();
   if (createProfileError) throw createProfileError;
+  if (createdProfile?.id !== owner.id || clean(createdProfile?.email).toLowerCase() !== owner.email) throw new Error("payment_owner_profile_mismatch");
   return createdProfile;
 }
 
 async function addCredits(input: {
-  email: string;
-  customerName?: string | null;
+  profile: VerifiedPaymentOwner;
   product: Product;
   billing: string;
   credits: number;
   paymentId: string;
   membershipId: string;
 }) {
-  if (!input.email) return { activated: false, reason: "missing_customer_email" };
-
-  const profile = await profileByEmail(input.email, input.customerName);
-  if (!profile) return { activated: false, reason: "crelavo_user_not_found" };
+  const profile = input.profile;
 
   const supabase = supabaseAdmin();
   if(whopAtomicPurchaseEnabled()){
@@ -274,6 +255,13 @@ async function addCredits(input: {
 
 export async function POST(request: Request) {
   try {
+    const token = bearerTokenFromRequest(request);
+    if (!token) return Response.json({ ok: false, reason: "authentication_required" }, { status: 401 });
+    const { data: auth, error: authError } = await supabaseAdmin().auth.getUser(token);
+    if (authError || !auth?.user?.id) return Response.json({ ok: false, reason: "authentication_required" }, { status: 401 });
+    const ownerEmail = clean(auth.user.email).toLowerCase();
+    if (!ownerEmail || !(auth.user.email_confirmed_at || auth.user.confirmed_at)) return Response.json({ ok: false, reason: "verified_email_required" }, { status: 403 });
+    const owner = { id: auth.user.id, email: ownerEmail };
     const body = await request.json().catch(() => ({}));
     const requestedPaymentId = clean(body.payment_id ?? body.paymentId ?? body.receipt_id);
     if (!requestedPaymentId || !requestedPaymentId.startsWith("pay_")) {
@@ -286,6 +274,8 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, reason: "payment_id_mismatch" }, { status: 400 });
     }
 
+    // Check provider-verified ownership before revealing payment state or mutating any records.
+    if (customerEmail(payment) !== owner.email) return Response.json({ ok: false, reason: "payment_owner_mismatch" }, { status: 403 });
     if (await whopReversalNoticeExists(resolvedPaymentId))return Response.json({ok:true,activated:false,reason:"payment_reversal_review_required"});
     if (!paymentSucceeded(payment)) {
       return Response.json({ ok: true, activated: false, reason: "payment_not_succeeded", status: paymentStatus(payment), substatus: paymentSubstatus(payment) });
@@ -297,7 +287,7 @@ export async function POST(request: Request) {
     const email = customerEmail(payment);
     const name = customerName(payment);
     const membershipReference = membershipId(payment);
-    const analyticsProfile = email ? await profileByEmail(email, name) : null;
+    const analyticsProfile = await profileForVerifiedOwner(owner, name);
     await recordWhopAnalytics({ eventId: `reconcile:${resolvedPaymentId}`, eventType: "checkout_complete_fallback", paymentId: resolvedPaymentId, membershipId: membershipReference, customerId: firstString(payment.customer_id, payment.customerId), planId, productId: mappedPlan?.productId, userId: analyticsProfile?.id, amount: paymentAmount(payment), currency: paymentCurrency(payment), status: paymentStatus(payment) || paymentSubstatus(payment) || "paid", billingReason: paymentBillingReason(payment) }).catch(() => undefined);
 
     const adminNotificationInput = {
@@ -331,8 +321,7 @@ export async function POST(request: Request) {
 
     const credits = creditsForProduct(product, mappedPlan.billing);
     const activation = await addCredits({
-      email,
-      customerName: name,
+      profile: analyticsProfile,
       product,
       billing: mappedPlan.billing,
       credits,
@@ -363,7 +352,7 @@ export async function POST(request: Request) {
 
     return Response.json({ ok: true, activated: activation.activated, reason:activationReason, productId: product.id, billing: mappedPlan.billing, credits:fulfillment.fulfilled?credits:0 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Whop payment reconciliation failed.";
-    return Response.json({ ok: false, reason: "reconcile_failed", error: message }, { status: 400 });
+    console.error("Whop payment reconciliation failed", error instanceof Error ? error.name : "unknown");
+    return Response.json({ ok: false, reason: "reconcile_failed", error: "Payment verification could not be completed. Contact support with your payment ID." }, { status: 503 });
   }
 }

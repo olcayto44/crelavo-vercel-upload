@@ -3,6 +3,7 @@
 import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { supabaseBrowser } from "@/lib/supabase";
 
 type ReconcileState = "idle" | "checking" | "success" | "info" | "error";
 
@@ -49,10 +50,15 @@ export function WhopPaymentReconcileStatus() {
     setState("checking");
     setMessage("Verifying your payment and updating Crelavo credits...");
 
-    fetch("/api/whop/reconcile-payment", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ payment_id: paymentId })
+    supabaseBrowser().auth.getSession().then(({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) throw new Error("Sign in with your checkout email to verify payment. Signed Whop webhooks continue processing eligible payments automatically.");
+      if (cancelled) throw new Error("Verification cancelled.");
+      return fetch("/api/whop/reconcile-payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ payment_id: paymentId })
+      });
     })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
@@ -85,7 +91,7 @@ export function WhopPaymentReconcileStatus() {
           return;
         }
         setState("info");
-        setMessage("Payment verified. If credits or service access do not appear shortly, contact support with your payment ID.");
+        setMessage("Payment verification is pending or requires review. If credits or service access do not appear shortly, contact support with your payment ID.");
       })
       .catch((error) => {
         if (cancelled) return;

@@ -63,6 +63,7 @@ jobs:
           node scripts/studio-whop-recovery-adapter-smoke.cjs
           node scripts/studio-whop-atomic-purchase-smoke.cjs
           node scripts/studio-whop-refund-smoke.cjs
+          node scripts/studio-whop-reconcile-owner-smoke.cjs
           node scripts/admin-owner-authorization-release-smoke.cjs
           node scripts/studio-reconciliation-monitor-smoke.cjs
           node scripts/studio-admin-wallet-atomic-candidate-smoke.cjs
