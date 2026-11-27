@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {buildWebsiteAdminPreview} from "@/lib/website-admin-preview";
 import {parsePaidCMS,websitePaidCMSModules} from "@/lib/website-paid-cms";
 import {buildWebsiteSelfHostedBundle} from "@/lib/website-selfhost-bundle";
 import {paidRevisionPrompt,proposePaidWebsiteRevision,prepareWebsiteRevisionContext,applySavedPaidRevision} from "@/lib/website-paid-revision";
@@ -41,6 +42,7 @@ async function save(a:Owned,version:number,design:unknown,revisionApplied=false)
 export async function PUT(request:Request){try{const a=await owned(request);if("response" in a)return a.response;const p=WebsiteDraftSave.parse(await readBoundedWebsiteJson(request,50000));return await save(a,p.version,p.design);}catch{return out({ok:false,code:"invalid_design"},422);}}
 export async function PATCH(request:Request){try{const a=await owned(request);if("response" in a)return a.response;const p=z.strictObject({version:z.number().int().positive(),restoreVersion:z.number().int().positive()}).parse(await readBoundedWebsiteJson(request,1024));const old=paidDesignHistory(a.row.output_json).find(h=>h.version===p.restoreVersion);if(!old)return out({ok:false,code:"version_not_found"},404);return await save(a,p.version,old.design);}catch{return out({ok:false,code:"restore_unavailable"},422);}}
 export async function POST(request:Request){try{const a=await owned(request);if("response" in a)return a.response;
+ if(new URL(request.url).searchParams.get("operation")==="admin-preview"){return out({ok:true,pages:buildWebsiteAdminPreview(a.design)});}
  if(new URL(request.url).searchParams.has("format"))return out({ok:false,code:"use_saved_delivery"},403);
  const operation=new URL(request.url).searchParams.get("operation");
  if(operation==="cms"){

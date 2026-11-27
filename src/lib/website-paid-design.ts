@@ -6,6 +6,7 @@ import {requireWebsiteArtifact} from "./website-artifact-acceptance";
 import type {WebsiteGeneratedFile} from "./providers/openai";
 export function renderPaidWebsiteDesign(raw:unknown,limit=5,media:unknown=[],approvedScope:WebsiteDesignSpecInput["industryScope"]=undefined){
  const design=WebsiteDesignSpec.parse(raw);
+ if(!approvedScope&&design.industryScope?.sector==="custom"&&!design.industryScope.extraModules.length)delete design.industryScope;
  if(design.pages.length>limit||!samePaidWebsiteScope(design.industryScope,approvedScope)||design.siteSettings?.membership?.showPlanPreview)throw Error("website_paid_scope_changed");
  const rendered=renderWebsiteDesignCandidate(design,WebsiteHeroMediaList.parse(media));
  const acceptance=requireWebsiteArtifact(rendered.files.map(f=>({name:f.path,content:f.content})),{root:"",requiredPages:rendered.manifest.pages.map(p=>p.path),language:design.language});

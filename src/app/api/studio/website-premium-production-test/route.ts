@@ -1,4 +1,5 @@
 import {createClient} from "@supabase/supabase-js";
+import {buildWebsiteAdminPreview} from "@/lib/website-admin-preview";
 import {createHash} from "node:crypto";
 import {z} from "zod";
 import {websitePilotCanary,websitePilotProviderKey,websitePilotScope} from "@/lib/studio-agent/website-pilot-provider";
@@ -20,7 +21,7 @@ const source="studio_premium_pilot_v1",uuid=z.string().uuid(),hash=z.string().re
 const input=z.discriminatedUnion("action",[
  z.strictObject({action:z.literal("quote"),projectId:uuid}),
  z.strictObject({action:z.literal("submit"),projectId:uuid,quoteHash:hash,approvedCredits:z.number().int().positive(),confirmProduction:z.literal(true)}),
- z.strictObject({action:z.enum(["status","preview","zip"])})
+ z.strictObject({action:z.enum(["status","preview","zip","admin"])})
 ]);
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"};
 export async function POST(request:Request){
@@ -40,12 +41,13 @@ export async function POST(request:Request){
  const p=current.data,phase=p?.output_json?.websiteAssistant?.phase;
  const enabled=process.env.STUDIO_WEBSITE_PREMIUM_PILOT_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_REAL_AI_ENABLED==="true"&&process.env.STUDIO_AGENT_PROVIDER_VERIFIED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true";
  if(v.action==="status")return reply({ok:true,enabled,state:phase??"not_started",productionId:p?.id??null,credits:p?.estimated_credits??null,completedImages:Object.values(p?.output_json?.websitePageMediaJournal??{}).filter((x:any)=>x?.state==="validated").length});
- if(v.action==="preview"||v.action==="zip"){
+ if(v.action==="preview"||v.action==="zip"||v.action==="admin"){
   if(!p||phase!=="ready")return fail(409,"settled_delivery_required");
   const r=await db.from("website_credit_reservations").select("production_id,user_id,state,credits,plan_hash").eq("production_id",p.id).eq("user_id",actor).maybeSingle();
   const plan=p.output_json?.plan,media=WebsiteHeroMediaList.parse(plan?.websiteHeroMedia),design=WebsiteDesignSpec.parse(plan?.editableDesign);
   if(r.error||!r.data||r.data.plan_hash!==p.output_json?.websiteAssistant?.planHash||!websiteCreditDeliveryProof(p,r.data)||media.length!==plan?.websitePageMediaCoverage?.required||media.length!==plan?.websitePageMediaCoverage?.delivered)return fail(409,"settled_delivery_required");
   const rows=[{productionId:p.id,designHash:plan.editableDesignHash,design,heroMedia:media}];
+  if(v.action==="admin")return reply({ok:true,pages:buildWebsiteAdminPreview(design)});
   if(v.action==="preview")return reply({ok:true,...buildSettledWebsitePreview(rows,p.id)});
   const zip=buildSettledWebsiteCandidate(rows,p.id).zip;
   return new Response(new Uint8Array(zip).buffer,{headers:{...headers,"Content-Type":"application/zip","Content-Disposition":'attachment; filename="crelavo-premium-website-pilot.zip"'}});

@@ -1,0 +1,26 @@
+import {WebsiteDesignSpec} from "./website-design-schema";
+import {resolveWebsiteIndustryScope} from "./website-industry-scope";
+import {escapeHtml as esc} from "./providers/website-template";
+import {websiteAdminStyle} from "./website-admin-style";
+export function buildWebsiteAdminPreview(raw:unknown){
+ const d=WebsiteDesignSpec.parse(raw),tr=d.language==="tr",t=(en:string,tu:string)=>tr?tu:en;
+ const modules=d.industryScope?resolveWebsiteIndustryScope(d.industryScope.sector,d.industryScope.extraModules).modules.map(m=>m.id):[];
+ const field=(label:string,value:string)=>'<label>'+esc(label)+'<input readonly value="'+esc(value)+'"></label>';
+ const metric=(label:string,n:string|number)=>'<div class="admin-metric"><span>'+esc(label)+'</span><strong>'+esc(String(n))+'</strong></div>';
+ const sections=[
+ {id:"pages",label:t("Pages","Sayfalar"),html:d.pages.map(p=>'<details><summary>'+esc(p.nav)+'</summary>'+field("SEO title",p.title)+field("Meta description",p.description)+field("H1",p.headline)+field("Introduction",p.lead)+'<button disabled>'+esc(t("Save","Kaydet"))+'</button></details>').join("")},
+ {id:"inbox",label:t("Contact inbox","İletişim kutusu"),html:'<p class="admin-empty">'+esc(t("Messages appear after installation.","Gerçek mesajlar kurulumdan sonra görünür."))+'</p>'},
+ ...(modules.some(m=>["catalog","booking","orders"].includes(m))?[{id:"business",label:t("Business operations","İşletme işlemleri"),html:'<p>'+esc(modules.filter(m=>["catalog","orders","booking"].includes(m)).join(", "))+'</p>'}]:[]),
+ ...(modules.includes("cms")?[{id:"articles",label:t("Articles","Yazılar"),html:'<p>'+esc(t("Manage articles on the installed site.","Kurulan sitede yazıları yönetin."))+'</p>'}]:[]),
+ ...(modules.includes("analytics")?[{id:"analytics",label:t("Analytics","İstatistikler"),html:'<p>'+esc(t("Page request counters require activation.","Sayfa istek sayacı etkinleştirilmelidir."))+'</p>'}]:[]),
+ ...(modules.includes("accounts")?[{id:"members",label:t("Customer accounts","Müşteri hesapları"),html:'<p>'+esc(t("Invitation-only accounts after installation.","Kurulumdan sonra davetli hesaplar."))+'</p>'}]:[]),
+ ...(modules.includes("orders")||modules.includes("accounts")?[{id:"payments",label:t("Payment sandbox","Ödeme test ortamı"),html:'<p>'+esc(t("Optional sandbox; no live payment.","İsteğe bağlı test ortamı; canlı ödeme yok."))+'</p>'}]:[]),
+ {id:"security",label:t("Security","Güvenlik"),html:'<p>'+esc(t("Owner password rotation, session revocation and private backup are available on the installed site.","Kurulu sitede şifre değişimi, oturum iptali ve özel yedekleme bulunur."))+'</p>'}
+ ];
+ const nav=sections.map(s=>'<a href="#'+s.id+'">'+esc(s.label)+'</a>').join("");
+ const head='<!doctype html><html lang="'+esc(d.language)+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><meta http-equiv="Content-Security-Policy" content="default-src &apos;none&apos;; style-src &apos;unsafe-inline&apos;; form-action &apos;none&apos;; base-uri &apos;none&apos;"><title>'+esc(d.brand)+'</title><style>'+websiteAdminStyle+'</style></head>';
+ const banner='<p class="admin-muted">'+esc(t("Read-only design preview. No live inbox, credentials or settings.","Salt okunur tasarım önizlemesi. Canlı mesaj, şifre veya ayar yok."))+'</p>';
+ const overview=head+'<body class="admin-shell"><div class="admin-layout"><aside class="admin-sidebar"><div class="admin-brand"><small>'+esc(t("WEBSITE MANAGEMENT","SİTE YÖNETİMİ"))+'</small><strong>'+esc(d.brand)+'</strong></div><nav class="admin-nav"><a href="#overview">'+esc(t("Overview","Genel bakış"))+'</a>'+nav+'</nav></aside><main class="admin-main"><header class="admin-top" id="overview"><div>'+banner+'<h1>'+esc(t("Website overview","Siteye genel bakış"))+'</h1></div></header><div class="admin-metrics">'+metric(t("Editable pages","Düzenlenebilir sayfalar"),d.pages.length)+metric(t("All messages","Tüm mesajlar"),"—")+metric(t("New messages","Yeni mesajlar"),"—")+metric(t("Configured modules","Tanımlı modüller"),modules.length)+'</div>'+sections.map(s=>'<section class="admin-section" id="'+s.id+'"><h2>'+esc(s.label)+'</h2>'+s.html+'</section>').join("")+'</main></div></body></html>';
+ const login=head+'<body class="admin-shell"><main class="admin-login">'+banner+'<div class="admin-brand"><strong>'+esc(d.brand)+'</strong></div><h1>'+esc(t("Owner sign-in","Yönetici girişi"))+'</h1><label>'+esc(t("Password","Şifre"))+'<input type="password" disabled autocomplete="off"></label><button disabled>'+esc(t("Sign in","Giriş yap"))+'</button></main></body></html>';
+ return [{path:"admin",title:t("Management panel","Yönetim paneli"),content:overview},{path:"admin-login",title:t("Owner sign-in","Yönetici girişi"),content:login}];
+}

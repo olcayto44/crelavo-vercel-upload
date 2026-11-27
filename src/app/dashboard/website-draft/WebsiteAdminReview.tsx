@@ -1,0 +1,8 @@
+"use client";
+import {useEffect,useState} from "react";
+type Page={path:string;title:string;content:string};
+export function WebsiteAdminReview({endpoint,token,version,body="{}"}:{endpoint:string;token:string;version:number;body?:string}){
+ const [pages,setPages]=useState<Page[]>([]),[selected,setSelected]=useState("admin"),[message,setMessage]=useState("");
+ useEffect(()=>{const c=new AbortController();setPages([]);setMessage("Yönetim önizlemesi hazırlanıyor…");void(async()=>{try{const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+token},body,signal:c.signal});const v=await r.json();if(!r.ok||!v.ok||!Array.isArray(v.pages))throw Error();if(!c.signal.aborted){setPages(v.pages);setMessage("");}}catch{if(!c.signal.aborted)setMessage("Yönetim önizlemesi yüklenemedi.");}})();return()=>c.abort();},[endpoint,token,version,body]);
+ return <section style={{display:"grid",gap:12}}><p>Bağımsız yönetim panelinin salt okunur tasarım önizlemesi. Canlı yönetim işlemleri kurulumdan sonra çalışır.</p><div style={{display:"flex",gap:8,flexWrap:"wrap"}}>{pages.map(p=><button key={p.path} type="button" aria-pressed={selected===p.path} onClick={()=>setSelected(p.path)}>{p.path==="admin"?"Yönetim paneli":"Giriş ekranı"}</button>)}</div><p role="status">{message}</p>{pages.length>0&&<iframe title="Bağımsız yönetim paneli önizlemesi" sandbox="" referrerPolicy="no-referrer" srcDoc={pages.find(p=>p.path===selected)?.content??pages[0].content} style={{width:"100%",height:"min(85vh,900px)",minHeight:480,border:0,background:"#101827",borderRadius:10}}/>}</section>;
+}
