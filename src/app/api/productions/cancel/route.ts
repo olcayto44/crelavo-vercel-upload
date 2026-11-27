@@ -28,6 +28,15 @@ export async function POST(request: Request) {
     if (!verified.ok) return verified.response;
 
     const supabase = supabaseAdmin();
+    // Separate release gate: active/provider-uncertain jobs require reconciliation.
+    if (process.env.CRELAVO_ATOMIC_LEGACY_CANCEL_ENABLED === "true") {
+      const { data: result, error: rpcError } = await supabase.rpc("studio_legacy_cancel_unstarted", { p_user: userId, p_production: productionId });
+      if (rpcError || !result) return Response.json({ error: "atomic_cancel_unconfirmed" }, { status: 503 });
+      if (result.state === "not_found") return Response.json({ error: "Production not found." }, { status: 404 });
+      if (!["cancelled", "already_cancelled"].includes(result.state)) return Response.json({ error: "wallet_reconciliation_required" }, { status: 409 });
+      return Response.json({ production: result.production, cancellation_fee: result.cancellation_fee, refund_amount: result.refund_amount, provider_cancelled: false, idempotent: result.state === "already_cancelled" });
+    }
+
     const { data: production, error: productionError } = await supabase
       .from("production_requests")
         .select("id, user_id, status, automation_status, generation_status, reserved_credits, estimated_credits, output_json")

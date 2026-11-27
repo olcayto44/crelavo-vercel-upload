@@ -123,3 +123,43 @@ begin
 end $$;
 revoke all on function public.studio_legacy_expire_unstarted(uuid) from public,anon,authenticated;
 grant execute on function public.studio_legacy_expire_unstarted(uuid) to service_role;
+
+-- Member cancellation candidate, before provider start only. Maintain existing 50% fee.
+-- Enable only when provider claims and competing legacy writers use compatible locks.
+create or replace function public.studio_legacy_cancel_unstarted(p_user uuid,p_production uuid)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare w credit_balances%rowtype; j production_requests%rowtype; a integer; fee integer; released integer; n integer; rem integer; r integer;c integer;b integer;t integer; take integer; res jsonb; have_wallet boolean;
+begin
+ if p_user is null or p_production is null then raise exception 'legacy_cancel_invalid';end if;
+ if not exists(select 1 from production_requests where id=p_production and user_id=p_user) then return jsonb_build_object('state','not_found');end if;
+ select * into w from credit_balances where user_id=p_user for update;have_wallet:=found;
+ select * into j from production_requests where id=p_production and user_id=p_user for update;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ if j.status='cancelled' and j.reserved_credits=0 and j.output_json#>>'{creditResolution,atomicLegacyCancel}'='true' then
+  return jsonb_build_object('state','already_cancelled','production',to_jsonb(j),'cancellation_fee',(j.output_json#>>'{creditResolution,spentCredits}')::int,'refund_amount',(j.output_json#>>'{creditResolution,releasedReservedCredits}')::int);
+ end if;
+ a:=j.reserved_credits;
+ if j.status is distinct from 'queued' or j.generation_status is null or j.generation_status not in ('automation_queued','waiting_provider_config') or coalesce(j.automation_status,'queued') not in ('queued','waiting_provider_config') or j.started_at is not null or a is null or a<0 or j.request_metadata->'atomicCreateReservedCredits' is distinct from to_jsonb(a) or coalesce(j.output_json,'{}'::jsonb) ?| array['visualJob','renderJob','providerJob','providerJobId','provider_job_id','providerStartDiagnostic','creditResolution','finalImageUrl','finalVideoUrl'] then
+  return jsonb_build_object('state','reconcile_required');
+ end if;
+ fee:=(a+1)/2;released:=a-fee;
+ if a>0 then
+  if not have_wallet then return jsonb_build_object('state','reconcile_required');end if;
+  select count(*) into n from credit_events where user_id=p_user and type='reserve' and note='legacy-production:'||p_production::text and amount=a;
+  if n<>1 or exists(select 1 from credit_events where user_id=p_user and note in ('legacy-cancel-spend:'||p_production::text,'legacy-cancel-release:'||p_production::text)) or w.reserved<a or w.reserved>w.balance or least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits then return jsonb_build_object('state','reconcile_required');end if;
+  rem:=fee;r:=w.rolled_over_credits;c:=w.current_subscription_credits;b:=w.bonus_credits;t:=w.topup_credits;
+  take:=least(r,rem);r:=r-take;rem:=rem-take;
+  take:=least(c,rem);c:=c-take;rem:=rem-take;
+  take:=least(b,rem);b:=b-take;rem:=rem-take;
+  take:=least(t,rem);t:=t-take;rem:=rem-take;
+  if rem<>0 then raise exception 'wallet_bucket_mismatch';end if;
+  update credit_balances set balance=balance-fee,reserved=reserved-a,rolled_over_credits=r,current_subscription_credits=c,bonus_credits=b,topup_credits=t,updated_at=now() where user_id=p_user;
+  if fee>0 then insert into credit_events(user_id,type,amount,note) values(p_user,'spend',fee,'legacy-cancel-spend:'||p_production::text);end if;
+  if released>0 then insert into credit_events(user_id,type,amount,note) values(p_user,'refund',released,'legacy-cancel-release:'||p_production::text);end if;
+ end if;
+ res:=jsonb_build_object('status','cancelled_half_spent','reason','member_cancelled_or_abandoned','spentCredits',fee,'releasedReservedCredits',released,'finalizedAt',now(),'atomicLegacyCancel',true);
+ update production_requests set status='cancelled',automation_status='cancelled',generation_status='cancelled_by_member',cancellation_fee_credits=fee,reserved_credits=0,output_json=coalesce(output_json,'{}'::jsonb)||jsonb_build_object('creditResolution',res),error_message='Cancelled by member. Existing 50% reservation fee applied.',updated_at=now() where id=p_production returning * into j;
+ return jsonb_build_object('state','cancelled','production',to_jsonb(j),'cancellation_fee',fee,'refund_amount',released);
+end $$;
+revoke all on function public.studio_legacy_cancel_unstarted(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.studio_legacy_cancel_unstarted(uuid,uuid) to service_role;

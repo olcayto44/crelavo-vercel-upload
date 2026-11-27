@@ -35,4 +35,17 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  select * into w from credit_balances where user_id=u;if w.balance<>130 or w.reserved<>0 or w.topup_credits<>130 then raise exception 'expiry minted credits';end if;
  if (select count(*) from credit_events where user_id=u and type='refund' and note='legacy-expire:'||(a#>>'{production,id}'))<>1 then raise exception 'duplicate expiry event';end if;
  if has_function_privilege('anon','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_expire_unstarted(uuid)','EXECUTE') then raise exception 'expiry permission mismatch';end if;
-end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked' result;rollback;
+ payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture other hold"'),'{reserved_credits}','40'),'{estimated_credits}','40');
+ b:=studio_legacy_create(u,payload);if b->>'state' is distinct from 'created' then raise exception 'other hold fixture';end if;
+ payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture cancel"'),'{reserved_credits}','51'),'{estimated_credits}','51');
+ a:=studio_legacy_create(u,payload);if a->>'state' is distinct from 'created' then raise exception 'cancel fixture';end if;
+ b:=studio_legacy_cancel_unstarted(gen_random_uuid(),(a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'not_found' then raise exception 'cross owner cancellation';end if;
+ update production_requests set started_at=now() where id=(a#>>'{production,id}')::uuid;
+ b:=studio_legacy_cancel_unstarted(u,(a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'started job cancelled';end if;
+ update production_requests set started_at=null where id=(a#>>'{production,id}')::uuid;
+ b:=studio_legacy_cancel_unstarted(u,(a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'cancelled' or (b->>'cancellation_fee')::int<>26 or (b->>'refund_amount')::int<>25 then raise exception 'cancel settlement mismatch';end if;
+ b:=studio_legacy_cancel_unstarted(u,(a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'already_cancelled' then raise exception 'cancel replay';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>104 or w.reserved<>40 or w.topup_credits<>104 then raise exception 'cancel wallet or other hold mismatch';end if;
+ if (select count(*) from credit_events where user_id=u and note in ('legacy-cancel-spend:'||(a#>>'{production,id}'),'legacy-cancel-release:'||(a#>>'{production,id}')))<>2 then raise exception 'cancel event count';end if;
+ if has_function_privilege('anon','public.studio_legacy_cancel_unstarted(uuid,uuid)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_cancel_unstarted(uuid,uuid)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_cancel_unstarted(uuid,uuid)','EXECUTE') then raise exception 'cancel permission mismatch';end if;
+end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected' result;rollback;
