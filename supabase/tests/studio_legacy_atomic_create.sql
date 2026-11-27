@@ -86,6 +86,18 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  b:=studio_legacy_refund_reviewed(jid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'terminal observation released hold';end if;
  select * into w from credit_balances where user_id=u;if w.balance<>74 or w.reserved<>70 or w.topup_credits<>74 then raise exception 'terminal observation wallet changed';end if;
  if has_function_privilege('anon','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') or not has_function_privilege('service_role','public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text)','EXECUTE') then raise exception 'terminal privilege mismatch';end if;
+ -- Existing complex terminal failure must not be released by single-task review.
+ select updated_at into stamp from production_requests where id=jid;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-123',10,'reviewer@example.invalid');if b->>'state' is distinct from 'complex_or_delivered_job_review_required' then raise exception 'complex refund accepted %',b;end if;
+ -- Single-task fixture; attestation is synthetic and rolled back.
+ update production_requests set output_json=output_json-'renderJob' where id=jid returning updated_at into stamp;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'wrong-task','provider-case-123',10,'reviewer@example.invalid');if b->>'state' is distinct from 'reconcile_required' then raise exception 'wrong task refund';end if;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-123',9,'reviewer@example.invalid');if b->>'state' is distinct from 'reconcile_required' then raise exception 'wrong amount refund';end if;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-123',10,'reviewer@example.invalid');if b->>'state' is distinct from 'refunded' or (b->>'refunded_credits')::int<>10 then raise exception 'attested refund failed %',b;end if;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-123',10,'reviewer@example.invalid');if b->>'state' is distinct from 'already_refunded' or (b->>'refunded_credits')::int<>0 then raise exception 'attested refund replay';end if;
+ b:=studio_legacy_confirm_zero_cost_refund(jid,stamp,'fixture-task','provider-case-999',10,'reviewer@example.invalid');if b->>'state' is distinct from 'reconcile_required' then raise exception 'changed refund evidence replay';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>74 or w.reserved<>60 or w.topup_credits<>74 then raise exception 'attested refund wallet mismatch';end if;
+ if has_function_privilege('anon','public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text)','EXECUTE') then raise exception 'attestation permission';end if;
 end $test$;
 set local role anon;
 do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'anonymous access';end if;end $deny$;
@@ -93,4 +105,4 @@ reset role;
 set local role authenticated;
 do $deny$ begin if exists(select 1 from storage.objects where bucket_id='studio-final-private') then raise exception 'authenticated direct access';end if;end $deny$;
 reset role;
-select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched, private storage identity enforced' result;rollback;
+select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed, terminal observation preserves reservation and sibling job, media proof required and storage size matched, private storage identity enforced, manual zero cost attestation atomic and replay protected' result;rollback;

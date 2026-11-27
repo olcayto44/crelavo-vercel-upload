@@ -258,3 +258,33 @@ begin
 end $$;
 revoke all on function public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text) from public,anon,authenticated;
 grant execute on function public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text) to service_role;
+
+create or replace function public.studio_legacy_confirm_zero_cost_refund(p_job uuid,p_stamp timestamptz,p_task text,p_evidence text,p_expected_credits integer,p_reviewer text)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare u uuid; j production_requests%rowtype; w credit_balances%rowtype; o jsonb; r jsonb; v jsonb;
+begin
+ if p_job is null or p_stamp is null or p_task is null or length(p_task) not between 1 and 256 or p_evidence is null or p_evidence !~ '^[A-Za-z0-9][A-Za-z0-9._:-]{7,159}$' or p_expected_credits is null or p_expected_credits<=0 or p_reviewer is null or length(p_reviewer) not between 3 and 254 then raise exception 'refund_evidence_invalid';end if;
+ select user_id into u from production_requests where id=p_job;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ select * into w from credit_balances where user_id=u for update;
+ if not found then return jsonb_build_object('state','reconcile_required');end if;
+ select * into j from production_requests where id=p_job and user_id=u for update;
+ if not found then return jsonb_build_object('state','reconcile_required');end if;
+ o:=coalesce(j.output_json,'{}'::jsonb);r:=o->'creditResolution';v:=r->'manualProviderReconciliation';
+ if r->>'atomicLegacyRefund'='true' then
+  if v->>'taskId'=p_task and v->>'evidenceReference'=p_evidence and v->'credits'=to_jsonb(p_expected_credits) then return public.studio_legacy_refund_reviewed(p_job);end if;
+  return jsonb_build_object('state','reconcile_required');
+ end if;
+ if j.updated_at is distinct from p_stamp or j.status is distinct from 'failed' or j.generation_status is distinct from 'provider_outcome_reconciliation_required' or r->>'status' is distinct from 'provider_outcome_unconfirmed' or r->>'reason' is distinct from 'terminal_provider_observation' or r->>'taskId' is distinct from p_task or j.reserved_credits is distinct from p_expected_credits or j.request_metadata->'atomicCreateReservedCredits' is distinct from to_jsonb(p_expected_credits) then return jsonb_build_object('state','reconcile_required');end if;
+ if nullif(j.delivery_link,'') is not null or nullif(j.preview_url,'') is not null or nullif(j.delivery_zip_url,'') is not null or o ?| array['finalVideoUrl','finalImageUrl','privateVideo','deliveryReady','renderJob','characterDialoguePlan','alternatives','shotJobs','visualJobs'] then return jsonb_build_object('state','complex_or_delivered_job_review_required');end if;
+ -- Only narrow single-task jobs. The reviewer has checked actual provider billing
+ -- and absence of usable output. An evidence reference is an attestation, not a provider receipt.
+ if o#>>'{visualJob,id}' is distinct from p_task or o#>>'{visualJob,provider}' is distinct from r->>'provider' or o ? 'providerJob' then return jsonb_build_object('state','complex_or_delivered_job_review_required');end if;
+ v:=jsonb_build_object('method','manual_provider_billing_attestation','taskId',p_task,'evidenceReference',p_evidence,'credits',p_expected_credits,'reviewer',p_reviewer,'zeroProviderCostAttested',true,'noUsableOutputAttested',true,'reviewedAt',now());
+ update production_requests set output_json=jsonb_set(o,'{creditResolution}',r||jsonb_build_object('status','admin_review_required','manualProviderReconciliation',v),true) where id=p_job;
+ r:=public.studio_legacy_refund_reviewed(p_job);
+ if r->>'state' is distinct from 'refunded' then raise exception 'atomic_review_refund_rejected';end if;
+ return r;
+end $$;
+revoke all on function public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text) from public,anon,authenticated;
+grant execute on function public.studio_legacy_confirm_zero_cost_refund(uuid,timestamptz,text,text,integer,text) to service_role;
