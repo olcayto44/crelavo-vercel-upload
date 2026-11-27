@@ -40,6 +40,7 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
   const result=await generateWebsiteAICopy(batch,{enabled:()=>Boolean(env.OPENAI_API_KEY?.trim()),apiKey:env.OPENAI_API_KEY!,policy:paidWebsitePolicy,customer:true});
   if(result.state!=="validated")throw Error("website_ai_output_unconfirmed");
   requireCompleteWebsiteCopy(batch,result.copy);
+  if(wantsPageImages(input)&&result.copy.secondaryPages?.some(p=>(p.additionalSections?.length??0)<1))throw Error("website_premium_page_content_incomplete");
   results.push(result);
  }
  const first=results[0]!,copy:WebsiteAICopy=first.copy,secondary=results.flatMap(r=>r.copy.secondaryPages??[]);
