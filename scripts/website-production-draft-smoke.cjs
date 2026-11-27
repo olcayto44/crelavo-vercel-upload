@@ -30,6 +30,12 @@ const {renderWebsiteDesignCandidate}=load("src/lib/website-design-candidate.ts")
  assert(editor.includes('srcDoc={preview.content}'));
  assert(editor.includes('useState(customerMode)'));
  assert(editor.includes('dropPage(pageDrag.current,i)'));
- console.log("website editor: actual per-page sandbox previews, page reorder and customer autosave contract");
+ const isolatedEditor=fs.readFileSync("src/app/website-design-test/IsolatedWebsiteDesignPilot.tsx","utf8");
+ assert(isolatedEditor.includes('from "./WebsiteDesignPilot"'),"the customer pilot must use the same editor");
+ const cmsEditor=fs.readFileSync("src/app/website-cms-test/WebsiteCmsPilot.tsx","utf8");
+ assert(cmsEditor.includes("Kaydedilmiş siteyi indir (ZIP)"));
+ assert(cmsEditor.includes('expectedSha256:review!.sha256'));
+ assert(cmsEditor.includes('b.headers.get("X-Artifact-SHA256")!==review!.sha256'));
+ console.log("website editor: shared actual per-page previews, reorder, autosave and one-action hash-verified ZIP contract");
  console.log("website production draft: schema, owner-scoped storage, compare-and-swap, preview and paid export fence");
 })().catch(e=>{console.error(e);process.exitCode=1;});
