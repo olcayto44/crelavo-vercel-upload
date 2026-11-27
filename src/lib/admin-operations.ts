@@ -43,13 +43,14 @@ export async function recordCreditLedger(input: {
   if (!input.userId || !input.delta) return null;
   const supabase = supabaseAdmin();
   if (input.paymentId) {
-    const { data: existing } = await supabase
+    const { data: existing,error:readError } = await supabase
       .from("credit_ledger")
-      .select("id")
+      .select("id,user_id,delta")
       .eq("whop_payment_id", input.paymentId)
       .eq("reason", input.reason)
       .maybeSingle();
-    if (existing) return existing;
+    if(readError)throw readError;
+    if(existing){if(existing.user_id!==input.userId||existing.delta!==input.delta)throw Error("credit_ledger_payment_conflict");return {id:existing.id};}
   }
   const { data, error } = await supabase
     .from("credit_ledger")

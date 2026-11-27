@@ -1,4 +1,5 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
+import {findWhopLegacyPurchase} from "@/lib/whop-legacy-purchase";
 import {whopPaymentHasReversal,whopCreditFulfillment,whopOriginalPaymentId,whopSubscriptionExpiryAllowed} from "@/lib/whop-payment-state";
 import {recordWhopReversalNotice,whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
 import crypto from "node:crypto";
@@ -424,15 +425,8 @@ async function addCredits(input: {
   if(whopAtomicPurchaseEnabled()){
     return commitVerifiedWhopPurchase(supabase,{profile,product:input.product,billing:input.billing,credits:input.credits,paymentId:input.paymentId,membershipId:input.membershipId,source:"webhook"});
   }
-  const { data: existingEvent, error: existingError } = await supabase
-    .from("credit_events")
-    .select("id")
-    .eq("user_id", profile.id)
-    .ilike("note", `%${input.idempotencyKey}%`)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-  if (existingEvent) return { activated: false, reason: "already_processed", profile };
+  const history=await findWhopLegacyPurchase(supabase,{paymentId:input.paymentId,userId:profile.id,credits:input.credits});
+  if(history==="already_processed")return {activated:false as const,reason:"already_processed",profile};
 
   const { data: balanceRow, error: balanceReadError } = await supabase
     .from("credit_balances")
@@ -609,9 +603,9 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
     kind: "credits",
     status: fulfillment.status,
     billingReason,
-  }).catch(() => null);
-  if (activation.activated && activationProfileId) {
-    await recordCreditLedger({ userId: activationProfileId, delta: credits, reason: "purchase", paymentId: paymentReference, note: `${product.name} / ${mappedPlan.billing}` }).catch(() => null);
+  });
+  if (fulfillment.fulfilled && activationProfileId) {
+    await recordCreditLedger({ userId: activationProfileId, delta: credits, reason: "purchase", paymentId: paymentReference, note: `${product.name} / ${mappedPlan.billing}` });
   }
 
   const creditActivationEmailResult = activation.activated

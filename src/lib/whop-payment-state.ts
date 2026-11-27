@@ -30,3 +30,10 @@ export function whopSubscriptionExpiryAllowed(row:{balance?:number|null;reserved
  if(!amounts.every(v=>typeof v==="number"&&Number.isSafeInteger(v)&&v>=0))return false;
  return row.reserved===0&&row.balance===Number(row.current_subscription_credits)+Number(row.rolled_over_credits)+Number(row.topup_credits)+Number(row.bonus_credits);
 }
+
+export function whopLegacyPurchaseState(rows:{user_id?:unknown;type?:unknown;amount?:unknown;note?:unknown}[],expected:{paymentId:string;userId:string;credits:number}){
+ const key="whop:payment:"+expected.paymentId;
+ if(!/^pay_[A-Za-z0-9_-]{3,156}$/.test(expected.paymentId)||!Number.isSafeInteger(expected.credits)||expected.credits<=0)return "conflict";
+ if(!rows.length)return "new";
+ return rows.length===1&&rows[0].user_id===expected.userId&&rows[0].type==="purchase"&&rows[0].amount===expected.credits&&String(rows[0].note??"").split(" | ")[0]===key?"already_processed":"conflict";
+}

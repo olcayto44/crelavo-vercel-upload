@@ -1,4 +1,5 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
+import {findWhopLegacyPurchase} from "@/lib/whop-legacy-purchase";
 import { applyCreditPurchaseToBuckets, creditsForBilling } from "@/lib/credit-rollover";
 import {whopLookupPaymentSucceeded,whopCreditFulfillment} from "@/lib/whop-payment-state";
 import {whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
@@ -223,15 +224,8 @@ async function addCredits(input: {
     return commitVerifiedWhopPurchase(supabase,{profile,product:input.product,billing:input.billing,credits:input.credits,paymentId:input.paymentId,membershipId:input.membershipId,source:"checkout_complete_fallback"});
   }
   const idempotencyKey = `whop:payment:${input.paymentId}`;
-  const { data: existingEvent, error: existingError } = await supabase
-    .from("credit_events")
-    .select("id, amount, note, created_at")
-    .eq("user_id", profile.id)
-    .ilike("note", `%${idempotencyKey}%`)
-    .maybeSingle();
-
-  if (existingError) throw existingError;
-  if (existingEvent) return { activated: false, reason: "already_processed", profile, existingEvent };
+  const history=await findWhopLegacyPurchase(supabase,{paymentId:input.paymentId,userId:profile.id,credits:input.credits});
+  if(history==="already_processed")return {activated:false as const,reason:"already_processed",profile};
 
   const { data: balanceRow, error: balanceReadError } = await supabase
     .from("credit_balances")
@@ -349,7 +343,7 @@ export async function POST(request: Request) {
     const activationProfile = (activation as { profile?: { id?: string } }).profile;
     const fulfillment=whopCreditFulfillment(activation.activated,activationReason);
     await recordPaymentFulfillment({ paymentId: resolvedPaymentId, userId: activationProfile?.id ?? null, planId, productTitle: product.name, amountUsd: paymentAmount(payment), credits:fulfillment.fulfilled?credits:0, kind: "credits", status: fulfillment.status, billingReason: paymentBillingReason(payment) || activationReason || null });
-    if (activation.activated && activationProfile?.id) await recordCreditLedger({ userId: activationProfile.id, delta: credits, reason: "purchase", paymentId: resolvedPaymentId, note: `checkout reconciliation | package=${product.id} | billing=${mappedPlan.billing}` });
+    if (fulfillment.fulfilled && activationProfile?.id) await recordCreditLedger({ userId: activationProfile.id, delta: credits, reason: "purchase", paymentId: resolvedPaymentId, note: `checkout reconciliation | package=${product.id} | billing=${mappedPlan.billing}` });
     const isAlreadyProcessed = (activation as { reason?: string }).reason === "already_processed";
     const adminNotification = isAlreadyProcessed
       ? { skipped: true, reason: "Payment already processed; admin notification not repeated." }
@@ -367,7 +361,7 @@ export async function POST(request: Request) {
       });
     }
 
-    return Response.json({ ok: true, ...activation, productId: product.id, billing: mappedPlan.billing, credits, adminNotification });
+    return Response.json({ ok: true, activated: activation.activated, reason:activationReason, productId: product.id, billing: mappedPlan.billing, credits:fulfillment.fulfilled?credits:0 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Whop payment reconciliation failed.";
     return Response.json({ ok: false, reason: "reconcile_failed", error: message }, { status: 400 });

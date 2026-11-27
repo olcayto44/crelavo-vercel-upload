@@ -46,3 +46,11 @@ const db={auth:{admin:{getUserById:async id=>({data:{user:{id,email:owner}},erro
  console.log("Whop atomic candidate: same entry boundary, canonical owner, exact terms, no fallback on uncertain RPC (offline)");
  }finally{for(const k of Object.keys(process.env))if(!(k in before))delete process.env[k];Object.assign(process.env,before);}
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
+const {whopLegacyPurchaseState}=load("src/lib/whop-payment-state.ts");
+const expectedLegacy={paymentId:"pay_fixture_123",userId:"owner",credits:100};
+const legacy={user_id:"owner",type:"purchase",amount:100,note:"whop:payment:pay_fixture_123 | package=pro"};
+assert.equal(whopLegacyPurchaseState([],expectedLegacy),"new");
+assert.equal(whopLegacyPurchaseState([legacy],expectedLegacy),"already_processed");
+for(const row of [{...legacy,user_id:"other"},{...legacy,amount:99},{...legacy,type:"adjustment"},{...legacy,note:legacy.note.replace("123","1234")}])assert.equal(whopLegacyPurchaseState([row],expectedLegacy),"conflict");
+assert.equal(whopLegacyPurchaseState([legacy,legacy],expectedLegacy),"conflict");

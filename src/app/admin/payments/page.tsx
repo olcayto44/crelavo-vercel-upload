@@ -30,7 +30,7 @@ export default function AdminPaymentsPage() {
         <span className="badge">Current launch mode</span>
         <h2>Whop checkout + controlled credit activation</h2>
         <p style={{ color: "var(--muted)" }}>
-          Crelavo Pro uses the approved Polar checkout. Legacy Whop checkout is disabled, and other packages remain unavailable until their Polar products are mapped.
+          Whop checkout is the selected commercial workflow. Historical payment records do not prove that the new Website credit flow is ready; verify payment and credit fulfillment before granting access.
         </p>
         <div className="admin-info-grid" style={{ marginTop: 14 }}>
           <div><span>Payment collection</span><strong>Whop checkout</strong><small>Configured from Whop plan IDs and PAYMENT_PROVIDER=whop</small></div>
@@ -40,7 +40,8 @@ export default function AdminPaymentsPage() {
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
           <Link className="btn" href="/admin/packages">Review Packages</Link>
-          <Link className="btn secondary" href="/admin/credits">Activate Credits</Link>
+          <Link className="btn secondary" href="/admin/credits">Review Credits</Link>
+          <Link className="btn secondary" href="/admin/studio-reconciliation">Payment and credit reconciliation</Link>
           <Link className="btn secondary" href="/admin/manual-e2e-checklist">Manual E2E Checklist</Link>
         </div>
       </section>

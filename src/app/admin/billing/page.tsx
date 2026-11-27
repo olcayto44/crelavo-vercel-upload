@@ -7,7 +7,7 @@ export default function AdminBillingPage() {
       <section className="card admin-billing-card">
         <span className="badge">Billing center</span>
         <h2>Subscription and payment management</h2>
-        <p style={{ color: "var(--muted)" }}>Legacy Whop checkout is disabled. Credit subscriptions and one-time top-ups remain unavailable until their Polar products are mapped.</p>
+        <p style={{ color: "var(--muted)" }}>Whop payment and subscription records are managed separately from the Website commercial release gate. Verify the configured provider and confirmed credit fulfillment before granting access.</p>
         <div className="admin-info-grid">
           <div><span>Checkout</span><strong>/dashboard/payment</strong><small>User payment screen</small></div>
           <div><span>Subscriptions</span><strong>Automatic renewal</strong><small>Monthly/yearly Whop subscription payments</small></div>
