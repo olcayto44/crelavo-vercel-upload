@@ -1,1 +1,2 @@
-export function websiteDesignPilotEnabled(){const e=process.env,origin="https://bwzxdxqgrgbsvndinmrv.supabase.co";return e.VERCEL_ENV==="preview"&&["feat/central-production-dispatch-20261125","release/commercial-five-track-20261126"].includes(e.VERCEL_GIT_COMMIT_REF||"")&&e.STUDIO_WEBSITE_TEST_CONNECTION_ENABLED==="true"&&e.STUDIO_AGENT_TEST_DATABASE_URL===origin&&e.STUDIO_AGENT_TEST_DATABASE_ORIGIN===origin;}
+import {websitePilotScope} from "./studio-agent/website-pilot-provider";
+export function websiteDesignPilotEnabled(){return websitePilotScope();}
