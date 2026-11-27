@@ -1,7 +1,12 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),{load}=require("./studio-agent-test-loader.cjs");
 const {commitVerifiedWhopPurchase,whopAtomicPurchaseEnabled}=load("src/lib/studio-agent/whop-atomic-purchase.ts",{"server-only":{},"@/lib/supabase":{}});
 const {findPaymentProduct}=load("src/lib/data.ts");
-const {whopPaymentHasReversal,whopLookupPaymentSucceeded,whopCreditFulfillment}=load("src/lib/whop-payment-state.ts");
+const {whopPaymentHasReversal,whopLookupPaymentSucceeded,whopCreditFulfillment,whopOriginalPaymentId,whopSubscriptionExpiryAllowed}=load("src/lib/whop-payment-state.ts");
+assert.equal(whopOriginalPaymentId({id:"refund_test",payment:{id:"pay_original"}}),"pay_original");
+assert.equal(whopOriginalPaymentId({id:"refund_test"}),null);
+assert.equal(whopOriginalPaymentId({payment_id:"pay_first",payment:{id:"pay_second"}}),null);
+const safeExpiry={balance:100,reserved:0,current_subscription_credits:50,rolled_over_credits:10,topup_credits:30,bonus_credits:10};
+assert(whopSubscriptionExpiryAllowed(safeExpiry));assert(!whopSubscriptionExpiryAllowed({...safeExpiry,reserved:1}));assert(!whopSubscriptionExpiryAllowed({...safeExpiry,balance:101}));assert(!whopSubscriptionExpiryAllowed(null));
 const paid={status:"paid",substatus:"succeeded",paid_at:"2026-11-27T00:00:00Z",refunded_amount:0,refunds:[],disputes:[]};
 assert(whopLookupPaymentSucceeded(paid));
 for(const reversal of [{status:"refunded"},{substatus:"partially_refunded"},{auto_refunded:true},{refunded_amount:1},{refunds:[{}]},{disputes:[{}]},{refunded_at:"2026-11-27"},{dispute_alerted_at:"2026-11-27"}]){

@@ -1,6 +1,7 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
 import { applyCreditPurchaseToBuckets, creditsForBilling } from "@/lib/credit-rollover";
 import {whopLookupPaymentSucceeded,whopCreditFulfillment} from "@/lib/whop-payment-state";
+import {whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
 import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
@@ -291,6 +292,7 @@ export async function POST(request: Request) {
       return Response.json({ ok: false, reason: "payment_id_mismatch" }, { status: 400 });
     }
 
+    if (await whopReversalNoticeExists(resolvedPaymentId))return Response.json({ok:true,activated:false,reason:"payment_reversal_review_required"});
     if (!paymentSucceeded(payment)) {
       return Response.json({ ok: true, activated: false, reason: "payment_not_succeeded", status: paymentStatus(payment), substatus: paymentSubstatus(payment) });
     }

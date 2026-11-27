@@ -1,5 +1,6 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
-import {whopPaymentHasReversal,whopCreditFulfillment} from "@/lib/whop-payment-state";
+import {whopPaymentHasReversal,whopCreditFulfillment,whopOriginalPaymentId,whopSubscriptionExpiryAllowed} from "@/lib/whop-payment-state";
+import {recordWhopReversalNotice,whopReversalNoticeExists} from "@/lib/whop-reversal-notice";
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
@@ -648,20 +649,28 @@ async function clearCreditsAfterMembershipEnd(payment: WhopObject) {
   const supabase = supabaseAdmin();
   const { data: balanceRow, error: balanceReadError } = await supabase
     .from("credit_balances")
-    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, billing_cycle_ends_at")
+    .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, billing_cycle_ends_at, updated_at")
     .eq("user_id", profile.id)
     .maybeSingle();
   if (balanceReadError) throw balanceReadError;
 
+  if(!balanceRow||!whopSubscriptionExpiryAllowed(balanceRow))return {skipped:true,reason:"wallet_reservation_or_balance_review_required"};
+  const endedMembership=membershipId(payment);
+  if(!endedMembership)return {skipped:true,reason:"membership_identity_review_required"};
+  const purchase=await supabase.from("credit_events").select("note").eq("user_id",profile.id).eq("type","purchase").ilike("note","%billing=%").order("created_at",{ascending:false}).limit(30);
+  if(purchase.error)return {skipped:true,reason:"membership_identity_review_required"};
+  const lastSubscription=purchase.data?.find(row=>String(row.note??"").split(" | ").some(part=>part==="billing=monthly"||part==="billing=yearly"));
+  if(!lastSubscription||!String(lastSubscription.note??"").split(" | ").includes("membership="+endedMembership))return {skipped:true,reason:"membership_identity_review_required"};
   const update = clearSubscriptionCreditBuckets({ row: balanceRow });
   const expiredAmount = Number(balanceRow?.current_subscription_credits ?? 0) + Number(balanceRow?.rolled_over_credits ?? 0);
   const { data: balance, error: balanceError } = await supabase
     .from("credit_balances")
-    .upsert({ user_id: profile.id, ...update }, { onConflict: "user_id" })
+    .update(update).eq("user_id",profile.id).eq("updated_at",balanceRow.updated_at).eq("reserved",0)
     .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits, subscription_status, updated_at")
-    .single();
+    .maybeSingle();
   if (balanceError) throw balanceError;
 
+  if(!balance)return {skipped:true,reason:"wallet_changed_review_required"};
   if (expiredAmount > 0) {
     await supabase.from("credit_events").insert({
       user_id: profile.id,
@@ -726,13 +735,16 @@ export async function POST(request: Request) {
     const webhookId = request.headers.get("webhook-id") ?? paymentId(payment) ?? event;
 
     if (event === "payment.succeeded") {
-      if(whopPaymentHasReversal(payment))return Response.json({received:true,ignored:true,reason:"payment_reversed_or_disputed"});
+      const originalPaymentId=whopOriginalPaymentId(payment);
+      if(!originalPaymentId)return Response.json({received:true,ignored:true,reason:"payment_id_unverified"});
+      if(whopPaymentHasReversal(payment)||await whopReversalNoticeExists(originalPaymentId))return Response.json({received:true,ignored:true,reason:"payment_reversed_or_disputed"});
       const result = await handlePaymentSucceeded(event, payment, webhookId);
       console.log("Whop payment succeeded", result);
       return Response.json({ received: true, result });
     }
 
     if (["payment.failed", "membership.deactivated", "refund.created", "dispute.created"].includes(event)) {
+      if(event==="refund.created"||event==="dispute.created")await recordWhopReversalNotice(webhookId,event,whopOriginalPaymentId(eventData(payload)));
       const adminPaymentNotificationResult = await handleAttentionEvent(event, payment, webhookId);
       console.warn("Whop attention event", { event, adminPaymentNotificationResult });
       return Response.json({ received: true, adminPaymentNotificationResult });

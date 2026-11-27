@@ -24,7 +24,7 @@ export default async function StudioReconciliationPage(){
   <section className="card admin-wide-card">
    <h2>Mevcut veritabanı kayıtları</h2>
    <div className="admin-info-grid">{metrics.map(metric=><div key={metric.id}><span>{metric.label}</span><strong>{metric.state==="observed"?metric.count.toLocaleString("tr-TR"):"Veri alınamadı"}</strong><small>{metric.state==="observed"?"Kayıt sayısı (tüm dönemler)":"Sorgu doğrulanamadı; sıfır kabul edilmez"}</small></div>)}</div>
-   <p>Whop fulfillment kayıtları muhasebe denetim görünümüdür; tek başına tahsilat veya doğru kredi yükleme kanıtı değildir. Website kayıtları mevcut rezervasyon defterinin durumudur.</p>
+   <p>Whop fulfillment kayıtları muhasebe denetim görünümüdür; tek başına tahsilat veya doğru kredi yükleme kanıtı değildir. İade/itiraz inceleme bildirimleri otomatik kredi kesintisi veya kesin para iadesi kanıtı değildir. Website kayıtları mevcut rezervasyon defterinin durumudur.</p>
    <Link href="/admin/finance">Finans ekranına git</Link>
   </section>
   <section className="card admin-wide-card">

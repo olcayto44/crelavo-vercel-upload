@@ -3,6 +3,7 @@ export const reconciliationMetrics=[
  {id:"whop_pending",label:"Whop — kullanıcı eşleşmesi bekleyen",table:"payment_fulfillments",column:"status",value:"pending_user"},
  {id:"whop_fulfilled",label:"Whop — tamamlandı olarak kaydedilen",table:"payment_fulfillments",column:"status",value:"fulfilled"},
  {id:"whop_reversed",label:"Whop — ters işlem olarak kaydedilen",table:"payment_fulfillments",column:"status",value:"reversed"},
+ {id:"whop_reversal_review",label:"Whop — iade/itiraz inceleme bildirimleri",table:"payment_provider_events",column:"event_type",value:"credit_reversal_review"},
  {id:"website_reserved",label:"Website — rezervasyon açık",table:"website_credit_reservations",column:"state",value:"reserved"},
  {id:"website_review",label:"Website — mutabakat gerekli",table:"website_credit_reservations",column:"state",value:"reconcile_required"},
  {id:"website_settled",label:"Website — tahsilat tamamlandı",table:"website_credit_reservations",column:"state",value:"settled"},
