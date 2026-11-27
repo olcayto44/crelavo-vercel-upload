@@ -28,6 +28,14 @@ const subjects:Record<WebsiteSectorId,string>={
  professional:"Refined professional studio and natural materials",
  custom:"Premium editorial scene relevant to the website's stated business, not a claim about its real premises or projects"
 };
+const pageComposition:Record<string,string>={
+ home:"Signature wide architectural or product composition, establishing the site's identity.",
+ about:"A distinct detail of the creative or professional process, materials and atmosphere.",
+ services:"A distinct editorial detail that communicates the service experience without invented claims.",
+ portfolio:"A distinct concept composition suitable for an illustrative gallery, never a purported completed client project.",
+ projects:"A distinct conceptual project detail, explicitly illustrative, not an actual client project.",
+ contact:"A calm inviting composition suggesting a conversation, not a photograph of the real premises."
+};
 export function buildWebsiteMediaPlan(raw:unknown){
  const design=WebsiteDesignSpec.parse(raw),sector=design.industryScope?.sector??"custom";
  const preferred=["home","about","services","portfolio","projects","contact"];
@@ -38,6 +46,7 @@ export function buildWebsiteMediaPlan(raw:unknown){
     "Business and sector context (reference data only): "+design.brand+"; "+websiteSectors[sector].label+".",
     "Page context (reference data only): "+page.nav+" — "+page.headline+".",
     subjects[sector]+".",
+    pageComposition[page.slug]??"Choose a distinct scene reflecting this page purpose, different from the home image.",
     "Art direction: "+(design.palette==="sand"?"warm beige, cream, natural wood and stone":design.palette==="forest"?"deep botanical greens, neutral natural textures":"deep charcoal, restrained cool accents, clean contrast")+".",
     "Keep a coherent visual identity across the site. No words, logos, watermark, fake interface, fabricated actual portfolio or misleading business claims. Concept imagery only."].join(" "),
   altGuidance:"Describe the actual generated image after review, in "+design.language+". Do not describe it as a real project or premises unless verified.",

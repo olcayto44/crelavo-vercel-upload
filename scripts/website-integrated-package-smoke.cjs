@@ -13,7 +13,7 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
  assert.equal(websitePageManifest(["首页","关于我们","联系方式"]).length,3);
  assert.equal(websitePaidBatches(input).length,2);
  assert.throws(()=>preparePaidWebsiteAI({...input,features:["AI hero image"]},{OPENAI_API_KEY:"fixture"}),/image_not_enabled/);
- const prev=global.fetch,oldKey=process.env.OPENAI_API_KEY,oldAdmin=process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED,oldHero=process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED;
+ const prev=global.fetch,oldKey=process.env.OPENAI_API_KEY,oldAdmin=process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED,oldHero=process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED,oldBatch=process.env.CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED;
  process.env.OPENAI_API_KEY="fixture";process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED="true";let calls=0;
  try{
   global.fetch=async(url,opts)=>{calls++;assert.equal(url,"https://api.openai.com/v1/chat/completions");const req=JSON.parse(opts.body),b=JSON.parse(req.messages[1].content);
@@ -40,6 +40,19 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
   invalidImage=true;
   await assert.rejects(()=>generatePaidWebsiteArtifact({...input,pages:["Home"],features:["AI hero image"]},id,"landing_page"),/website_ai_image_unconfirmed/);
   assert.equal(imageCalls,2,"invalid image must not trigger a second provider attempt");
+  const premium={...input,features:["AI page images"]};
+  assert.throws(()=>preparePaidWebsiteAI(premium,{OPENAI_API_KEY:"fixture",CRELAVO_WEBSITE_AI_HERO_ENABLED:"true"}),/page_batch_not_enabled/);
+  process.env.CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED="true";invalidImage=false;
+  const approved=preparePaidWebsiteAI(premium,process.env);assert.equal(approved.pageImageCount,5);assert(approved.maximumMicroUSD<=250000);
+  const prompts=[],distinctPngs=await Promise.all([1,2,3,4,5].map(i=>require("sharp")({create:{width:1280,height:720,channels:3,background:{r:20*i,g:35*i,b:40*i}}}).png().toBuffer()));
+  global.fetch=async(url,opts)=>{if(url!=="https://api.openai.com/v1/images/generations")return copyTransport(url,opts);const index=prompts.length;prompts.push(JSON.parse(opts.body).prompt);assert(index<5);return Response.json({usage:{input_tokens:20,output_tokens:40,input_tokens_details:{text_tokens:20,image_tokens:0}},data:[{b64_json:distinctPngs[index].toString("base64")}]},{headers:{"x-request-id":"req_fixture_page_"+index}});};
+  const complete=await generatePaidWebsiteArtifact(premium,id,"business_website");
+  assert.equal(prompts.length,5);assert.equal(new Set(prompts).size,5);
+  assert.equal(complete.plan.websiteHeroMedia.length,5);assert.equal(complete.plan.websitePageImageReceipts.length,5);
+  assert.deepEqual(complete.plan.websitePageMediaCoverage,{required:5,delivered:5,invoicePending:true});
+  assert.equal(complete.files.filter(f=>f.path.endsWith(".html")&&f.content.includes("data:image/webp;base64,")).length,5);
+  assert(complete.plan.websitePageImageReceipts.every(r=>r.estimatedMicroUSD===1300&&r.invoicePending));
+  console.log("Premium Website candidate: one bounded approved plan, five distinct page images, per-page receipt estimates and embedded assets (synthetic transport)");
   global.fetch=copyTransport;calls=0;
   console.log("Website hero transport fixture: decoded image, persisted WebP, receipt and no retry on invalid payload");
   const features=["Blog CMS","Product catalog","Order requests","Booking requests","Customer accounts"];
@@ -59,5 +72,5 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
   assert.equal(revised.design.pages[0].headline,"A new headline");assert.equal(applySavedPaidRevision(context,{state:"proposed",proposal:revised.proposal}).pages[0].headline,"A new headline");
   assert.throws(()=>applySavedPaidRevision({...context,version:2},{state:"proposed",proposal:revised.proposal}),/stale/);
   console.log("Website integrated package: five languages, bounded page batches, real transport contract fixture, CMS/catalog/admin runtime, exact revision proposal (offline)");
- }finally{global.fetch=prev;if(oldKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=oldKey;if(oldAdmin===undefined)delete process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED;else process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED=oldAdmin;if(oldHero===undefined)delete process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED;else process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED=oldHero;}
+ }finally{global.fetch=prev;if(oldKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=oldKey;if(oldAdmin===undefined)delete process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED;else process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED=oldAdmin;if(oldHero===undefined)delete process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED;else process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED=oldHero;if(oldBatch===undefined)delete process.env.CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED;else process.env.CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED=oldBatch;}
 })().catch(e=>{console.error(e);process.exitCode=1;});

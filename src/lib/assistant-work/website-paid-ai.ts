@@ -7,9 +7,11 @@ import {renderPaidWebsiteDesign} from "../website-paid-design";
 import {generateSingleOpenAIWebsiteImage} from "../studio-agent/image-provider";
 import type {WebsiteHeroMediaInput} from "../website-hero-media";
 import type {CostPolicy} from "../studio-agent/cost-policy";
+import {websitePremiumImagePlan,generatePremiumWebsiteMedia} from "./website-premium-media";
 const sharp:typeof import("sharp").default=require("sharp");
 export const paidWebsitePolicy:CostPolicy={version:"website-paid-v2",model:"gpt-6.1-terra",inputLimit:12000,outputLimit:1200,requestMicroUSD:50000,totalMicroUSD:250000,userRPM:1,systemRPM:2,inputRate:3000000,outputRate:5000000};
 const wantsHero=(input:WebsiteEngineInput)=>input.features.some(f=>/^ai hero image$/i.test(f.trim()));
+const wantsPageImages=(input:WebsiteEngineInput)=>input.features.some(f=>/^ai page images$/i.test(f.trim()));
 export function websitePaidBatches(input:WebsiteEngineInput){
  const manifest=websitePageManifest(input.pages);if(manifest.length>5)throw Error("website_ai_maximum_five_pages");
  const secondary=manifest.slice(1).map(p=>p.title),batches:WebsiteEngineInput[]=[];
@@ -19,13 +21,18 @@ export function websitePaidBatches(input:WebsiteEngineInput){
 export function preparePaidWebsiteAI(input:WebsiteEngineInput,env:NodeJS.ProcessEnv=process.env,packId="business_website"){
  if(packId==="website_basic_admin"&&env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED!=="true")throw Error("website_admin_package_not_enabled");
  if(!env.OPENAI_API_KEY?.trim())throw Error("website_ai_provider_unavailable");
- if(wantsHero(input)&&env.CRELAVO_WEBSITE_AI_HERO_ENABLED!=="true")throw Error("website_ai_image_not_enabled");
- prepareEditableWebsiteBrief(input,true);
- const cost=websitePaidBatches(input).reduce((sum,b)=>sum+prepareWebsiteAICopy(b,paidWebsitePolicy,true).maxCost,0);
+ if((wantsHero(input)||wantsPageImages(input))&&env.CRELAVO_WEBSITE_AI_HERO_ENABLED!=="true")throw Error("website_ai_image_not_enabled");
+ // Deliberately OFF until worker/reconciliation and real-provider acceptance.
+ if(wantsPageImages(input)&&env.CRELAVO_WEBSITE_AI_PAGE_BATCH_ENABLED!=="true")throw Error("website_ai_page_batch_not_enabled");
+ const prepared=prepareEditableWebsiteBrief(input,true);
+ const textCeiling=websitePaidBatches(input).reduce((sum,b)=>sum+prepareWebsiteAICopy(b,paidWebsitePolicy,true).maxCost,0);
+ const pageImages=wantsPageImages(input)?websitePremiumImagePlan(prepared):null;
+ const cost=textCeiling+(pageImages?.maximumMicroUSD??0);
  if(cost>paidWebsitePolicy.totalMicroUSD)throw Error("website_ai_total_budget_exceeded");
+ return {textCeiling,maximumMicroUSD:cost,pageImageCount:pageImages?.targets.length??0};
 }
 export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:string,packId="business_website"){
- preparePaidWebsiteAI(input,process.env,packId);
+ const budget=preparePaidWebsiteAI(input,process.env,packId);
  const batches=websitePaidBatches(input),results=[];
  for(const batch of batches){
   const result=await generateWebsiteAICopy(batch,{enabled:()=>Boolean(process.env.OPENAI_API_KEY?.trim()),apiKey:process.env.OPENAI_API_KEY!,policy:paidWebsitePolicy,customer:true});
@@ -37,8 +44,13 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  const artifact=await generateWebsiteArtifact(input,id,{mode:"validated_copy",copy});
  const base=buildEditableWebsiteFromCopy(input,copy,true,secondary),scope=paidWebsiteScope(packId,input.features);
  const design=scope?{...base,industryScope:scope}:base;
- const media:WebsiteHeroMediaInput[]=[];let imageReceipt:unknown=null;
- if(wantsHero(input)){
+ const media:WebsiteHeroMediaInput[]=[];let imageReceipt:unknown=null;let pageMediaEvidence:Awaited<ReturnType<typeof generatePremiumWebsiteMedia>>["receipts"]=[];
+ if(wantsPageImages(input)){
+  if(design.pages.slice(1).some(p=>p.sections.length<2))throw Error("website_premium_page_content_incomplete");
+  const batch=await generatePremiumWebsiteMedia(design,process.env.OPENAI_API_KEY!,input.brief);
+  if(batch.media.length!==budget.pageImageCount||batch.estimatedMicroUSD+results.reduce((n,r)=>n+r.receipt.estimatedMicroUSD,0)>budget.maximumMicroUSD)throw Error("website_ai_page_batch_budget_mismatch");
+  media.push(...batch.media);pageMediaEvidence=batch.receipts;imageReceipt=batch.receipts.find(r=>r.pageSlug==="home")?.receipt??null;
+ }else if(wantsHero(input)){
   const prompt=("Original professional website hero photograph for "+input.brand+". "+(copy.artDirection?.heroImageBrief??input.style)+". No logos, readable text, celebrities or claims.").slice(0,1200);
   const image=await generateSingleOpenAIWebsiteImage({prompt,aspect:"16:9"},process.env.OPENAI_API_KEY!);
   if(image.state!=="artifact_validated")throw Error("website_ai_image_unconfirmed");
@@ -48,5 +60,5 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  }
  const rendered=renderPaidWebsiteDesign(design,5,media,scope);
  if(scope)buildWebsiteSelfHostedBundle({design,revision:1,catalog:[],articles:[],heroMedia:media});
- return {...artifact,files:rendered.files,pageManifest:rendered.pageManifest,plan:{...artifact.plan,status:"approved" as const,editableDesign:design,editableDesignHash:rendered.hash,websiteAIReceipt:first.receipt,websiteAIReceipts:results.map(r=>r.receipt),websiteHeroMedia:media,websiteImageReceipt:imageReceipt,approvedIndustryScope:scope??null},websiteContent:{siteTitle:design.brand,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
+ return {...artifact,files:rendered.files,pageManifest:rendered.pageManifest,plan:{...artifact.plan,status:"approved" as const,editableDesign:design,editableDesignHash:rendered.hash,websiteAIReceipt:first.receipt,websiteAIReceipts:results.map(r=>r.receipt),websiteHeroMedia:media,websiteImageReceipt:imageReceipt,websitePageImageReceipts:pageMediaEvidence,websitePageMediaCoverage:wantsPageImages(input)?{required:budget.pageImageCount,delivered:media.length,invoicePending:true}:null,approvedIndustryScope:scope??null},websiteContent:{siteTitle:design.brand,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
 }
