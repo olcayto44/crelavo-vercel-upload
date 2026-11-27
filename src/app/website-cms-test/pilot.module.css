@@ -11,3 +11,5 @@
 
 /* Keep the workbench first; controls and placeholder text remain legible. */
 .shell .aiEditCard textarea::placeholder{color:#b5c4d9;opacity:1}.shell .aiEditCard textarea:disabled::placeholder{color:#a6b5c9;opacity:1}.shell .aiEditCard textarea{line-height:1.55;min-height:108px}.shell .topbar{padding-bottom:4px;margin-bottom:3px}.shell .tabs{margin-bottom:4px;padding-bottom:2px}.shell .tabs button{min-height:34px;padding:5px 12px}.shell .siteBar{padding:2px 8px}.shell .siteBar label{margin:0}.shell .customerEditor{gap:5px;margin:5px 0}.shell .customerTitle p{margin:0}.shell .editorCanvas header{margin-bottom:5px}.shell .editorCanvas .aiEditCard label{font-weight:600}.shell .editorCanvas .aiEditCard textarea:disabled{opacity:.8}
+
+/* Primary customer production/review uses the full workspace width. */.workflow{grid-template-columns:minmax(0,1fr)!important}.workflowColumn{min-width:0}.workflow>details>summary,.workflowColumn>details>summary{cursor:pointer;font-weight:600}.workflowColumn>.customerEditor{width:100%}
