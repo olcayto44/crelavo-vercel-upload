@@ -108,7 +108,10 @@ const {load}=require('./studio-agent-test-loader.cjs');
   const savedJournal=(await db.query("select output_json->'websitePageMediaJournal' j from production_requests where id=$1",[p])).rows[0].j;
   assert.equal(savedJournal.home.state,"validated");assert.equal(savedJournal.contact.state,"uncertain");assert.equal(savedJournal.home.estimatedMicroUSD,1300);
   assert.equal((await db.query("select has_function_privilege('authenticated','public.website_media_journal_v1(uuid,uuid,text,text,text,jsonb)','execute') allowed")).rows[0].allowed,false);
-  console.log("website durable per-page journal: exact owner/reservation, no replay, estimate and partial evidence");
+  await assert.rejects(()=>ledger.record({...identity2,outcome:"ready",result:{files:[{path:"index.html",content:"<h1>Incomplete premium</h1>"}],plan:{websiteHeroMedia:[evidence.media],websitePageImageReceipts:[{pageSlug:"home",receipt:evidence.receipt,estimatedMicroUSD:1300,invoicePending:true}],websitePageMediaCoverage:{required:1,delivered:1,invoicePending:true}}}}),/record_unavailable/);
+  assert.equal((await db.query("select output_json->'websiteAssistant'->>'phase' phase from production_requests where id=$1",[p])).rows[0].phase,"generating");
+  assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,2);
+  console.log("website durable per-page journal: exact owner/reservation, no replay, estimate and partial evidence; incomplete delivery blocked");
 
   console.log('website-atomic-flow-smoke ok: isolated owner-scoped approved brief -> atomic reserve -> one claim -> persisted files -> one spend -> verified preview and delivery links. No real provider, multi-session DB or browser payment.');
  }finally{await db.close();}

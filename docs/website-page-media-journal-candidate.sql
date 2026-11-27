@@ -49,4 +49,37 @@ revoke all on function public.website_media_journal_ready() from public,anon,aut
 revoke all on function public.website_media_journal_v1(uuid,uuid,text,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.website_media_journal_ready() to service_role;
 grant execute on function public.website_media_journal_v1(uuid,uuid,text,text,text,jsonb) to service_role;
+-- Enforce delivery completeness at the same row boundary that records the artifact.
+-- Existing non-premium jobs are unchanged; only an explicitly approved AI page images plan is affected.
+create or replace function public.website_media_delivery_guard_v1() returns trigger
+language plpgsql security invoker set search_path='' as $$
+declare journal jsonb; plan jsonb; media jsonb; receipts jsonb; coverage jsonb; required integer; entry jsonb; item jsonb; slug text;
+begin
+ if new.production_type is distinct from 'website' or
+    old.output_json->'websiteAssistant'->>'phase' is distinct from 'generating' or
+    new.output_json->'websiteAssistant'->>'phase' is distinct from 'awaiting_payment' or
+    not exists(select 1 from jsonb_array_elements_text(coalesce(old.output_json->'websiteAssistant'->'brief'->'features','[]'::jsonb)) f where lower(trim(f))='ai page images') then return new;end if;
+ journal=old.output_json->'websitePageMediaJournal';plan=new.output_json->'plan';
+ media=plan->'websiteHeroMedia';receipts=plan->'websitePageImageReceipts';coverage=plan->'websitePageMediaCoverage';
+ if jsonb_typeof(journal) is distinct from 'object' or jsonb_typeof(media) is distinct from 'array' or jsonb_typeof(receipts) is distinct from 'array'
+ or coalesce(coverage->>'required','') !~ '^[1-5]$' or coverage->>'delivered' is distinct from coverage->>'required'
+ or coverage->>'invoicePending' is distinct from 'true' then raise exception 'website_premium_media_evidence_required';end if;
+ required=(coverage->>'required')::integer;
+ if jsonb_array_length(media)<>required or jsonb_array_length(receipts)<>required
+ or (select count(*) from jsonb_object_keys(journal))<>required
+ or (select count(distinct v->>'page_slug') from jsonb_array_elements(media) v)<>required
+ or (select count(distinct v->>'pageSlug') from jsonb_array_elements(receipts) v)<>required
+ then raise exception 'website_premium_media_evidence_required';end if;
+ for entry in select value from jsonb_array_elements(media) loop
+  slug=entry->>'page_slug';item=journal->slug;
+  if item->>'state' is distinct from 'validated' or item->'media' is distinct from entry
+   or not exists(select 1 from jsonb_array_elements(receipts) v where v->>'pageSlug'=slug and v->'receipt'=item->'receipt' and v->'estimatedMicroUSD'=item->'estimatedMicroUSD' and v->>'invoicePending'='true')
+   then raise exception 'website_premium_media_evidence_required';end if;
+ end loop;
+ return new;
+end $$;
+revoke all on function public.website_media_delivery_guard_v1() from public,anon,authenticated;
+grant execute on function public.website_media_delivery_guard_v1() to service_role;
+drop trigger if exists website_media_delivery_guard_v1 on public.production_requests;
+create trigger website_media_delivery_guard_v1 before update of output_json on public.production_requests for each row execute function public.website_media_delivery_guard_v1();
 commit;

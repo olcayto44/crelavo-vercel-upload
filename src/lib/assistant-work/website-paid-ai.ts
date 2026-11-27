@@ -61,6 +61,7 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
   media.push({page_slug:"home",image_data:webp.toString("base64"),alt:input.brand.slice(0,120)+" — website visual",width:1024,height:576,version:1,provenance:"ai_generated_verified"});imageReceipt=image.receipt;
  }
  const rendered=renderPaidWebsiteDesign(design,5,media,scope);
+ if(wantsPageImages(input)&&media.some(m=>!rendered.files.some(f=>f.path===(m.page_slug==="home"?"index.html":m.page_slug+".html")&&f.content.includes("data:image/webp;base64,"+m.image_data))))throw Error("website_premium_media_not_embedded");
  if(scope)buildWebsiteSelfHostedBundle({design,revision:1,catalog:[],articles:[],heroMedia:media});
  return {...artifact,files:rendered.files,pageManifest:rendered.pageManifest,plan:{...artifact.plan,status:"approved" as const,editableDesign:design,editableDesignHash:rendered.hash,websiteAIReceipt:first.receipt,websiteAIReceipts:results.map(r=>r.receipt),websiteHeroMedia:media,websiteImageReceipt:imageReceipt,websitePageImageReceipts:pageMediaEvidence,websitePageMediaCoverage:wantsPageImages(input)?{required:budget.pageImageCount,delivered:media.length,invoicePending:true}:null,approvedIndustryScope:scope??null},websiteContent:{siteTitle:design.brand,heroTitle:design.pages[0].headline,heroBody:design.pages[0].lead}};
 }
