@@ -41,6 +41,14 @@ export async function runIsolatedWebsiteGeneration(
     missingWebsiteBrief(brief).length || unsupportedWebsiteScope(brief,stored.packId).length) {
     throw new Error("website_reserved_plan_mismatch_reconciliation_required");
   }
+  // A durably recorded artifact can settle after an interrupted HTTP response.
+  // The database rechecks the owner, exact plan, reservation and recorded files.
+  // No provider invocation or fresh reservation is performed on this path.
+  if(stored.phase==="awaiting_payment"){
+    const settlement=await deps.ledger.finalize({...identity,outcome:"ready"});
+    if(!settlement||typeof settlement!=="object"||!("state" in settlement)||settlement.state!=="settled")return {state:"reconciliation_required" as const,charged:false,settlement};
+    return {state:"ready" as const,charged:true,settlement};
+  }
   // Finished or interrupted attempts are never sent to the provider again.
   if (stored.phase !== "approved") return { state: "already_reserved_or_finished" as const, charged: false };
   // Validate before reserving so invalid/stale packs never hold a user's credits.

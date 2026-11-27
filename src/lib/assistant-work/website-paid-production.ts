@@ -75,7 +75,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
       return reply({ ok: false, code: "website_generation_reconciliation_required" }, 409);
     return reply({ ok: true, state: "already_ready", productionId, charged: 0 }, 200);
   }
-  if (state?.phase !== "approved" || state?.planHash !== planHash || state?.approvedHash !== planHash)
+  if (!["approved","awaiting_payment"].includes(state?.phase) || state?.planHash !== planHash || state?.approvedHash !== planHash)
     return reply({ ok: false, code: "website_current_approval_required" }, 409);
   const pack = getCategory("website")?.packs.find(p => p.id === state.packId);
   const credits = pack?.credits;
@@ -88,6 +88,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
     return reply({ ok: false, code: "website_approved_package_or_brief_changed" }, 409);
   }
   if(state.packId==="landing_page"&&websitePageManifest(brief.pages).length!==1)return reply({ok:false,code:"website_package_page_limit"},422);
+  if(state.phase==="approved"){
   const {data:wallet,error:walletError}=await db.from("credit_balances").select("balance,reserved").eq("user_id",user.id).maybeSingle();
   if(walletError)return reply({ok:false,code:"website_credit_balance_unavailable"},503);
   const available=Math.max(0,Number(wallet?.balance??0)-Number(wallet?.reserved??0));
@@ -95,6 +96,7 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   if(!check.ok)return reply(check,check.status);
   try{preparePaidWebsiteAI(websiteEngineInput(brief),process.env,state.packId);}catch{return reply({ok:false,code:"website_ai_provider_or_scope_unavailable"},503);}
 
+  }
   const ledger = createWebsiteCreditLedger(async (name, args) => {
     const { data, error } = await db.rpc(name, args);
     return { data, error };

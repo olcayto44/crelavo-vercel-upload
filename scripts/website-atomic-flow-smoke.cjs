@@ -81,6 +81,17 @@ const {load}=require('./studio-agent-test-loader.cjs');
   const {websiteCreditDeliveryProof}=load('src/lib/assistant-work/website-paid-delivery.ts');
   const reservation=(await db.query('select state,credits from website_credit_reservations where production_id=$1',[productionId])).rows[0];
   assert.equal(websiteCreditDeliveryProof(delivered,reservation),true);
+  // Simulate an HTTP interruption after durable artifact record, before settlement.
+  const pending=(await db.query(`insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,estimated_credits,input_json,output_json)
+     values($1,'website',$2,'Resume fixture','Isolated resume','pending','pending',$3,'{}'::jsonb,$4::jsonb) returning id`,
+    [owner,packId,credits,JSON.stringify({websiteAssistant:{phase:'approved',approvedHash:planHash,planHash,packId,credits,brief:hashBrief}})])).rows[0].id;
+  const identity={userId:owner,productionId:pending,planHash};
+  await ledger.reserve({...identity,credits});assert(await ledger.claim(identity));
+  await ledger.record({...identity,outcome:"ready",result:{files:[{path:"index.html",content:"<h1>Resume fixture</h1>"}],websiteContent:{},pageManifest:[]}});
+  const resumed=await runIsolatedWebsiteGeneration({...identity,credits},{ledger,loadReserved,generate:()=>{throw Error("provider must not run on resume");}});
+  assert.equal(resumed.state,"ready");assert.equal((await runIsolatedWebsiteGeneration({...identity,credits},{ledger,loadReserved,generate})).state,"already_reserved_or_finished");
+  assert.equal((await db.query("select count(*)::int as n from credit_events where type='spend'")).rows[0].n,2);assert.equal(generated,1);
+  console.log("website recovery: durable artifact settled exactly once, no provider rerun");
   console.log('website-atomic-flow-smoke ok: isolated owner-scoped approved brief -> atomic reserve -> one claim -> persisted files -> one spend -> verified preview and delivery links. No real provider, multi-session DB or browser payment.');
  }finally{await db.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;});
