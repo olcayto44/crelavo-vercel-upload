@@ -32,6 +32,7 @@ const {renderWebsiteDesignCandidate}=load("src/lib/website-design-candidate.ts")
  assert(editor.includes('dropPage(pageDrag.current,i)'));
  assert(editor.includes('data-gallery-size={gallerySize}'));
  assert(editor.includes('Bu sayfanın görselini düzenle'));
+ assert(editor.includes('Taslağın yedeğini indir'));
  const isolatedEditor=fs.readFileSync("src/app/website-design-test/IsolatedWebsiteDesignPilot.tsx","utf8");
  assert(isolatedEditor.includes('from "./WebsiteDesignPilot"'),"the customer pilot must use the same editor");
  const cmsEditor=fs.readFileSync("src/app/website-cms-test/WebsiteCmsPilot.tsx","utf8");

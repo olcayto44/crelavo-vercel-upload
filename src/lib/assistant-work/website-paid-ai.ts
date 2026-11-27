@@ -1,5 +1,5 @@
 import {generateWebsiteArtifact,websitePageManifest,type WebsiteEngineInput} from "../website-engine";
-import {generateWebsiteAICopy,prepareWebsiteAICopy,type WebsiteAICopy} from "../studio-agent/website-ai-copy";
+import {generateWebsiteAICopy,prepareWebsiteAICopy,requireCompleteWebsiteCopy,type WebsiteAICopy} from "../studio-agent/website-ai-copy";
 import {buildEditableWebsiteFromCopy,prepareEditableWebsiteBrief} from "../studio-agent/website-editable-artifact";
 import {paidWebsiteScope} from "../website-paid-scope";
 import {buildWebsiteSelfHostedBundle} from "../website-selfhost-bundle";
@@ -37,7 +37,7 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  for(const batch of batches){
   const result=await generateWebsiteAICopy(batch,{enabled:()=>Boolean(process.env.OPENAI_API_KEY?.trim()),apiKey:process.env.OPENAI_API_KEY!,policy:paidWebsitePolicy,customer:true});
   if(result.state!=="validated")throw Error("website_ai_output_unconfirmed");
-  if(websitePageManifest(batch.pages).slice(1).some(p=>!result.copy.secondaryPages?.some(s=>s.pageTitle===p.title)))throw Error("website_ai_required_page_missing");
+  requireCompleteWebsiteCopy(batch,result.copy);
   results.push(result);
  }
  const first=results[0]!,copy:WebsiteAICopy=first.copy,secondary=results.flatMap(r=>r.copy.secondaryPages??[]);
