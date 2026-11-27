@@ -1,5 +1,6 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
-import { applyCreditPurchaseToBuckets } from "@/lib/credit-rollover";
+import { applyCreditPurchaseToBuckets, creditsForBilling } from "@/lib/credit-rollover";
+import {whopLookupPaymentSucceeded,whopCreditFulfillment} from "@/lib/whop-payment-state";
 import { recordCreditLedger, recordPaymentFulfillment } from "@/lib/admin-operations";
 import { findPaymentProduct } from "@/lib/data";
 import { sendAdminPaymentNotificationEmail, sendCreditActivationEmail } from "@/lib/payment-email";
@@ -99,12 +100,11 @@ function membershipStatus(payment: WhopObject) {
 }
 
 function creditsForProduct(product: Product, billing: string) {
-  if (product.planType !== "subscription") return product.credits;
-  return billing === "yearly" ? product.credits * 12 : product.credits;
+  return creditsForBilling(product,billing==="yearly"?"yearly":billing==="one_time"?"one_time":"monthly");
 }
 
 function paymentSucceeded(payment: WhopObject) {
-  return paymentStatus(payment) === "paid" || paymentSubstatus(payment) === "succeeded" || Boolean(payment.paid_at);
+  return whopLookupPaymentSucceeded(payment);
 }
 
 function shouldAddCredits(product: Product, billing: string, payment: WhopObject) {
@@ -345,7 +345,8 @@ export async function POST(request: Request) {
     });
     const activationReason = (activation as { reason?: string }).reason;
     const activationProfile = (activation as { profile?: { id?: string } }).profile;
-    await recordPaymentFulfillment({ paymentId: resolvedPaymentId, userId: activationProfile?.id ?? null, planId, productTitle: product.name, amountUsd: paymentAmount(payment), credits, kind: "credits", status: activation.activated || activationReason === "already_processed" ? "fulfilled" : "pending_user", billingReason: paymentBillingReason(payment) || activationReason || null });
+    const fulfillment=whopCreditFulfillment(activation.activated,activationReason);
+    await recordPaymentFulfillment({ paymentId: resolvedPaymentId, userId: activationProfile?.id ?? null, planId, productTitle: product.name, amountUsd: paymentAmount(payment), credits:fulfillment.fulfilled?credits:0, kind: "credits", status: fulfillment.status, billingReason: paymentBillingReason(payment) || activationReason || null });
     if (activation.activated && activationProfile?.id) await recordCreditLedger({ userId: activationProfile.id, delta: credits, reason: "purchase", paymentId: resolvedPaymentId, note: `checkout reconciliation | package=${product.id} | billing=${mappedPlan.billing}` });
     const isAlreadyProcessed = (activation as { reason?: string }).reason === "already_processed";
     const adminNotification = isAlreadyProcessed

@@ -1,6 +1,18 @@
 const assert=require("node:assert/strict"),fs=require("node:fs"),{load}=require("./studio-agent-test-loader.cjs");
 const {commitVerifiedWhopPurchase,whopAtomicPurchaseEnabled}=load("src/lib/studio-agent/whop-atomic-purchase.ts",{"server-only":{},"@/lib/supabase":{}});
 const {findPaymentProduct}=load("src/lib/data.ts");
+const {whopPaymentHasReversal,whopLookupPaymentSucceeded,whopCreditFulfillment}=load("src/lib/whop-payment-state.ts");
+const paid={status:"paid",substatus:"succeeded",paid_at:"2026-11-27T00:00:00Z",refunded_amount:0,refunds:[],disputes:[]};
+assert(whopLookupPaymentSucceeded(paid));
+for(const reversal of [{status:"refunded"},{substatus:"partially_refunded"},{auto_refunded:true},{refunded_amount:1},{refunds:[{}]},{disputes:[{}]},{refunded_at:"2026-11-27"},{dispute_alerted_at:"2026-11-27"}]){
+ assert(whopPaymentHasReversal({...paid,...reversal}));
+ assert(!whopLookupPaymentSucceeded({...paid,...reversal}));
+}
+assert(!whopLookupPaymentSucceeded({status:"failed",paid_at:paid.paid_at}));
+assert(!whopLookupPaymentSucceeded({status:"pending",substatus:"succeeded"}));
+assert.deepEqual(whopCreditFulfillment(false,"already_processed"),{fulfilled:true,status:"fulfilled"});
+assert.deepEqual(whopCreditFulfillment(false,"crelavo_user_not_found"),{fulfilled:false,status:"pending_user"});
+assert.deepEqual(whopCreditFulfillment(true),{fulfilled:true,status:"fulfilled"});
 const env={VERCEL_ENV:"production",STUDIO_WHOP_ATOMIC_PURCHASE_ENABLED:"true"};
 assert(whopAtomicPurchaseEnabled(env));
 assert(!whopAtomicPurchaseEnabled({...env,VERCEL_ENV:"preview"}));

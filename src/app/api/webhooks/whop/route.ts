@@ -1,4 +1,5 @@
 import {whopAtomicPurchaseEnabled,commitVerifiedWhopPurchase} from "@/lib/studio-agent/whop-atomic-purchase";
+import {whopPaymentHasReversal,whopCreditFulfillment} from "@/lib/whop-payment-state";
 import crypto from "node:crypto";
 import { sendPaidAdConversions } from "@/lib/ad-conversions";
 import { applyCreditPurchaseToBuckets, clearSubscriptionCreditBuckets } from "@/lib/credit-rollover";
@@ -596,15 +597,16 @@ async function handlePaymentSucceeded(event: string, payment: WhopObject, webhoo
   });
 
   const activationProfileId = "profile" in activation && activation.profile ? activation.profile.id : profile?.id ?? null;
+  const fulfillment=whopCreditFulfillment(activation.activated,"reason" in activation?activation.reason:undefined);
   await recordPaymentFulfillment({
     paymentId: paymentReference,
     userId: activationProfileId,
     planId,
     productTitle: product.name,
     amountUsd,
-    credits: activation.activated ? credits : 0,
+    credits: fulfillment.fulfilled ? credits : 0,
     kind: "credits",
-    status: activation.activated ? "fulfilled" : "pending_user",
+    status: fulfillment.status,
     billingReason,
   }).catch(() => null);
   if (activation.activated && activationProfileId) {
@@ -724,6 +726,7 @@ export async function POST(request: Request) {
     const webhookId = request.headers.get("webhook-id") ?? paymentId(payment) ?? event;
 
     if (event === "payment.succeeded") {
+      if(whopPaymentHasReversal(payment))return Response.json({received:true,ignored:true,reason:"payment_reversed_or_disputed"});
       const result = await handlePaymentSucceeded(event, payment, webhookId);
       console.log("Whop payment succeeded", result);
       return Response.json({ received: true, result });
