@@ -4,7 +4,7 @@ const {spawn}=require("node:child_process");
 const {mkdtemp,rm}=require("node:fs/promises");
 const {tmpdir}=require("node:os");
 const {join}=require("node:path");
-async function browserCheck(origin){
+async function browserCheck(origin,password){
   const u=new URL(origin);assert.equal(u.hostname,"127.0.0.1");assert.equal(u.protocol,"http:");
   const profile=await mkdtemp(join(tmpdir(),"crelavo-chrome-"));
   const child=spawn("google-chrome",["--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check","--disable-background-networking","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
@@ -46,6 +46,23 @@ async function browserCheck(origin){
       assert.equal(metrics.heading,"Original heading");assert.equal(metrics.overflow,false,"horizontal overflow at "+width);assert.equal(metrics.language,"tr");assert(metrics.hasMain);
     }
     console.log("PASS: extracted ZIP in real Chromium, desktop/mobile layout, language and main content");
+    if(password){
+      await cdp("Page.navigate",{url:origin+"/admin"});
+      for(let i=0;i<100;i++){if(await evaluate("!!document.querySelector('input[name=password]')"))break;await new Promise(r=>setTimeout(r,100));}
+      assert(await evaluate("!!document.querySelector('form[action=\"/admin/login\"]')"));
+      await evaluate("document.querySelector('input[name=password]').value="+JSON.stringify(password)+";document.querySelector('form[action=\"/admin/login\"]').requestSubmit();true");
+      for(let i=0;i<100;i++){if(await evaluate("!!document.querySelector('.admin-layout') && document.readyState==='complete'"))break;await new Promise(r=>setTimeout(r,100));}
+      assert(await evaluate("!!document.querySelector('.admin-layout')"));
+      for(const width of [1440,390]){
+       await cdp("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:width===390});
+       for(const section of ["overview","pages","inbox","security"]){
+        await evaluate("document.querySelector('.admin-nav a[href=\"#"+section+"\"]').click();true");
+        const m=await evaluate("({visible:[...document.querySelectorAll('.admin-main .admin-section')].filter(e=>getComputedStyle(e).display!=='none').map(e=>e.id),metrics:getComputedStyle(document.querySelector('.admin-metrics')).display!=='none',overflow:document.documentElement.scrollWidth>innerWidth+2})");
+        assert.deepEqual(m.visible,section==="overview"?[]:[section]);assert.equal(m.metrics,section==="overview");assert.equal(m.overflow,false,"Admin overflow: "+section+" "+width);
+       }
+      }
+      console.log("PASS: authenticated standalone admin section navigation, no horizontal overflow at desktop/mobile");
+    }
   }finally{
     ws?.close();
     if(child.exitCode===null&&child.signalCode===null&&!launchError){
