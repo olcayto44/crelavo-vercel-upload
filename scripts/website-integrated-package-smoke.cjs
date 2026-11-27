@@ -13,11 +13,35 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
  assert.equal(websitePageManifest(["首页","关于我们","联系方式"]).length,3);
  assert.equal(websitePaidBatches(input).length,2);
  assert.throws(()=>preparePaidWebsiteAI({...input,features:["AI hero image"]},{OPENAI_API_KEY:"fixture"}),/image_not_enabled/);
- const prev=global.fetch,oldKey=process.env.OPENAI_API_KEY,oldAdmin=process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED;
+ const prev=global.fetch,oldKey=process.env.OPENAI_API_KEY,oldAdmin=process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED,oldHero=process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED;
  process.env.OPENAI_API_KEY="fixture";process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED="true";let calls=0;
  try{
   global.fetch=async(url,opts)=>{calls++;assert.equal(url,"https://api.openai.com/v1/chat/completions");const req=JSON.parse(opts.body),b=JSON.parse(req.messages[1].content);
    return Response.json({id:"chatcmpl-fixture-"+calls,model:req.model,usage:{prompt_tokens:100,completion_tokens:200},choices:[{finish_reason:"stop",message:{content:JSON.stringify({headline:"Design with purpose",intro:"Websites and visual identities for small businesses.",eyebrow:"Independent design",features:[{title:"Website design",body:"Clear interfaces for business customers."},{title:"Visual identity",body:"Thoughtful design for a consistent brand."},{title:"Editorial layout",body:"Readable pages with a clear structure."}],faq:[{question:"What do you design?",answer:"Websites and visual identities."},{question:"Who is the service for?",answer:"Small businesses."},{question:"Can we discuss the brief?",answer:"Share your website needs."}],secondaryPages:b.pages.slice(1).map(pageTitle=>({pageTitle,title:pageTitle+" | Fixture Studio",description:"Explore "+pageTitle+" at Fixture Studio.",headline:pageTitle+" at Fixture Studio",lead:"Information about "+pageTitle+" for small businesses.",section:{heading:pageTitle,body:"Contact the studio to discuss your design needs."}}))})}}]});};
+  const copyTransport=global.fetch;
+  const png=await require("sharp")({create:{width:1280,height:720,channels:3,background:"#345678"}}).png().toBuffer();
+  let imageCalls=0,invalidImage=false;
+  process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED="true";
+  global.fetch=async(url,opts)=>{
+    if(url!=="https://api.openai.com/v1/images/generations")return copyTransport(url,opts);
+    imageCalls++;
+    const req=JSON.parse(opts.body);
+    assert.equal(req.n,1);assert.equal(req.size,"1280x720");
+    return Response.json({usage:{input_tokens:20,output_tokens:40,input_tokens_details:{text_tokens:20,image_tokens:0}},data:[{b64_json:invalidImage?Buffer.from("invalid").toString("base64"):png.toString("base64")}]},{headers:{"x-request-id":"req_fixture_website_image_123"}});
+  };
+  const withHero=await generatePaidWebsiteArtifact({...input,pages:["Home"],features:["AI hero image"]},id,"landing_page");
+  assert.equal(imageCalls,1);
+  const hero=withHero.plan.websiteHeroMedia[0];
+  const metadata=await require("sharp")(Buffer.from(hero.image_data,"base64")).metadata();
+  assert.equal(metadata.format,"webp");assert.equal(metadata.width,1024);assert.equal(metadata.height,576);
+  assert.equal(hero.provenance,"ai_generated_verified");
+  assert.equal(withHero.plan.websiteImageReceipt.providerRequestId,"req_fixture_website_image_123");
+  assert(withHero.files.some(f=>f.path==="index.html"&&f.content.includes("data:image/webp;base64,")));
+  invalidImage=true;
+  await assert.rejects(()=>generatePaidWebsiteArtifact({...input,pages:["Home"],features:["AI hero image"]},id,"landing_page"),/website_ai_image_unconfirmed/);
+  assert.equal(imageCalls,2,"invalid image must not trigger a second provider attempt");
+  global.fetch=copyTransport;calls=0;
+  console.log("Website hero transport fixture: decoded image, persisted WebP, receipt and no retry on invalid payload");
   const features=["Blog CMS","Product catalog","Order requests","Booking requests","Customer accounts"];
   const generated=await generatePaidWebsiteArtifact({...input,features},id,"website_basic_admin");
   assert.equal(calls,2);assert.equal(generated.pageManifest.length,5);
@@ -35,5 +59,5 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
   assert.equal(revised.design.pages[0].headline,"A new headline");assert.equal(applySavedPaidRevision(context,{state:"proposed",proposal:revised.proposal}).pages[0].headline,"A new headline");
   assert.throws(()=>applySavedPaidRevision({...context,version:2},{state:"proposed",proposal:revised.proposal}),/stale/);
   console.log("Website integrated package: five languages, bounded page batches, real transport contract fixture, CMS/catalog/admin runtime, exact revision proposal (offline)");
- }finally{global.fetch=prev;if(oldKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=oldKey;if(oldAdmin===undefined)delete process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED;else process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED=oldAdmin;}
+ }finally{global.fetch=prev;if(oldKey===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=oldKey;if(oldAdmin===undefined)delete process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED;else process.env.CRELAVO_WEBSITE_ADMIN_PACKAGE_ENABLED=oldAdmin;if(oldHero===undefined)delete process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED;else process.env.CRELAVO_WEBSITE_AI_HERO_ENABLED=oldHero;}
 })().catch(e=>{console.error(e);process.exitCode=1;});

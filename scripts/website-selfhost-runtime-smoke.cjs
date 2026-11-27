@@ -19,7 +19,7 @@ const assert=require("node:assert/strict"),fs=require("node:fs"),os=require("nod
  const get=(url,cookie="")=>fetch(origin+url,{headers:{cookie}});
  const post=(url,body,cookie="",requestOrigin=origin)=>fetch(origin+url,{method:"POST",redirect:"manual",headers:{"Content-Type":"application/x-www-form-urlencoded",Origin:requestOrigin,cookie},body:new URLSearchParams(body)});
  const login=async()=>{const r=await post("/admin/login",{password});assert.equal(r.status,303);return r.headers.get("set-cookie").split(";")[0];};
- await start(true);let r=await get("/");assert.equal(r.status,200);assert((await r.text()).includes("Original heading"));assert.match(r.headers.get("x-robots-tag"),/noindex/);assert.equal((await get("/sitemap.xml")).status,404);assert.match(await (await get("/robots.txt")).text(),/Disallow: \/\n/);
+ await start(true);if(process.env.WEBSITE_BROWSER_SMOKE==="true")await require("./website-standalone-browser-smoke.cjs").browserCheck(origin);let r=await get("/");assert.equal(r.status,200);assert((await r.text()).includes("Original heading"));assert.match(r.headers.get("x-robots-tag"),/noindex/);assert.equal((await get("/sitemap.xml")).status,404);assert.match(await (await get("/robots.txt")).text(),/Disallow: \/\n/);
  for(const p of ["/site-config.json","/server.cjs","/data/site.sqlite","/delivery-report.json"]){assert.equal((await get(p)).status,404);}
  assert.equal((await post("/contact-form",{name:"Test",email:"test@example.test",message:"No"}, "", "https://other.example")).status,403);
  assert.equal((await post("/contact-form",{name:"Test",email:"not-email",message:"Invalid"})).status,400);

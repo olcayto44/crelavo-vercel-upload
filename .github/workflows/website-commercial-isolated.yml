@@ -41,6 +41,8 @@ jobs:
           node scripts/website-cms-operations-local-smoke.cjs
       - name: Extract ZIP and exercise its actual local server
         run: node scripts/website-selfhost-runtime-smoke.cjs
+        env:
+          WEBSITE_BROWSER_SMOKE: "true"
   billing:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
