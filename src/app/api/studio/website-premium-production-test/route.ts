@@ -21,7 +21,7 @@ const source="studio_premium_pilot_v1",uuid=z.string().uuid(),hash=z.string().re
 const input=z.discriminatedUnion("action",[
  z.strictObject({action:z.literal("quote"),projectId:uuid}),
  z.strictObject({action:z.literal("submit"),projectId:uuid,quoteHash:hash,approvedCredits:z.number().int().positive(),confirmProduction:z.literal(true)}),
- z.strictObject({action:z.enum(["status","preview","zip","admin"])})
+ z.strictObject({action:z.enum(["status","preview","admin"])}),z.strictObject({action:z.literal("zip"),version:z.number().int().positive().optional()})
 ]);
 const headers={"Cache-Control":"no-store","X-Robots-Tag":"noindex,nofollow"};
 export async function POST(request:Request){
@@ -46,6 +46,7 @@ export async function POST(request:Request){
   const r=await db.from("website_credit_reservations").select("production_id,user_id,state,credits,plan_hash").eq("production_id",p.id).eq("user_id",actor).maybeSingle();
   const plan=p.output_json?.plan,media=WebsiteHeroMediaList.parse(plan?.websiteHeroMedia),design=WebsiteDesignSpec.parse(plan?.editableDesign);
   if(r.error||!r.data||r.data.plan_hash!==p.output_json?.websiteAssistant?.planHash||!websiteCreditDeliveryProof(p,r.data)||media.length!==plan?.websitePageMediaCoverage?.required||media.length!==plan?.websitePageMediaCoverage?.delivered)return fail(409,"settled_delivery_required");
+  if(v.action==="zip"&&v.version!==undefined&&v.version!==Number(p.output_json.websiteDesignVersion??1))return fail(409,"version_conflict");
   const rows=[{productionId:p.id,designHash:plan.editableDesignHash,design,heroMedia:media,revision:Number(p.output_json.websiteDesignVersion??1)}];
   if(v.action==="admin")return reply({ok:true,pages:buildWebsiteAdminPreview(design)});
   if(v.action==="preview")return reply({ok:true,...buildSettledWebsitePreview(rows,p.id)});

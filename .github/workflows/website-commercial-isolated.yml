@@ -4,6 +4,9 @@ on:
     branches: [feat/studio-stage-image-20261127]
     paths:
       - 'src/app/api/**'
+      - 'src/app/website-cms-test/**'
+      - 'src/app/website-design-test/**'
+      - 'src/app/dashboard/website-draft/**'
       - 'src/lib/**'
       - 'scripts/*website*'
       - 'scripts/*whop*'

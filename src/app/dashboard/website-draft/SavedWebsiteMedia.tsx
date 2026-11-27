@@ -8,7 +8,7 @@ async function optimize(file:File):Promise<ImageDraft>{
  const bitmap=await createImageBitmap(file);
  try{if(bitmap.width*bitmap.height>40000000)throw Error("Görsel çok büyük.");
  for(const cap of [1440,1200,960,720,480]){const ratio=Math.min(1,cap/Math.max(bitmap.width,bitmap.height)),width=Math.max(1,Math.round(bitmap.width*ratio)),height=Math.max(1,Math.round(bitmap.height*ratio)),canvas=document.createElement("canvas");canvas.width=width;canvas.height=height;const ctx=canvas.getContext("2d");if(!ctx)throw Error();ctx.drawImage(bitmap,0,0,width,height);
- for(const quality of [.85,.75,.65,.55]){const url=canvas.toDataURL("image/webp",quality);if(!url.startsWith("data:image/webp;base64,"))throw Error("WebP desteklenmiyor.");const image_data=url.slice(23);if(image_data.length<=180000)return {image_data,width,height};}}throw Error("Görsel boyut sınırına sığmadı.");
+ for(const quality of [.85,.75,.65,.55]){const url=canvas.toDataURL("image/webp",quality);if(!url.startsWith("data:image/webp;base64,"))throw Error("WebP desteklenmiyor.");const image_data=url.slice("data:image/webp;base64,".length);if(image_data.length<=180000)return {image_data,width,height};}}throw Error("Görsel boyut sınırına sığmadı.");
  }finally{bitmap.close();}
 }
 export function SavedWebsiteMedia({endpoint,token,version,pageSlug,disabled,onReload,onBusy,aiRevision=false}:{endpoint:string;token:string;version:number;pageSlug:string;disabled:boolean;onReload:()=>void;onBusy:(busy:boolean)=>void;aiRevision?:boolean}){
