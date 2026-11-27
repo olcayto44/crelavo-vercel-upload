@@ -2,20 +2,27 @@
 -- This is a service-only candidate. Enable the route only after legacy settlement writers are migrated.
 create or replace function public.studio_legacy_create(p_user uuid,p_payload jsonb)
 returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
-declare w credit_balances%rowtype; j production_requests%rowtype; a integer; f text; have_wallet boolean;
+declare w credit_balances%rowtype; j production_requests%rowtype; a integer; e integer; f text; have_wallet boolean;
 begin
  if p_user is null or p_payload is null or jsonb_typeof(p_payload)<>'object' or octet_length(p_payload::text)>2000000 or p_payload->>'user_id' is distinct from p_user::text or p_payload->>'status' is distinct from 'queued' then raise exception 'legacy_create_invalid';end if;
- a:=(p_payload->>'reserved_credits')::integer;f:=lower(regexp_replace(trim(p_payload#>>'{request_metadata,requestFingerprint}'),'[[:space:]]+',' ','g'));
- if a is null or a<0 or a>1000000 or f is null or length(f) not between 1 and 32000 or (p_payload->>'estimated_credits')::integer<a or coalesce(p_payload->>'title','')='' or coalesce(p_payload->>'production_type','')='' or jsonb_typeof(p_payload->'legal_acceptance_snapshot') is distinct from 'object' then raise exception 'legacy_create_terms_invalid';end if;
+ a:=(p_payload->>'reserved_credits')::integer;e:=(p_payload->>'estimated_credits')::integer;f:=lower(regexp_replace(trim(p_payload#>>'{request_metadata,requestFingerprint}'),'[[:space:]]+',' ','g'));
+ if a is null or a<0 or a>1000000 or f is null or length(f) not between 1 and 32000 or e is null or e<a or e>1000000 or coalesce(p_payload->>'title','')='' or coalesce(p_payload->>'production_type','')='' or jsonb_typeof(p_payload->'legal_acceptance_snapshot') is distinct from 'object' then raise exception 'legacy_create_terms_invalid';end if;
  perform pg_advisory_xact_lock(hashtextextended('studio-legacy-create:'||p_user::text,0));
  select * into w from credit_balances where user_id=p_user for update;have_wallet:=found;
  select * into j from (select * from production_requests where user_id=p_user and status<>'deleted' order by created_at desc limit 20) q
  where q.status not in ('failed','cancelled') and lower(regexp_replace(trim(q.request_metadata->>'requestFingerprint'),'[[:space:]]+',' ','g'))=f limit 1;
- if found then return jsonb_build_object('state','existing','production',to_jsonb(j));end if;
+ if found then
+  -- Never treat a price, package or initial reservation change as an identical replay.
+  -- Older rows without immutable reservation terms require reconciliation, not a new charge.
+  if j.production_type is distinct from p_payload->>'production_type' or j.package_id is distinct from p_payload->>'package_id' or j.estimated_credits is distinct from e or j.request_metadata->'atomicCreateReservedCredits' is distinct from to_jsonb(a) then
+   return jsonb_build_object('state','reconcile_required','code','idempotency_terms_mismatch');
+  end if;
+  return jsonb_build_object('state','existing','production',to_jsonb(j));
+ end if;
  if a>0 and (not have_wallet or w.balance-w.reserved<a) then return jsonb_build_object('state','insufficient','available',case when have_wallet then greatest(0,w.balance-w.reserved) else 0 end);end if;
  if have_wallet and (least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.reserved>w.balance or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits) then return jsonb_build_object('state','reconcile_required');end if;
  insert into production_requests(user_id,production_type,package_id,title,prompt,status,generation_status,request_metadata,input_json,materials_json,estimated_credits,reserved_credits,output_json,admin_notes,legal_acceptance_snapshot)
- values(p_user,p_payload->>'production_type',p_payload->>'package_id',p_payload->>'title',p_payload->>'prompt','queued',p_payload->>'generation_status',p_payload->'request_metadata',p_payload->'input_json',p_payload->'materials_json',(p_payload->>'estimated_credits')::integer,a,p_payload->'output_json',p_payload->>'admin_notes',p_payload->'legal_acceptance_snapshot') returning * into j;
+ values(p_user,p_payload->>'production_type',p_payload->>'package_id',p_payload->>'title',p_payload->>'prompt','queued',p_payload->>'generation_status',jsonb_set(p_payload->'request_metadata','{atomicCreateReservedCredits}',to_jsonb(a),true),p_payload->'input_json',p_payload->'materials_json',e,a,p_payload->'output_json',p_payload->>'admin_notes',p_payload->'legal_acceptance_snapshot') returning * into j;
  if a>0 then
   update credit_balances set reserved=reserved+a,updated_at=now() where user_id=p_user;
   insert into credit_events(user_id,type,amount,note) values(p_user,'reserve',a,'legacy-production:'||j.id::text);

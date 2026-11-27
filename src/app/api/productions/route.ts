@@ -976,7 +976,9 @@ outputPlan,
           return productionFingerprintForRow(rowRecord) === normalizeFingerprintValue(requestFingerprint);
         }) as Record<string, unknown> | undefined
       : undefined;
-    if (matchingProduction) {
+    const atomicLegacyCreate=process.env.CRELAVO_ATOMIC_LEGACY_CREATE_ENABLED==="true";
+    // In atomic mode only the locked RPC may accept a replay or reject for insufficient funds.
+    if (!atomicLegacyCreate && matchingProduction) {
       return Response.json({
         production: matchingProduction,
         automation_job_id: String((matchingProduction.output_json as Record<string, unknown> | undefined)?.jobId ?? "") || null,
@@ -986,7 +988,6 @@ outputPlan,
       });
     }
 
-    const atomicLegacyCreate=process.env.CRELAVO_ATOMIC_LEGACY_CREATE_ENABLED==="true";
     const verifiedEmail = String(authUser.user.email ?? (atomicLegacyCreate?"":body.user_email) ?? "").trim().toLowerCase();
     if(atomicLegacyCreate&&!verifiedEmail)return Response.json({error:"verified_email_required"},{status:401});
     const { error: profileError } = await supabase
@@ -1052,7 +1053,7 @@ outputPlan,
     const reserved = Number(effectiveBalanceRow?.reserved ?? 0) || 0;
     const available = balance - reserved;
 
-    if (reserveCredits > 0 && available < reserveCredits) {
+    if (!atomicLegacyCreate && reserveCredits > 0 && available < reserveCredits) {
       return Response.json({
         error: `Not enough credits. Required: ${reserveCredits}, available: ${available}.`,
         required: reserveCredits,
@@ -1139,6 +1140,7 @@ outputPlan,
       if(r.error||!r.data)return Response.json({error:"production_creation_unconfirmed"},{status:503});
       if(r.data.state==="insufficient"){const available=Number(r.data.available??0);return Response.json({error:"Not enough credits.",required:reserveCredits,available,shortfall:Math.max(0,reserveCredits-available),redirect:"/dashboard/credits"},{status:402});}
       if(r.data.state==="existing")return Response.json({production:r.data.production,duplicate_request_reused:true,provider_start_requested:false});
+      if(r.data.code==="idempotency_terms_mismatch")return Response.json({error:"idempotency_terms_mismatch"},{status:409});
       if(r.data.state!=="created"||!r.data.production)return Response.json({error:"wallet_reconciliation_required"},{status:409});
       inserted={data:r.data.production,removedColumns:[]};
     }else inserted=await insertProductionRequestSchemaSafe(supabase,productionInsertPayload);
