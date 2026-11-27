@@ -52,7 +52,7 @@ async function browserCheck(origin,password){
       assert(await evaluate("!!document.querySelector('form[action=\"/admin/login\"]')"));
       await evaluate("document.querySelector('input[name=password]').value="+JSON.stringify(password)+";document.querySelector('form[action=\"/admin/login\"]').requestSubmit();true");
       for(let i=0;i<100;i++){if(await evaluate("!!document.querySelector('.admin-layout') && document.readyState==='complete'"))break;await new Promise(r=>setTimeout(r,100));}
-      assert(await evaluate("!!document.querySelector('.admin-layout')"));
+      assert(await evaluate("!!document.querySelector('.admin-layout')"),"Browser login did not reach the dashboard: "+JSON.stringify(await evaluate("({path:location.pathname,title:document.title,heading:document.querySelector('h1')?.textContent})")));
       for(const width of [1440,390]){
        await cdp("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:width===390});
        for(const section of ["overview","pages","inbox","security"]){
