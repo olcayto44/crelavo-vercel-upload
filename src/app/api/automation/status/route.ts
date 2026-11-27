@@ -1,3 +1,4 @@
+import { readBoundedVideo, verifyMp4Bytes } from "@/lib/verified-mp4";
 import { execFile } from "node:child_process";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -63,7 +64,12 @@ async function settleVerifiedLegacyVideo(supabase: ReturnType<typeof supabaseAdm
     if (!base || url.origin !== new URL(base).origin || url.search || url.hash || !url.pathname.startsWith(prefix)) throw Error("storage_origin");
     object = url.pathname.slice(prefix.length);
   } catch { return Response.json({ error: "delivery_storage_unverified", charged: 0 }, { status: 409 }); }
-  const { data, error } = await supabase.rpc("studio_legacy_settle_video", { p_user: production.user_id, p_job: production.id, p_stamp: production.updated_at, p_bucket: bucket, p_object: object, p_url: finalUrl, p_output: postgresSafe(output) });
+  let mediaProof;
+  try {
+    const bytes = await readBoundedVideo(await fetch(finalUrl, { cache: "no-store", redirect: "error", signal: AbortSignal.timeout(30000) }));
+    mediaProof = await verifyMp4Bytes(bytes, assertFfmpegAvailable());
+  } catch { return Response.json({ error: "delivery_media_decode_unverified", charged: 0 }, { status: 409 }); }
+  const { data, error } = await supabase.rpc("studio_legacy_settle_video", { p_user: production.user_id, p_job: production.id, p_stamp: production.updated_at, p_bucket: bucket, p_object: object, p_url: finalUrl, p_output: postgresSafe({ ...output, mediaProof }) });
   if (error || !data) return Response.json({ error: "video_settlement_unconfirmed", automatic_retry: false }, { status: 503 });
   if (!["settled", "already_settled"].includes(data.state)) return Response.json({ error: "wallet_reconciliation_required", state: data.state, charged: 0 }, { status: 409 });
   return Response.json({ production: data.production, charged: data.charged, idempotent: data.state === "already_settled" });
