@@ -249,6 +249,11 @@ export async function PATCH(request: Request) {
       .maybeSingle();
     if (existingError) throw existingError;
     const existingOutput = existing?.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+    if (existing?.production_type === "website") {
+      const proof = await supabaseAdmin().from("website_credit_reservations").select("state").eq("production_id",id).maybeSingle();
+      if (proof.error) return Response.json({ error: "website_credit_proof_unavailable" }, { status: 503 });
+      if (proof.data || existingOutput.websiteAssistant || existingOutput.websiteBillingMode === "atomic_v1" || existingOutput.websiteBillingPending === true) return Response.json({ error: "website_paid_coordinator_required" }, { status: 409 });
+    }
     if (status === "ready" && isProductAdProduction(String(existing?.package_id ?? ""), String(existing?.production_type ?? ""))) {
       const finalVideoUrl = String(existingOutput.finalVideoUrl ?? existingOutput.final_video_url ?? existingOutput.providerFinalUrl ?? "").trim();
       const hasRealFinalVideo = /^https?:\/\//i.test(finalVideoUrl) && /\.mp4(?:\?|$)|\.mov(?:\?|$)|\.webm(?:\?|$)|replicate\.delivery|fal\.media|cloudfront|supabase/i.test(finalVideoUrl) && !/placeholder|preview\.html|manifest|readme/i.test(finalVideoUrl);
@@ -418,6 +423,7 @@ export async function POST(request: Request) {
   const prompt = String(body.prompt ?? "").trim();
   let productionType = String(body.production_type ?? "").trim();
   let packageId = String(body.package_id ?? "").trim();
+  if (productionType.toLowerCase() === "website" || getProductionPackage(packageId)?.productionType === "website") return Response.json({ error: "website_paid_coordinator_required", productionStarted: false, builderUrl: "/dashboard/website-draft" }, { status: 409 });
   if(isRetiredCategory(productionType)||isRetiredCategory(getProductionPackage(packageId)?.productionType))return Response.json({error:"category_retired",productionStarted:false},{status:410});
   const initialRequestMetadata = body.request_metadata && typeof body.request_metadata === "object" ? body.request_metadata as Record<string, unknown> : {};
   const initialInputJson = body.input_json && typeof body.input_json === "object" ? body.input_json as Record<string, unknown> : {};

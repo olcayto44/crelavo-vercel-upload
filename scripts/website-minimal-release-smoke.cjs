@@ -66,5 +66,16 @@ function load(path){
  const directGenerator=fs.readFileSync('src/app/api/websites/generate/route.ts','utf8');
  assert.ok(directGenerator.includes('executePaidWebsiteProduction') && !directGenerator.includes('estimated_credits: 0'), 'direct builder uses the same private artifact coordinator');
  assert.ok(!directGenerator.includes('uploadProviderAsset'), 'private website HTML must not be uploaded to public provider assets bucket');
+ const legacyCreate=fs.readFileSync('src/app/api/productions/route.ts','utf8');
+ const legacyStart=fs.readFileSync('src/app/api/automation/start/route.ts','utf8');
+ const legacyStatus=fs.readFileSync('src/app/api/automation/status/route.ts','utf8');
+ assert.ok(legacyCreate.includes('website_paid_coordinator_required'));
+ assert.ok(legacyStart.indexOf('website_paid_coordinator_required') < legacyStart.indexOf('verifiedOwner = String(currentProduction.user_id'));
+ assert.ok(legacyStatus.indexOf('websiteCoordinator: true, readOnly: true') < legacyStatus.indexOf('if (isAutomaticProjectDelivery(projectType, projectPackage))'));
+ assert.ok(delivery.includes('Boolean(data.output_json?.websiteAssistant)'));
+ assert.ok(contentApi.includes('Boolean(output.websiteAssistant)'));
+ assert.ok(paid.includes('settlement?.plan_hash !== planHash'));
+ const runner=fs.readFileSync('src/lib/assistant-work/website-atomic-runner.ts','utf8');
+ assert.ok(runner.includes('released.state !== "released"'));
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});

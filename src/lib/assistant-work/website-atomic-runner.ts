@@ -78,6 +78,7 @@ export async function runIsolatedWebsiteGeneration(
       ...identity, outcome: "failed", result: { kind: "confirmed_local_generation_failure" },
     });
     const released = await deps.ledger.finalize({ ...identity, outcome: "failed" });
+    if (!released || typeof released !== "object" || !("state" in released) || released.state !== "released") return { state: "reconciliation_required" as const, charged: false, settlement: released };
     return { state: "generation_failed" as const, charged: false, settlement: released };
   }
   // Persist the actual artifact before charging, with the same plan hash.

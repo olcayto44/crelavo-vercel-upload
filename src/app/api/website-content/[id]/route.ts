@@ -19,7 +19,7 @@ async function atomicWebsiteContentAccess(record: {
   if (error) return Response.json({ error: "website_credit_proof_unavailable" },
     { status: 503, headers: { "Cache-Control": "no-store" } });
   const hasAtomicClaim = Boolean(data) || output.websiteBillingMode === "atomic_v1" ||
-    output.websiteBillingPending === true;
+    output.websiteBillingPending === true || Boolean(output.websiteAssistant);
   if (hasAtomicClaim && !websiteCreditDeliveryProof(record, data))
     return Response.json({ error: "website_atomic_delivery_not_settled" },
       { status: 409, headers: { "Cache-Control": "no-store" } });

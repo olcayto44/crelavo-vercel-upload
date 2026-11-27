@@ -537,6 +537,7 @@ export async function POST(request: Request) {
      const access = await requireAutomationAccess(request, body, currentProduction);
 
     if (!access.ok) return access.response;
+    if (String(currentProduction.production_type ?? "").toLowerCase() === "website") return Response.json({ error: "website_paid_coordinator_required", productionStarted: false, automatic_retry: false }, { status: 409 });
     verifiedOwner = String(currentProduction.user_id ?? "") || null;
     if (currentProduction.generation_status === "provider_outcome_reconciliation_required") return Response.json({ error: "provider_outcome_reconciliation_required", automatic_retry: false }, { status: 409 });
     const existingOutput = postgresSafe(currentProduction.output_json && typeof currentProduction.output_json === "object" ? currentProduction.output_json as Record<string, unknown> : {});

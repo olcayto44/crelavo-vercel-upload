@@ -143,7 +143,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       { status: 503, headers: { "Cache-Control": "no-store" } });
     const hasAtomicClaim = Boolean(proof.data) ||
       data.output_json?.websiteBillingMode === "atomic_v1" ||
-      data.output_json?.websiteBillingPending === true;
+      data.output_json?.websiteBillingPending === true || Boolean(data.output_json?.websiteAssistant);
     if (hasAtomicClaim) {
       websitePaidByCredits = websiteCreditDeliveryProof(data, proof.data);
       if (!websitePaidByCredits)

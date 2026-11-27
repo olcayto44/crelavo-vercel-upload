@@ -69,9 +69,9 @@ export async function executePaidWebsiteProduction(raw: unknown, user: { id: str
   // without a matching, durably settled reservation.
   if (row.status === "ready" && row.output_json?.websiteBillingMode === "atomic_v1") {
     const { data: settlement, error: settlementError } = await db
-      .from("website_credit_reservations").select("state,credits")
+      .from("website_credit_reservations").select("state,credits,plan_hash")
       .eq("production_id", productionId).eq("user_id", user.id).maybeSingle();
-    if (settlementError || !websiteCreditDeliveryProof(row, settlement))
+    if (settlementError || settlement?.plan_hash !== planHash || state?.planHash !== planHash || !websiteCreditDeliveryProof(row, settlement))
       return reply({ ok: false, code: "website_generation_reconciliation_required" }, 409);
     return reply({ ok: true, state: "already_ready", productionId, charged: 0 }, 200);
   }

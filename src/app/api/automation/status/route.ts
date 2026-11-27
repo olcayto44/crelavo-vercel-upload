@@ -477,6 +477,9 @@ export async function POST(request: Request) {
     if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
     const access = await requireAutomationStatusAccess(request, body, production);
     if (!access.ok) return access.response;
+    // Website state is exclusively owned by its paid coordinator. Generic
+    // automation must not overwrite approval, files or settlement markers.
+    if (String(production.production_type ?? "").toLowerCase() === "website") return Response.json({ production, websiteCoordinator: true, readOnly: true });
     if (["ready", "completed", "cancelled", "deleted"].includes(String(production.status ?? ""))) return Response.json({ production, already_closed: true });
     if (production.generation_status === "provider_outcome_reconciliation_required") return Response.json({ production, adminRecoveryRequired: true, automatic_retry: false, credits_released: 0 });
 
