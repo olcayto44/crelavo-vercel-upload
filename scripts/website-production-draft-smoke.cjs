@@ -25,5 +25,11 @@ const {renderWebsiteDesignCandidate}=load("src/lib/website-design-candidate.ts")
  assert(assistantRoute.includes('isolated?createClient("https://bwzxdxqgrgbsvndinmrv.supabase.co"'));
  assert(assistantRoute.includes('!websitePilotCanary(data.user.id)'));
  console.log("website commercial preview: dedicated credentials only, exact isolated origin and verified canary fences");
+ const editor=fs.readFileSync("src/app/website-design-test/WebsiteDesignPilot.tsx","utf8");
+ assert(editor.includes('aria-label={tr("All website pages","Tüm site sayfaları")}'));
+ assert(editor.includes('srcDoc={preview.content}'));
+ assert(editor.includes('useState(customerMode)'));
+ assert(editor.includes('dropPage(pageDrag.current,i)'));
+ console.log("website editor: actual per-page sandbox previews, page reorder and customer autosave contract");
  console.log("website production draft: schema, owner-scoped storage, compare-and-swap, preview and paid export fence");
 })().catch(e=>{console.error(e);process.exitCode=1;});
