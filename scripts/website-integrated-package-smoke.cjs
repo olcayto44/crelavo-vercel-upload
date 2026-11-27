@@ -55,6 +55,9 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
   const premiumRows=[{productionId:id,designHash:complete.plan.editableDesignHash,design:complete.plan.editableDesign,heroMedia:complete.plan.websiteHeroMedia}];
   assert.equal(buildSettledWebsitePreview(premiumRows,id).pages.filter(p=>p.html.includes("data:image/webp;base64,")).length,5);
   assert.equal(buildSettledWebsiteCandidate(premiumRows,id).entries.filter(e=>e.name.startsWith("site/")&&e.name.endsWith(".html")&&e.content.includes("data:image/webp;base64,")).length,5);
+  for(const [name,composition] of Object.entries({"index.html":"signature","about.html":"story","services.html":"services","portfolio.html":"showcase","contact.html":"contact"})){const f=complete.files.find(f=>f.path===name);assert(f.content.includes("composition-"+composition));assert(f.content.includes("page-kicker"));}
+  const style=complete.files.find(f=>f.path==="styles.css").content;assert(style.includes("composition-showcase .hero-with-media"));assert(style.includes("composition-story .hero-media"));
+  const {websiteVisualFamily,websitePageComposition}=load("src/lib/website-page-composition.ts");assert.equal(websiteVisualFamily({...complete.plan.editableDesign,industryScope:{sector:"restaurant",extraModules:[]}}),"hospitality");assert.equal(websiteVisualFamily({...complete.plan.editableDesign,industryScope:{sector:"saas",extraModules:[]}}),"technology");assert.equal(websitePageComposition("galeri"),"showcase");
   assert.equal(complete.plan.websiteHeroMedia.length,5);assert.equal(complete.plan.websitePageImageReceipts.length,5);
   assert.deepEqual(complete.plan.websitePageMediaCoverage,{required:5,delivered:5,invoicePending:true});
   assert.equal(complete.files.filter(f=>f.path.endsWith(".html")&&f.content.includes("data:image/webp;base64,")).length,5);

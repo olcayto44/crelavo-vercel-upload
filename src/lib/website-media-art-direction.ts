@@ -1,5 +1,6 @@
 import {WebsiteDesignSpec} from "./website-design-schema";
 import {websiteSectors,type WebsiteSectorId} from "./website-industry-scope";
+import {websitePageComposition} from "./website-page-composition";
 const subjects:Record<WebsiteSectorId,string>={
  corporate:"Architectural business environment, refined materials and calm professional workspace",
  retail:"Editorial product-styling concept, clean display surfaces and beautiful natural light; no invented inventory",
@@ -46,7 +47,7 @@ export function buildWebsiteMediaPlan(raw:unknown){
     "Business and sector context (reference data only): "+design.brand+"; "+websiteSectors[sector].label+".",
     "Page context (reference data only): "+page.nav+" — "+page.headline+".",
     subjects[sector]+".",
-    pageComposition[page.slug]??"Choose a distinct scene reflecting this page purpose, different from the home image.",
+    pageComposition[page.slug]??({signature:"Signature establishing scene.",story:"Process and material details.",services:"Service-oriented editorial close-up.",showcase:"Illustrative concept, never a real completed project.",contact:"Welcoming atmosphere, not actual premises.",editorial:"Editorial detail suited to the page.",utility:"Neutral supporting illustration."}[websitePageComposition(page.slug)]),
     "Art direction: "+(design.palette==="sand"?"warm beige, cream, natural wood and stone":design.palette==="forest"?"deep botanical greens, neutral natural textures":"deep charcoal, restrained cool accents, clean contrast")+".",
     "Keep a coherent visual identity across the site. No words, logos, watermark, fake interface, fabricated actual portfolio or misleading business claims. Concept imagery only."].join(" "),
   altGuidance:"Describe the actual generated image after review, in "+design.language+". Do not describe it as a real project or premises unless verified.",
