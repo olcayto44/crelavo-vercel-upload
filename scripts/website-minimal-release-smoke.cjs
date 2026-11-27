@@ -77,5 +77,10 @@ function load(path){
  assert.ok(paid.includes('settlement?.plan_hash !== planHash'));
  const runner=fs.readFileSync('src/lib/assistant-work/website-atomic-runner.ts','utf8');
  assert.ok(runner.includes('released.state !== "released"'));
+ const cancel=fs.readFileSync('src/app/api/productions/cancel/route.ts','utf8');
+ const expire=fs.readFileSync('src/app/api/productions/expire-stale/route.ts','utf8');
+ assert.ok(cancel.indexOf('website_cancellation_requires_reconciliation') < cancel.indexOf('CRELAVO_ATOMIC_LEGACY_CANCEL_ENABLED'));
+ assert.ok(expire.includes('.neq("production_type", "website")'));
+ assert.ok(legacyCreate.includes('website_delete_requires_reconciliation'));
  console.log('minimal website atomic release contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1});

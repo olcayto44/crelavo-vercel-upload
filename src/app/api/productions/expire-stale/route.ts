@@ -47,6 +47,7 @@ async function expireStaleProductions(request: Request) {
       .from("production_requests")
       .select("id, user_id, title, status, automation_status, generation_status, reserved_credits, estimated_credits, output_json, created_at, updated_at")
       .neq("status", "deleted")
+      .neq("production_type", "website")
       .in("status", ["queued"])
       .in("generation_status", ["automation_queued", "queued_for_render_slot", "waiting_provider_config", "provider_ready", "provider_ready_queued"])
       .lte("created_at", cutoff)

@@ -1,0 +1,62 @@
+name: Website commercial isolated acceptance
+on:
+  push:
+    branches: [feat/studio-stage-image-20261127]
+    paths:
+      - 'src/app/api/**'
+      - 'src/lib/**'
+      - 'scripts/*website*'
+      - 'scripts/*whop*'
+      - 'supabase/**'
+      - 'docs/*isolated.sql'
+      - '.github/workflows/website-commercial-isolated.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  core:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Approval, atomic ledger, private project, preview and ZIP
+        run: |
+          node scripts/website-minimal-release-smoke.cjs
+          node scripts/website-paid-production-gate-smoke.cjs
+          node scripts/website-atomic-flow-smoke.cjs
+          node scripts/website-production-draft-smoke.cjs
+          npm run smoke:website-assistant
+      - name: AI copy, image contract, structured revision and CMS
+        run: |
+          node scripts/studio-website-ai-job-smoke.cjs
+          node scripts/studio-website-revision-metered-smoke.cjs
+          node scripts/website-paid-design-smoke.cjs
+          node scripts/website-integrated-package-smoke.cjs
+          node scripts/website-cms-operations-local-smoke.cjs
+      - name: Extract ZIP and exercise its actual local server
+        run: node scripts/website-selfhost-runtime-smoke.cjs
+  billing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Whop purchase and assistant accounting fixtures
+        run: |
+          node scripts/studio-whop-recovery-adapter-smoke.cjs
+          node scripts/studio-whop-atomic-purchase-smoke.cjs
+          node scripts/studio-admin-wallet-atomic-candidate-smoke.cjs
+          node scripts/studio-assistant-accounting-local-smoke.cjs
+      - name: Evidence boundary
+        run: echo "No live payment or provider inference; offline acceptance is not production certification."

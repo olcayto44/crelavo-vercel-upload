@@ -378,13 +378,16 @@ export async function DELETE(request: Request) {
 
     const { data: existing, error: existingError } = await supabaseAdmin()
       .from("production_requests")
-      .select("user_id, output_json")
+      .select("user_id, output_json, production_type")
       .eq("id", id)
       .maybeSingle();
     if (existingError) throw existingError;
     if (!existing) return Response.json({ error: "Production not found." }, { status: 404 });
     if (!adminRequest && String(existing.user_id ?? "") !== userId) return Response.json({ error: "You are not allowed to delete this production." }, { status: 403 });
     const existingOutput = existing.output_json && typeof existing.output_json === "object" ? existing.output_json as Record<string, unknown> : {};
+    // A generic soft delete can race the atomic Website reservation/claim.
+    // Until a Website-specific delete transaction exists, preserve all these records.
+    if (existing.production_type === "website") return Response.json({error:"website_delete_requires_reconciliation"},{status:409});
     const deletedBy = adminRequest ? adminEmail : userId;
     const deletedStatus = adminRequest ? "deleted_by_admin" : "deleted_by_user";
 

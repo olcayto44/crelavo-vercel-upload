@@ -28,6 +28,12 @@ export async function POST(request: Request) {
     if (!verified.ok) return verified.response;
 
     const supabase = supabaseAdmin();
+    // The Website ledger has its own reservation lifecycle. Never use the
+    // legacy cancellation fee or a generic wallet write for these projects.
+    const websiteCheck = await supabase.from("production_requests").select("production_type").eq("id",productionId).eq("user_id",userId).maybeSingle();
+    if (websiteCheck.error) return Response.json({error:"production_lookup_unavailable"},{status:503});
+    if (!websiteCheck.data) return Response.json({error:"Production not found."},{status:404});
+    if (websiteCheck.data.production_type === "website") return Response.json({error:"website_cancellation_requires_reconciliation",automatic_retry:false},{status:409});
     // Separate release gate: active/provider-uncertain jobs require reconciliation.
     if (process.env.CRELAVO_ATOMIC_LEGACY_CANCEL_ENABLED === "true") {
       const { data: result, error: rpcError } = await supabase.rpc("studio_legacy_cancel_unstarted", { p_user: userId, p_production: productionId });
