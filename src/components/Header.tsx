@@ -49,8 +49,8 @@ function normalizeNavLabel(label: string) {
 
 const createGroups = [
   { title: "Build", links: [{ label: "Website Builder", href: "/ai-website-builder" }, { label: "SaaS & App Builder", href: "/ai-app-builder" }, { label: "E-commerce Builder", href: "/ai-ecommerce-builder" }] },
-  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/join" }] },
-  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/join" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
+  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/ai-social-media-ai" }] },
+  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/ai-ad-performance-score-checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
 ];
 
 export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
@@ -89,8 +89,8 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
               <Link href="/tools/image-editor">Image Editor</Link>
               <Link href="/tools/media-library">Media Library</Link>
               <Link href="/categories">All production categories</Link>
-              <Link href="/join">New Production</Link>
-              <Link href="/dashboard/productions">My Productions</Link>
+              <Link href="/dashboard/studio">New project</Link>
+              <Link href="/dashboard/productions">My projects</Link>
             </div>
           </div>
         </div>

@@ -1,0 +1,11 @@
+/* V3 tokens are opt-in; do not override private editors, billing or admin. */
+:root{--cr-bg:#0a0c13;--cr-surface:#151925;--cr-raised:#1b2030;--cr-line:#343c51;--cr-text:#f5f6fb;--cr-muted:#b8c2d5;--cr-accent:#c4b5fd;--cr-primary:#6942c9;--cr-radius:16px;--cr-space:clamp(16px,4vw,48px)}
+.cr-premium{background:var(--cr-bg);color:var(--cr-text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.cr-premium *{box-sizing:border-box}
+.cr-premium :focus-visible{outline:2px solid var(--cr-accent);outline-offset:4px}
+.cr-premium h1,.cr-premium h2,.cr-premium h3{color:var(--cr-text);letter-spacing:-.035em}
+.cr-premium p{color:var(--cr-muted);line-height:1.6}
+.cr-premium .cr-action{min-height:46px;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 18px;border-radius:10px;border:1px solid var(--cr-line);background:var(--cr-raised);color:var(--cr-text);font-size:14px;font-weight:650;text-decoration:none;cursor:pointer}
+.cr-premium .cr-action-primary{background:var(--cr-primary);border-color:#aa91f9;color:white}
+.cr-premium .cr-action:hover{border-color:var(--cr-accent)}
+@media(prefers-reduced-motion:reduce){.cr-premium *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}

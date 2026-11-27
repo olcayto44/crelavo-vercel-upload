@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { HOME_BRIEF_KEY,readHomeBrief } from "@/lib/home-brief";
 import { supabaseBrowser } from "@/lib/supabase";
 export function StudioConversationFrame({document}:{document:string}) {
   const frame=useRef<HTMLIFrameElement>(null);
@@ -21,5 +22,6 @@ export function StudioConversationFrame({document}:{document:string}) {
   },[]);
   const deliver=()=>frame.current?.contentWindow?.postMessage({type:"crelavo-studio-session",accessToken:session?.accessToken??null,userId:session?.userId??null},window.location.origin);
   useEffect(deliver,[session]);
-  return <iframe ref={frame} title="Crelavo Studio V2 conversation" allowFullScreen srcDoc={document} onLoad={deliver} sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style={{display:"block",width:"100%",height:"100dvh",border:0}}/>;
+  function onFrameLoad(){deliver();try{const saved=readHomeBrief(sessionStorage.getItem(HOME_BRIEF_KEY),window.location.pathname,Date.now());const input=frame.current?.contentDocument?.querySelector<HTMLTextAreaElement>("#prompt");if(saved&&input&&!input.value.trim()){input.value=saved;input.dispatchEvent(new Event("input",{bubbles:true}));sessionStorage.removeItem(HOME_BRIEF_KEY);}}catch{/* Studio still works when storage is unavailable. */}}
+  return <iframe ref={frame} title="Crelavo Studio V2 conversation" allowFullScreen srcDoc={document} onLoad={onFrameLoad} sandbox="allow-scripts allow-same-origin allow-downloads allow-modals" style={{display:"block",width:"100%",height:"100dvh",border:0}}/>;
 }
