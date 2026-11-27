@@ -17,7 +17,8 @@ export function websitePaidProductionEnabled(env: NodeJS.ProcessEnv = process.en
   return env.VERCEL_ENV === "production" &&
     env.CRELAVO_WEBSITE_ATOMIC_PAID_ENABLED === "true" &&
     env.STUDIO_AGENT_ISOLATED_PREVIEW !== "true" &&
-    Boolean(env.SUPABASE_SERVICE_ROLE_KEY && env.NEXT_PUBLIC_SUPABASE_URL);
+    Boolean(env.SUPABASE_SERVICE_ROLE_KEY && env.NEXT_PUBLIC_SUPABASE_URL) &&
+    env.CRELAVO_WEBSITE_COMMERCIAL_ACCEPTED === "true";
 }
 
 // First Production release is canary-only. No configured users = no paid generation.

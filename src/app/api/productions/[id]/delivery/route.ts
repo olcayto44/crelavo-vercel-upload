@@ -1,4 +1,5 @@
 import { PRIVATE_FINAL_BUCKET, privateVideoObject } from "@/lib/private-final-video";
+import {websiteHasAdminPackage,websiteDeliveryVersionMatches} from "@/lib/website-customer-delivery";
 import {buildWebsiteSelfHostedBundle} from "@/lib/website-selfhost-bundle";
 import { websiteCreditDeliveryProof } from "@/lib/assistant-work/website-paid-delivery";
 import { buildDeliveryEntries, buildDeliveryManifest, buildDeliveryReadme, buildDeliveryZip, buildPreviewHtml, buildSourceGuide } from "@/lib/automatic-delivery-builder";
@@ -250,7 +251,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return responseWithText(buildPreviewHtml(data, data.production_type === "website" ? page : "index.html"), `${safeTitle}-preview.html`, "text/html; charset=utf-8", "inline");
   }
   if (file === "zip") {
-    const paidAdmin=websitePaidByCredits&&data.production_type==="website"&&data.output_json?.websiteAssistant?.packId==="website_basic_admin"&&data.output_json?.plan?.approvedIndustryScope;
+    if(websitePaidByCredits&&data.production_type==="website"&&!websiteDeliveryVersionMatches(data.output_json,searchParams))return Response.json({error:"website_version_conflict"},{status:409});
+    const paidAdmin=websitePaidByCredits&&data.production_type==="website"&&websiteHasAdminPackage(data.output_json);
     const zip=paidAdmin?buildWebsiteSelfHostedBundle({design:data.output_json.plan.editableDesign,revision:Number(data.output_json.websiteDesignVersion??1),catalog:data.output_json.websiteCMS?.catalog??[],articles:data.output_json.websiteCMS?.articles??[],heroMedia:data.output_json.plan.websiteHeroMedia??[]}).zip:buildDeliveryZip(buildDeliveryEntries(data));
     return new Response(zip, {
       headers: {

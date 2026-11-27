@@ -1,4 +1,5 @@
 import {z} from "zod";
+import {websiteHasAdminPackage} from "@/lib/website-customer-delivery";
 import {changeSavedWebsiteMedia} from "@/lib/website-saved-media";
 import {WebsiteHeroMediaList} from "@/lib/website-hero-media";
 
@@ -31,7 +32,7 @@ async function owned(request:Request){
  return {db,row,actor,design:design.data,limit} as const;
 }
 type Owned=Exclude<Awaited<ReturnType<typeof owned>>,{response:Response}>;
-function view(a:Owned){const output=a.row.output_json;return {ok:true,version:Number(output.websiteDesignVersion??1),design:a.design,history:paidDesignHistory(output).map(({version,createdAt})=>({version,createdAt})),pageLimit:a.limit,cms:output.websiteCMS??{articles:[],catalog:[]},cmsVersion:Number(output.websiteCMSVersion??0),cmsModules:websitePaidCMSModules(output.plan?.approvedIndustryScope??undefined),revisionAvailable:process.env.CRELAVO_WEBSITE_INCLUDED_AI_REVISION_ENABLED==="true"&&!output.websiteAIRevision,revisionProposal:output.websiteAIRevision?.state==="proposed"?output.websiteAIRevision.proposal:null};}
+function view(a:Owned){const output=a.row.output_json;return {ok:true,version:Number(output.websiteDesignVersion??1),design:a.design,history:paidDesignHistory(output).map(({version,createdAt})=>({version,createdAt})),pageLimit:a.limit,cms:output.websiteCMS??{articles:[],catalog:[]},cmsVersion:Number(output.websiteCMSVersion??0),adminAvailable:websiteHasAdminPackage(output),cmsModules:websiteHasAdminPackage(output)?websitePaidCMSModules(output.plan?.approvedIndustryScope??undefined):[],revisionAvailable:process.env.CRELAVO_WEBSITE_INCLUDED_AI_REVISION_ENABLED==="true"&&!output.websiteAIRevision,revisionProposal:output.websiteAIRevision?.state==="proposed"?output.websiteAIRevision.proposal:null};}
 export async function GET(request:Request){try{const a=await owned(request);if("response" in a)return a.response;return out(view(a));}catch{return out({ok:false,code:"project_unavailable"},503);}}
 async function save(a:Owned,version:number,design:unknown,revisionApplied=false){
  if(version!==Number(a.row.output_json.websiteDesignVersion??1))return out({ok:false,code:"version_conflict"},409);
@@ -45,7 +46,7 @@ async function save(a:Owned,version:number,design:unknown,revisionApplied=false)
 export async function PUT(request:Request){try{const a=await owned(request);if("response" in a)return a.response;const p=WebsiteDraftSave.parse(await readBoundedWebsiteJson(request,50000));return await save(a,p.version,p.design);}catch{return out({ok:false,code:"invalid_design"},422);}}
 export async function PATCH(request:Request){try{const a=await owned(request);if("response" in a)return a.response;const p=z.strictObject({version:z.number().int().positive(),restoreVersion:z.number().int().positive()}).parse(await readBoundedWebsiteJson(request,1024));const old=paidDesignHistory(a.row.output_json).find(h=>h.version===p.restoreVersion);if(!old)return out({ok:false,code:"version_not_found"},404);return await save(a,p.version,old.design);}catch{return out({ok:false,code:"restore_unavailable"},422);}}
 export async function POST(request:Request){try{const a=await owned(request);if("response" in a)return a.response;
- if(new URL(request.url).searchParams.get("operation")==="admin-preview"){return out({ok:true,pages:buildWebsiteAdminPreview(a.design)});}
+ if(new URL(request.url).searchParams.get("operation")==="admin-preview"){if(!websiteHasAdminPackage(a.row.output_json))return out({ok:false,code:"cms_package_required"},403);return out({ok:true,pages:buildWebsiteAdminPreview(a.design)});}
  if(new URL(request.url).searchParams.has("format"))return out({ok:false,code:"use_saved_delivery"},403);
  const operation=new URL(request.url).searchParams.get("operation");
  if(operation==="media"){
