@@ -1,0 +1,57 @@
+// Actual Crelavo admin UI, isolated local Next.js process and synthetic owner.
+const assert=require("node:assert/strict"),{spawn}=require("node:child_process"),{mkdtemp,readFile,rm}=require("node:fs/promises"),{tmpdir}=require("node:os"),{join}=require("node:path");
+const origin="http://127.0.0.1:3197",sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const owner="owner@example.test",password="fixture-only-admin-2026";
+(async()=>{
+ const profile=await mkdtemp(join(tmpdir(),"crelavo-admin-chrome-"));
+ const env={PATH:process.env.PATH,HOME:process.env.HOME,TMPDIR:process.env.TMPDIR,NODE_ENV:"development",NEXT_TELEMETRY_DISABLED:"1",ADMIN_EMAIL:owner,ADMIN_USERNAME:"owner",ADMIN_PASSWORD:password,ADMIN_SESSION_SECRET:"synthetic-local-session-only-not-production",NEXT_PUBLIC_SUPABASE_URL:"http://127.0.0.1:3198",NEXT_PUBLIC_SUPABASE_ANON_KEY:"fixture-only",SUPABASE_SERVICE_ROLE_KEY:""};
+ const server=spawn(process.execPath,["node_modules/next/dist/bin/next","dev","--hostname","127.0.0.1","--port","3197"],{env,stdio:["ignore","pipe","pipe"]});
+ let logs="",chrome,ws;server.stdout.on("data",d=>logs=(logs+d).slice(-5000));server.stderr.on("data",d=>logs=(logs+d).slice(-5000));
+ async function until(fn,label,timeout=90000){const end=Date.now()+timeout;for(;Date.now()<end;){try{const v=await fn();if(v)return v;}catch{}await sleep(200);}throw Error("Timeout: "+label+"\n"+logs);}
+ try{
+  await until(async()=>{const r=await fetch(origin+"/api/admin/login",{signal:AbortSignal.timeout(5000)});return r.ok},"local server ready");
+  chrome=spawn("google-chrome",["--headless=new","--disable-gpu","--no-first-run","--disable-background-networking","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:"ignore"});
+  const port=await until(async()=>{const p=(await readFile(join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0];return /^\d{1,5}$/.test(p)?p:null;},"Chrome port");
+  const page=await until(async()=>{const r=await fetch("http://127.0.0.1:"+port+"/json/list");return (await r.json()).find(x=>x.type==="page");},"Chrome page");
+  ws=new WebSocket(page.webSocketDebuggerUrl);await new Promise((resolve,reject)=>{ws.addEventListener("open",resolve,{once:true});ws.addEventListener("error",reject,{once:true});});
+  let serial=0;const pending=new Map();ws.addEventListener("message",e=>{const m=JSON.parse(e.data),p=pending.get(m.id);if(p){pending.delete(m.id);m.error?p.reject(Error(m.error.message)):p.resolve(m.result);}});
+  const cdp=(method,params={})=>new Promise((resolve,reject)=>{const id=++serial;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pending.delete(id))reject(Error("CDP timeout "+method));},15000).unref();});
+  const ev=async expression=>{const v=await cdp("Runtime.evaluate",{expression,returnByValue:true,awaitPromise:true});if(v.exceptionDetails)throw Error("Browser evaluation error");return v.result.value;};
+  const wait=(expr,label)=>until(()=>ev(expr),label);
+  const nav=async(path,expr)=>{await cdp("Page.navigate",{url:origin+path});await wait(expr,path);};
+  const resize=width=>cdp("Emulation.setDeviceMetricsOverride",{width,height:900,deviceScaleFactor:1,mobile:width===390});
+  const type=async(sel,value)=>{await ev("document.querySelector("+JSON.stringify(sel)+").focus();true");await cdp("Input.insertText",{text:value});};
+  await cdp("Page.enable");await cdp("Network.enable");await cdp("Network.setBlockedURLs",{urls:["https://*","http://localhost/*"]});
+  await resize(1440);
+  const login="!!document.querySelector('.admin-login-form')";
+  await nav("/admin",login);
+  await nav("/admin/studio-reconciliation",login);
+  assert(!(await ev("!!document.querySelector('#admin-navigation')")));
+  await type("input[autocomplete=username]","owner");await type("input[type=password]","wrong-fixture");
+  await ev("document.querySelector('.admin-login-form button').click();true");
+  await wait("document.querySelector('.form-message')?.textContent.includes('incorrect')","wrong password denied");
+  await ev("document.querySelector('input[type=password]').focus();document.querySelector('input[type=password]').select();true");
+  await cdp("Input.insertText",{text:password});
+  await ev("document.querySelector('.admin-login-form button').click();true");
+  await wait("!!document.querySelector('#admin-navigation') && document.querySelector('h1')?.textContent.includes('mutabakat')","owner login");
+  await nav("/admin","!!document.querySelector('#admin-navigation') && document.querySelector('h1')?.textContent==='Genel bakış'");
+  await wait("document.body.innerText.includes('Veri yok')","no production data");
+  await type("input[type=search]","Finans");
+  await wait("!!document.querySelector('#admin-navigation a[href=\"/admin/finance\"]') && !document.querySelector('#admin-navigation a[href=\"/admin/users\"]')","menu filter");
+  await ev("document.querySelector('input[type=search]').focus();document.querySelector('input[type=search]').select();true");await cdp("Input.insertText",{text:"Ödeme"});
+  await wait("!!document.querySelector('#admin-navigation a[href=\"/admin/studio-reconciliation\"]')","payment menu search");
+  await ev("document.querySelector('#admin-navigation a[href=\"/admin/studio-reconciliation\"]').click();true");
+  await wait("location.pathname==='/admin/studio-reconciliation' && document.body.innerText.includes('Veri alınamadı')","payment reconciliation navigation");
+  await resize(390);
+  await wait("!!document.querySelector('button[aria-controls=admin-navigation]')","mobile menu");
+  await ev("document.querySelector('button[aria-controls=admin-navigation]').click();true");
+  await wait("document.querySelector('button[aria-controls=admin-navigation]').getAttribute('aria-expanded')==='true'","mobile open");
+  assert(await ev("document.documentElement.scrollWidth<=innerWidth+2"),"mobile admin overflow");
+  await resize(1440);
+  await nav("/admin/billing","document.querySelector('h1')?.textContent==='Billing'");
+  assert(await ev("document.documentElement.scrollWidth<=innerWidth+2"),"desktop admin overflow");
+  await ev("[...document.querySelectorAll('button')].find(b=>b.textContent==='Admin logout').click();true");
+  await wait(login,"logout");await nav("/admin/finance",login);
+  console.log("PASS: actual Crelavo admin browser, anonymous direct access denied, wrong password rejected, owner login, menu search and navigation, desktop/mobile, logout and protected route recheck. Synthetic owner; no live data.");
+ }finally{ws?.close();chrome?.kill("SIGTERM");server.kill("SIGTERM");await sleep(500);await rm(profile,{recursive:true,force:true,maxRetries:3}).catch(()=>{});}
+})().catch(e=>{console.error(e);process.exitCode=1;});

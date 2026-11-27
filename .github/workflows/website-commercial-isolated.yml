@@ -10,6 +10,7 @@ on:
       - 'src/lib/**'
       - 'scripts/*website*'
       - 'scripts/*whop*'
+      - 'scripts/admin-main-browser-smoke.cjs'
       - 'supabase/**'
       - 'docs/*isolated.sql'
       - '.github/workflows/website-commercial-isolated.yml'
@@ -68,3 +69,16 @@ jobs:
           node scripts/studio-assistant-accounting-local-smoke.cjs
       - name: Evidence boundary
         run: echo "No live payment or provider inference; offline acceptance is not production certification."
+
+  admin-browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node scripts/admin-main-browser-smoke.cjs
