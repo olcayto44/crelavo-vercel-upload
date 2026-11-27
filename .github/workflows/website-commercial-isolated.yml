@@ -35,6 +35,8 @@ jobs:
         run: |
           node scripts/website-minimal-release-smoke.cjs
           node scripts/website-customer-navigation-smoke.cjs
+          node scripts/website-customer-account-security-smoke.cjs
+          node scripts/dashboard-signin-smoke.cjs
           npx tsc --noEmit
           node scripts/website-paid-production-gate-smoke.cjs
           node scripts/website-atomic-flow-smoke.cjs

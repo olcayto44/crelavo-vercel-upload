@@ -521,7 +521,7 @@ const deliveryUrl = isDroneRawPreviewOnly ? "" : isMediaProduction && !mediaOutp
         if (!auth.ok) throw new Error(auth.message);
         return fetch(`/api/productions/${production.id}/thumbnail`, {
           method: "POST",
-          headers: { ...authHeaders(auth.user.id), "Content-Type": "application/json" },
+          headers: { ...authHeaders(auth.accessToken), "Content-Type": "application/json" },
           body: JSON.stringify({ videoUrl: playbackUrl, timestampSeconds: 2.5 })
         });
       })
@@ -707,9 +707,11 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
 
     setApprovalLoading(option.label);
     setNotice("");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok || auth.user.id !== production.user_id) { setApprovalLoading(""); setStatus("error"); setNotice("Sign in to your project account."); return; }
     const response = await fetch("/api/productions/approval", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(auth.accessToken),
       body: JSON.stringify({
         production_id: production.id,
         user_id: production.user_id,
@@ -745,9 +747,11 @@ const openVideoLabel = isImageProduction ? "Open final image" : isProjectProduct
 
     setCancelLoading(true);
     setNotice("");
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok || auth.user.id !== production.user_id) { setCancelLoading(false); setStatus("error"); setNotice("Sign in to your project account."); return; }
     const response = await fetch("/api/productions/cancel", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(auth.accessToken),
       body: JSON.stringify({ production_id: production.id, user_id: production.user_id })
     });
     const data = await response.json().catch(() => ({}));
@@ -942,9 +946,11 @@ const data = await response.json().catch(() => ({}));
       return;
     }
 
+    const auth = await requireVerifiedBrowserUser();
+    if (!auth.ok || auth.user.id !== production.user_id) {  setStatus("error"); setNotice("Sign in to your project account."); return; }
     const response = await fetch("/api/productions/revision", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeaders(auth.accessToken),
       body: JSON.stringify({
         production_id: production.id,
         user_id: production.user_id,

@@ -24,7 +24,7 @@ for(const preview of [false,true]){
 assert.deepEqual(scenario("/dashboard",{loading:true}).calls,[]);
 assert.deepEqual(scenario("/dashboard/studio/video").calls,[["auth","login",{next:"/dashboard/studio/video?test=1"}]]);
 assert.deepEqual(scenario("/dashboard/studio/video",{allowStudioPreview:true}).calls,[]);
-assert.deepEqual(scenario("/dashboard/credits").calls,[["redirect","/join?returnTo=%2Fdashboard%2Fcredits%3Ftest%3D1"]]);
+assert.deepEqual(scenario("/dashboard/credits").calls,[["auth","login",{next:"/dashboard/credits?test=1"}]]);
 const dashboard=fs.readFileSync("src/app/dashboard/page.tsx","utf8");
-assert.ok(dashboard.includes('href="/dashboard/studio/video"'));assert.ok(!dashboard.includes("/dashboard/studio-v2?category="));
-console.log("dashboard-signin-smoke ok: overview login only, member access, preview boundary, existing checkout path preserved");
+assert.ok(dashboard.includes('"/dashboard/studio/video"'));assert.ok(!dashboard.includes("/dashboard/studio-v2?category="));
+console.log("dashboard-signin-smoke ok: overview login only, member access, preview boundary, account routes require login without checkout");

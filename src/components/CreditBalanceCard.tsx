@@ -14,6 +14,8 @@ type CreditState = {
   rollover_cap: number;
   subscription_status: string;
   billing_cycle_ends_at: string | null;
+  active_subscription_package?: string|null;
+  active_subscription_billing?: string|null;
   billing_status?: string;
   billing_update_url?: string;
   preview?: { remaining?: number; trial_remaining?: number; business_trial_used?: boolean };
@@ -46,6 +48,8 @@ export function CreditBalanceCard({compact=false}:{compact?:boolean} = {}) {
               bonus_credits: data.bonus_credits ?? 0,
               rollover_cap: data.rollover_cap ?? 0,
               subscription_status: data.subscription_status ?? "inactive",
+              active_subscription_package: data.active_subscription_package ?? null,
+              active_subscription_billing: data.active_subscription_billing ?? null,
                billing_cycle_ends_at: data.billing_cycle_ends_at ?? null,
                billing_status: data.billing_status ?? data.subscription_status ?? "inactive",
                billing_update_url: data.billing_update_url ?? "/dashboard/payment",
@@ -76,10 +80,11 @@ export function CreditBalanceCard({compact=false}:{compact?:boolean} = {}) {
        {mode === "live" && !compact ? <small style={{ display: "block", marginTop: 8 }}>Preview remaining: {credits.preview?.remaining ?? 0} · Trial remaining: {credits.preview?.trial_remaining ?? 0}</small> : null}
       {mode === "live" && !compact ? (
         <div style={{ display: "grid", gap: 4, marginTop: 10 }}>
+          <small>Subscription: {credits.active_subscription_package?.replaceAll("_"," ") || "No recurring package recorded"} · {credits.subscription_status.replaceAll("_"," ")}{credits.active_subscription_billing ? " · "+credits.active_subscription_billing : ""}</small>
           <small>Monthly: {credits.current_subscription_credits.toLocaleString()} · Rollover: {credits.rolled_over_credits.toLocaleString()}</small>
           <small>Top-up: {credits.topup_credits.toLocaleString()} · Bonus: {credits.bonus_credits.toLocaleString()}</small>
           {credits.rollover_cap > 0 ? <small>Rollover cap: {credits.rollover_cap.toLocaleString()} · Status: {credits.subscription_status}</small> : null}
-          {credits.billing_cycle_ends_at ? <small>Next cycle: {new Date(credits.billing_cycle_ends_at).toLocaleDateString()}</small> : null}
+          {credits.billing_cycle_ends_at ? <small>Recorded cycle end: {new Date(credits.billing_cycle_ends_at).toLocaleDateString()}</small> : null}
         </div>
       ) : null}
       {mode === "live" && credits.available <= 0 ? (

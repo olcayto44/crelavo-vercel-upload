@@ -193,6 +193,8 @@ export async function GET(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
+    // Preserve distinct paid/draft projects even when the prompt and package match.
+    if (!adminEmail) return Response.json({ productions: data ?? [] }, { headers: { "Cache-Control": "private, no-store" } });
     const uniqueProductions: Record<string, unknown>[] = [];
     const seenFingerprints = new Set<string>();
     for (const item of Array.isArray(data) ? data as Record<string, unknown>[] : []) {
