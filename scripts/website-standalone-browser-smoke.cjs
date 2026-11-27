@@ -7,16 +7,25 @@ const {join}=require("node:path");
 async function browserCheck(origin){
   const u=new URL(origin);assert.equal(u.hostname,"127.0.0.1");assert.equal(u.protocol,"http:");
   const profile=await mkdtemp(join(tmpdir(),"crelavo-chrome-"));
-  const child=spawn("google-chrome",["--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check","--disable-background-networking","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:"ignore"});
+  const child=spawn("google-chrome",["--headless=new","--disable-gpu","--no-first-run","--no-default-browser-check","--disable-background-networking","--remote-debugging-address=127.0.0.1","--remote-debugging-port=0","--user-data-dir="+profile,"about:blank"],{stdio:["ignore","ignore","pipe"]});
+  let stderr="",launchError;
+  child.stderr.on("data",d=>{stderr=(stderr+d.toString()).slice(-4000);});
+  child.once("error",e=>{launchError=e;});
   let ws;
   try{
     let endpoint;
     const {readFile}=require("node:fs/promises");
-    for(let i=0;i<100;i++){
-      try{const port=(await readFile(join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0];endpoint="http://127.0.0.1:"+port;break;}catch{}
+    // Runner CPU contention can delay DevTools startup. Retain the actual
+    // browser test and sandbox; give the process a bounded 45s startup window.
+    for(let i=0;i<450;i++){
+      if(launchError||child.exitCode!==null||child.signalCode!==null)break;
+      try{const port=(await readFile(join(profile,"DevToolsActivePort"),"utf8")).split("\n")[0];if(!/^\d{1,5}$/.test(port))throw Error("invalid_port");
+       const url="http://127.0.0.1:"+port;
+       if((await fetch(url+"/json/version",{signal:AbortSignal.timeout(1000)})).ok){endpoint=url;break;}
+      }catch{}
       await new Promise(r=>setTimeout(r,100));
     }
-    assert(endpoint,"Chrome not started");
+    assert(endpoint,"Chrome not started: "+(launchError?.code??child.exitCode??child.signalCode??"startup_timeout")+" "+stderr.replace(/[^\x20-\x7e\n]/g,"").slice(-2000));
     const pages=await (await fetch(endpoint+"/json/list")).json();
     const page=pages.find(p=>p.type==="page");assert(page);
     ws=new WebSocket(page.webSocketDebuggerUrl);
@@ -39,7 +48,11 @@ async function browserCheck(origin){
     console.log("PASS: extracted ZIP in real Chromium, desktop/mobile layout, language and main content");
   }finally{
     ws?.close();
-    if(child.exitCode===null){child.kill("SIGTERM");await new Promise(resolve=>{child.once("exit",resolve);setTimeout(resolve,2000);});}
+    if(child.exitCode===null&&child.signalCode===null&&!launchError){
+      child.kill("SIGTERM");
+      await new Promise(resolve=>{child.once("exit",resolve);setTimeout(resolve,2000);});
+      if(child.exitCode===null&&child.signalCode===null)child.kill("SIGKILL");
+    }
     await rm(profile,{recursive:true,force:true,maxRetries:3});
   }
 }
