@@ -32,12 +32,12 @@ export function preparePaidWebsiteAI(input:WebsiteEngineInput,env:NodeJS.Process
  if(cost>paidWebsitePolicy.totalMicroUSD)throw Error("website_ai_total_budget_exceeded");
  return {textCeiling,maximumMicroUSD:cost,pageImageCount:pageImages?.targets.length??0};
 }
-export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:string,packId="business_website",journal?:WebsiteMediaJournal){
- const budget=preparePaidWebsiteAI(input,process.env,packId);
+export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:string,packId="business_website",journal?:WebsiteMediaJournal,env:NodeJS.ProcessEnv=process.env){
+ const budget=preparePaidWebsiteAI(input,env,packId);
  if(wantsPageImages(input)&&!journal)throw Error("website_media_journal_required");
  const batches=websitePaidBatches(input),results=[];
  for(const batch of batches){
-  const result=await generateWebsiteAICopy(batch,{enabled:()=>Boolean(process.env.OPENAI_API_KEY?.trim()),apiKey:process.env.OPENAI_API_KEY!,policy:paidWebsitePolicy,customer:true});
+  const result=await generateWebsiteAICopy(batch,{enabled:()=>Boolean(env.OPENAI_API_KEY?.trim()),apiKey:env.OPENAI_API_KEY!,policy:paidWebsitePolicy,customer:true});
   if(result.state!=="validated")throw Error("website_ai_output_unconfirmed");
   requireCompleteWebsiteCopy(batch,result.copy);
   results.push(result);
@@ -49,12 +49,12 @@ export async function generatePaidWebsiteArtifact(input:WebsiteEngineInput,id:st
  const media:WebsiteHeroMediaInput[]=[];let imageReceipt:unknown=null;let pageMediaEvidence:Awaited<ReturnType<typeof generatePremiumWebsiteMedia>>["receipts"]=[];
  if(wantsPageImages(input)){
   if(design.pages.slice(1).some(p=>p.sections.length<2))throw Error("website_premium_page_content_incomplete");
-  const batch=await generatePremiumWebsiteMedia(design,process.env.OPENAI_API_KEY!,input.brief,fetch,journal);
+  const batch=await generatePremiumWebsiteMedia(design,env.OPENAI_API_KEY!,input.brief,fetch,journal);
   if(batch.media.length!==budget.pageImageCount||batch.estimatedMicroUSD+results.reduce((n,r)=>n+r.receipt.estimatedMicroUSD,0)>budget.maximumMicroUSD)throw Error("website_ai_page_batch_budget_mismatch");
   media.push(...batch.media);pageMediaEvidence=batch.receipts;imageReceipt=batch.receipts.find(r=>r.pageSlug==="home")?.receipt??null;
  }else if(wantsHero(input)){
   const prompt=("Original professional website hero photograph for "+input.brand+". "+(copy.artDirection?.heroImageBrief??input.style)+". No logos, readable text, celebrities or claims.").slice(0,1200);
-  const image=await generateSingleOpenAIWebsiteImage({prompt,aspect:"16:9"},process.env.OPENAI_API_KEY!);
+  const image=await generateSingleOpenAIWebsiteImage({prompt,aspect:"16:9"},env.OPENAI_API_KEY!);
   if(image.state!=="artifact_validated")throw Error("website_ai_image_unconfirmed");
   const webp=await sharp(image.bytes).resize(1024,576,{fit:"fill"}).webp({quality:70}).toBuffer();
   if(webp.toString("base64").length>180000)throw Error("website_ai_image_size");

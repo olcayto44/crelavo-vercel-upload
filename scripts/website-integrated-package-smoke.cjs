@@ -51,6 +51,10 @@ const input={brand:"Fixture Studio",brief:"A professional design business that c
   const complete=await generatePaidWebsiteArtifact(premium,id,"business_website",journal);
   assert.equal(recorded.size,5);assert([...recorded.values()].every(v=>v.state==="validated"&&v.receipt&&v.media));
   assert.equal(prompts.length,5);assert.equal(new Set(prompts).size,5);
+  const {buildSettledWebsitePreview,buildSettledWebsiteCandidate}=load("src/lib/website-settled-delivery.ts");
+  const premiumRows=[{productionId:id,designHash:complete.plan.editableDesignHash,design:complete.plan.editableDesign,heroMedia:complete.plan.websiteHeroMedia}];
+  assert.equal(buildSettledWebsitePreview(premiumRows,id).pages.filter(p=>p.html.includes("data:image/webp;base64,")).length,5);
+  assert.equal(buildSettledWebsiteCandidate(premiumRows,id).entries.filter(e=>e.name.startsWith("site/")&&e.name.endsWith(".html")&&e.content.includes("data:image/webp;base64,")).length,5);
   assert.equal(complete.plan.websiteHeroMedia.length,5);assert.equal(complete.plan.websitePageImageReceipts.length,5);
   assert.deepEqual(complete.plan.websitePageMediaCoverage,{required:5,delivered:5,invoicePending:true});
   assert.equal(complete.files.filter(f=>f.path.endsWith(".html")&&f.content.includes("data:image/webp;base64,")).length,5);
