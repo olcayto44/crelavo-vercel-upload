@@ -23,6 +23,8 @@ export function RouteAwareFooter({ children }: { children: React.ReactNode }) {
     pathname?.startsWith("/dashboard/studio-v2") ||
     pathname === "/dashboard/studio" || pathname?.startsWith("/dashboard/studio/") ||
     pathname?.startsWith("/dashboard/website-builder") ||
+    pathname?.startsWith("/dashboard/website-draft") ||
+    pathname?.startsWith("/website-cms-test") ||
     pathname?.startsWith("/dashboard/studio-video-editor") ||
     pathname?.startsWith("/dashboard/studio-elements") ||
     pathname?.startsWith("/dashboard/studio-image-editor") ||
