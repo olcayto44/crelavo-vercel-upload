@@ -1,5 +1,6 @@
 import {createClient} from "@supabase/supabase-js";
 import {z} from "zod";
+import {preparePageImageRevision,generatePageImageRevision,applyPageImageRevision,pageImageRevisionMaximum} from "@/lib/website-page-image-revision";
 import {changeSavedWebsiteMedia} from "@/lib/website-saved-media";
 import {WebsiteHeroMediaList} from "@/lib/website-hero-media";
 
@@ -30,6 +31,7 @@ async function owned(request:Request){
 const revisionEnabled=()=>process.env.STUDIO_AGENT_WEBSITE_REVISION_ENABLED==="true"&&process.env.STUDIO_AGENT_REAL_AI_APPROVED==="true"&&process.env.STUDIO_AGENT_REAL_AI_ENABLED==="true"&&process.env.STUDIO_AGENT_PROVIDER_VERIFIED==="true"&&process.env.STUDIO_AGENT_ACCOUNTING_ENABLED==="true"&&process.env.STUDIO_AGENT_TEST_OFFLINE!=="true"&&Boolean(websitePilotProviderKey());
 export async function GET(request:Request){try{const a=await owned(request);return out({ok:true,version:a.version,design:WebsiteDesignSpec.parse(a.output.plan.editableDesign),revisionAvailable:revisionEnabled()&&!a.output.websiteAIRevision,revisionProposal:a.output.websiteAIRevision?.state==="proposed"?a.output.websiteAIRevision.proposal:null});}catch{return out({ok:false,code:"review_unavailable"},403);}}
 export async function POST(request:Request){try{const a=await owned(request);const operation=new URL(request.url).searchParams.get("operation");
+ if(operation==="image-revision")return await imageRevision(a,request);
  if(operation==="media"){
  const raw=await readBoundedWebsiteJson(request,190000) as any;
  if(raw?.action==="list")return out({ok:true,version:a.version,media:WebsiteHeroMediaList.parse(a.output.plan.websiteHeroMedia??[])});
@@ -83,4 +85,42 @@ async function revision(a:Awaited<ReturnType<typeof owned>>,request:Request,oper
  if(!await persist(next,at,new Date().toISOString()))return out({ok:false,code:"revision_outcome_unconfirmed"},409);
  return out({ok:true,proposal:result.proposal,additionalCredits:0});
  }catch{return out({ok:false,code:"revision_outcome_unconfirmed"},409);}
+}
+
+// Isolated, one sponsored acceptance attempt. No new customer debit, no public
+// activation, no general provider fallback, no retry on an uncertain response.
+async function imageRevision(a:Awaited<ReturnType<typeof owned>>,request:Request){
+ const page=z.string().regex(/^[a-z][a-z0-9-]{0,48}$/),instruction=z.string().trim().min(3).max(240),version=z.number().int().positive(),quoteHash=z.string().regex(/^[a-f0-9]{64}$/);
+ const p=z.discriminatedUnion("action",[
+ z.strictObject({action:z.literal("status")}),
+ z.strictObject({action:z.literal("quote"),pageSlug:page,version,instruction}),
+ z.strictObject({action:z.literal("submit"),pageSlug:page,version,instruction,quoteHash,confirmProviderCost:z.literal(true)}),
+ z.strictObject({action:z.literal("apply"),pageSlug:page,version,alt:z.string().trim().min(1).max(160)})
+ ]).parse(await readBoundedWebsiteJson(request,3000));
+ const enabled=revisionEnabled()&&process.env.STUDIO_WEBSITE_IMAGE_REVISION_PILOT_ENABLED==="true",record=a.output.websitePageImageRevision;
+ const status=()=>out({ok:true,enabled,state:record?.state??"not_started",pageSlug:record?.slug??null,version:record?.version??null,media:record?.state==="proposed"?record.media:null,maximumMicroUSD:pageImageRevisionMaximum,additionalTestCredits:0});
+ if(p.action==="status")return status();
+ if(p.version!==a.version)return out({ok:false,code:"version_conflict"},409);
+ const persist=async(next:Record<string,unknown>,previousAt:string,now:string)=>{
+ if(Buffer.byteLength(JSON.stringify(next))>7000000)return false;
+ const r=await a.db.from("production_requests").update({output_json:next,updated_at:now}).eq("id",a.row.id).eq("user_id",a.actor).eq("status","ready").eq("updated_at",previousAt).select("id").maybeSingle();
+ return !r.error&&Boolean(r.data);
+ };
+ if(p.action==="apply"){
+ const now=new Date().toISOString(),next=await applyPageImageRevision(a.output,p.pageSlug,p.version,p.alt,now);
+ return await persist(next,a.row.updated_at,now)?out({ok:true,version:next.websiteDesignVersion}):out({ok:false,code:"version_conflict"},409);
+ }
+ if(!enabled||record)return out({ok:false,code:"image_revision_unavailable"},409);
+ if(!rejectSuspiciousText([p.instruction]).ok)return out({ok:false,code:"invalid_instruction"},400);
+ const prepared=preparePageImageRevision(a.output,p.pageSlug,p.instruction);
+ if(p.action==="quote")return out({ok:true,quoteHash:prepared.quoteHash,maximumMicroUSD:prepared.maximumMicroUSD,additionalTestCredits:0});
+ if(p.quoteHash!==prepared.quoteHash)return out({ok:false,code:"quote_changed"},409);
+ const claim={state:"claimed",slug:prepared.slug,version:prepared.version,baseHash:prepared.baseHash,quoteHash:prepared.quoteHash,maximumMicroUSD:prepared.maximumMicroUSD},at=new Date().toISOString(),claimed={...a.output,websitePageImageRevision:claim};
+ if(!await persist(claimed,a.row.updated_at,at))return out({ok:false,code:"image_revision_claim_unconfirmed"},409);
+ try{
+ const result=await generatePageImageRevision(a.output,prepared,websitePilotProviderKey());
+ const next={...claimed,websitePageImageRevision:{...claim,...result}};
+ if(!await persist(next,at,new Date().toISOString()))return out({ok:false,code:"image_revision_outcome_unconfirmed"},409);
+ return out({ok:true,state:result.state});
+ }catch{return out({ok:false,code:"image_revision_outcome_unconfirmed"},409);}
 }
