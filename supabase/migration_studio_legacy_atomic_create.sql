@@ -223,3 +223,25 @@ begin
 end $$;
 revoke all on function public.studio_legacy_settle_video(uuid,uuid,timestamptz,text,text,text,jsonb) from public,anon,authenticated;
 grant execute on function public.studio_legacy_settle_video(uuid,uuid,timestamptz,text,text,text,jsonb) to service_role;
+
+-- A terminal provider response alone is not evidence that every paid subjob
+-- failed or that no deliverable exists. Record only a matched server observation.
+create or replace function public.studio_legacy_record_terminal_failure(p_user uuid,p_job uuid,p_stamp timestamptz,p_provider text,p_task text,p_status text)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare j production_requests%rowtype; o jsonb; res jsonb; matched boolean;
+begin
+ if p_user is null or p_job is null or p_stamp is null or p_provider is null or p_provider !~ '^[a-zA-Z0-9_-]{1,80}$' or p_task is null or length(p_task) not between 1 and 256 or p_task like 'pending-%' or p_status is null or p_status not in ('failed','cancelled') then raise exception 'invalid_terminal_evidence';end if;
+ select * into j from production_requests where id=p_job and user_id=p_user for update;
+ if not found then return jsonb_build_object('state','not_found');end if;
+ o:=coalesce(j.output_json,'{}'::jsonb);
+ if j.status in ('ready','completed','cancelled','deleted') then return jsonb_build_object('state','closed');end if;
+ if o#>>'{creditResolution,status}'='provider_outcome_unconfirmed' and o#>>'{creditResolution,provider}'=p_provider and o#>>'{creditResolution,taskId}'=p_task and o#>>'{creditResolution,providerStatus}'=p_status then return jsonb_build_object('state','already_in_review','production',to_jsonb(j));end if;
+ if j.updated_at is distinct from p_stamp or j.status not in ('queued','in_production','failed') or o ? 'creditResolution' then return jsonb_build_object('state','reconcile_required');end if;
+ select exists(select 1 from jsonb_array_elements(jsonb_build_array(o->'visualJob',o->'renderJob',o->'providerJob') || case when jsonb_typeof(o->'visualJobs')='array' then o->'visualJobs' else '[]'::jsonb end || case when jsonb_typeof(o->'shotJobs')='array' then o->'shotJobs' else '[]'::jsonb end) v where v->>'provider'=p_provider and coalesce(v->>'id',v->>'task_id')=p_task) into matched;
+ if not matched then return jsonb_build_object('state','unmatched_provider_task');end if;
+ res:=jsonb_build_object('status','provider_outcome_unconfirmed','reason','terminal_provider_observation','provider',p_provider,'taskId',p_task,'providerStatus',p_status,'reservedCredits',j.reserved_credits,'recordedAt',now(),'automaticRefundAllowed',false);
+ update production_requests set status='failed',automation_status='admin_recovery_required',generation_status='provider_outcome_reconciliation_required',output_json=o||jsonb_build_object('creditResolution',res),admin_notes='Terminal provider observation requires all-output reconciliation. Reservation unchanged.',error_message='Provider result requires review before settlement.',updated_at=now() where id=p_job returning * into j;
+ return jsonb_build_object('state','review_required','production',to_jsonb(j));
+end $$;
+revoke all on function public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text) from public,anon,authenticated;
+grant execute on function public.studio_legacy_record_terminal_failure(uuid,uuid,timestamptz,text,text,text) to service_role;

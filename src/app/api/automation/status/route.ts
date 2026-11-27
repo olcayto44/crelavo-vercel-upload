@@ -52,20 +52,6 @@ function safeUpdate<T extends Record<string, unknown>>(payload: T): T {
   return postgresSafe(productionRequestUpdatePayload(payload)) as T;
 }
 
-async function refundReservedCreditsOnce(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, output: Record<string, unknown>, note: string) {
-  const existing = output.creditResolution && typeof output.creditResolution === "object" ? output.creditResolution as Record<string, unknown> : null;
-  if (String(existing?.status ?? "").startsWith("refunded_reserved")) return existing;
-  const amount = Number(production.reserved_credits ?? 0) || 0;
-  if (!amount || !production.user_id) return existing;
-  const { data: balanceRow } = await supabase.from("credit_balances").select("balance,reserved").eq("user_id", production.user_id).maybeSingle();
-  if (!balanceRow) return existing;
-  const creditResolution = { status: "refunded_reserved", refundedCredits: amount, releasedReservedCredits: amount, resolvedAt: new Date().toISOString(), reason: "provider_start_failed_partial" };
-  await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
-  await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
-  return creditResolution;
-}
-
-
 async function settleVerifiedLegacyVideo(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, finalUrl: string, output: Record<string, any>) {
   if (process.env.CRELAVO_ATOMIC_LEGACY_VIDEO_SETTLEMENT_ENABLED !== "true") return Response.json({ error: "atomic_video_settlement_not_enabled", charged: 0 }, { status: 409 });
   const bucket = process.env.SUPABASE_PROVIDER_ASSETS_BUCKET || "provider-assets";
@@ -496,6 +482,9 @@ export async function POST(request: Request) {
     if (!production) return Response.json({ error: "Production not found." }, { status: 404 });
     const access = await requireAutomationStatusAccess(request, body, production);
     if (!access.ok) return access.response;
+    if (["ready", "completed", "cancelled", "deleted"].includes(String(production.status ?? ""))) return Response.json({ production, already_closed: true });
+    if (production.generation_status === "provider_outcome_reconciliation_required") return Response.json({ production, adminRecoveryRequired: true, automatic_retry: false, credits_released: 0 });
+
 
     const projectType = String(production.production_type ?? "");
     const projectPackage = String(production.package_id ?? "");
@@ -884,29 +873,12 @@ export async function POST(request: Request) {
     }
 
     if (terminalStatus.status === "failed" || terminalStatus.status === "cancelled") {
-      const failureMessage = terminalStatus.error ?? `Provider job ${terminalStatus.status}.`;
-      const creditResolution = await refundReservedCreditsOnce(supabase, production, output, `Reserved credits released after provider failure: ${production.title ?? production.id}`);
-      const failedOutput = outputWithWorkflow(production, outputWithRenderJob, { visualStatus, renderStatus, alternatives: polledAlternatives, alternativeStatuses, providerStatus: `${terminalStatus.provider}_failed`, providerLifecycle: { visual: visualLifecycle, render: renderLifecycle }, outputRegistry: renderLifecycle.outputRegistry.length ? renderLifecycle.outputRegistry : visualLifecycle.outputRegistry, creditResolution });
-      const { data } = await supabase
-        .from("production_requests")
-        .update(safeUpdate({
-           status: "failed",
-           provider: effectiveProvider,
-           provider_job_id: effectiveProviderJobId,
-           automation_status: "failed",
-           generation_status: `${terminalStatus.provider}_failed`,
-          error_message: failureMessage,
-          reserved_credits: 0,
-          output_json: failedOutput,
-          automation_steps: updatedSteps(production.automation_steps, terminalStatus),
-          admin_notes: `Provider failed: ${failureMessage}. Reserved credits were released once; no external provider refund was claimed.`,
-          updated_at: new Date().toISOString()
-        }))
-        .eq("id", productionId)
-        .select("*")
-        .single();
-
-      return Response.json({ production: data, visualStatus, renderStatus, creditResolution });
+      const taskId = String(terminalStatus.id ?? "").trim();
+      if (!taskId || taskId.startsWith("pending-")) return Response.json({ error: "provider_task_unverified", credits_released: 0, automatic_retry: false }, { status: 409 });
+      const { data: review, error: reviewError } = await supabase.rpc("studio_legacy_record_terminal_failure", { p_user: production.user_id, p_job: productionId, p_stamp: production.updated_at, p_provider: terminalStatus.provider, p_task: taskId, p_status: terminalStatus.status });
+      if (reviewError || !review) return Response.json({ error: "terminal_observation_unconfirmed", credits_released: 0, automatic_retry: false }, { status: 503 });
+      if (!["review_required", "already_in_review"].includes(review.state)) return Response.json({ error: "provider_reconciliation_required", state: review.state, credits_released: 0, automatic_retry: false }, { status: 409 });
+      return Response.json({ production: review.production, credits_released: 0, adminRecoveryRequired: true, automatic_retry: false });
     }
 
     if (terminalStatus.status === "unknown") {
