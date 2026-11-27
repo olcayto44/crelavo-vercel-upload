@@ -1,5 +1,5 @@
 begin;
-do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w credit_balances%rowtype;begin
+do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w credit_balances%rowtype; jid uuid; stamp timestamptz; obj text; url text; evidence jsonb; bucket text;begin
  insert into auth.users(id,email) values(u,'legacy-create-'||u||'@example.invalid');
  insert into profiles(id,email) values(u,'legacy-create-'||u||'@example.invalid') on conflict(id) do nothing;
  insert into credit_balances(user_id,balance,reserved,topup_credits) values(u,150,0,150) on conflict(user_id) do update set balance=150,reserved=0,topup_credits=150,rolled_over_credits=0,current_subscription_credits=0,bonus_credits=0;
@@ -57,4 +57,19 @@ do $test$ declare u uuid:=gen_random_uuid();payload jsonb;a jsonb;b jsonb;w cred
  b:=studio_legacy_refund_reviewed((a#>>'{production,id}')::uuid);if b->>'state' is distinct from 'reconcile_required' then raise exception 'ambiguous outcome refunded';end if;
  select * into w from credit_balances where user_id=u;if w.balance<>104 or w.reserved<>60 or w.topup_credits<>104 then raise exception 'failure changed wallet';end if;
  if has_function_privilege('anon','public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean)','EXECUTE') or has_function_privilege('authenticated','public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean)','EXECUTE') then raise exception 'failure review permission mismatch';end if;
-end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund' result;rollback;
+ payload:=jsonb_set(jsonb_set(jsonb_set(payload,'{request_metadata,requestFingerprint}','"fixture settlement"'),'{reserved_credits}','30'),'{estimated_credits}','30');
+ a:=studio_legacy_create(u,payload);if a->>'state' is distinct from 'created' then raise exception 'settlement fixture';end if;
+ jid:=(a#>>'{production,id}')::uuid;select updated_at into stamp from production_requests where id=jid;
+ bucket:='fixture-'||u::text;obj:=jid::text||'/final-render.mp4';url:='https://example.invalid/storage/v1/object/public/'||bucket||'/'||obj;
+ evidence:=jsonb_build_object('readyGate',jsonb_build_object('passed',true,'missing','[]'::jsonb),'qualityGate',jsonb_build_object('status','passed'),'finalAssetMirror',jsonb_build_object('status','mirrored_provider_url_primary','storedUrl',url),'finalVideoUrl',url,'providerStatus','shotstack_succeeded');
+ b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence);if b->>'state' is distinct from 'artifact_missing' then raise exception 'missing artifact accepted %',b;end if;
+ insert into storage.buckets(id,name,public) values(bucket,bucket,true);
+ insert into storage.objects(bucket_id,name,metadata) values(bucket,obj,jsonb_build_object('mimetype','video/mp4','size',12345));
+ b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,jsonb_set(evidence,'{readyGate,passed}','false'));if b->>'state' is distinct from 'quality_unverified' then raise exception 'bad quality accepted';end if;
+ b:=studio_legacy_settle_video(u,jid,stamp-interval '1 second',bucket,obj,url,evidence);if b->>'state' is distinct from 'reconcile_required' then raise exception 'stale snapshot accepted';end if;
+ b:=studio_legacy_settle_video(gen_random_uuid(),jid,stamp,bucket,obj,url,evidence);if b->>'state' is distinct from 'not_found' then raise exception 'cross owner accepted';end if;
+ b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence);if b->>'state' is distinct from 'settled' or (b->>'charged')::int<>30 then raise exception 'settle failed %',b;end if;
+ b:=studio_legacy_settle_video(u,jid,stamp,bucket,obj,url,evidence);if b->>'state' is distinct from 'already_settled' or (b->>'charged')::int<>0 then raise exception 'double charge';end if;
+ select * into w from credit_balances where user_id=u;if w.balance<>74 or w.reserved<>60 or w.topup_credits<>74 then raise exception 'wallet mismatch';end if;
+ if (select count(*) from credit_events where user_id=u and note='legacy-video-spend:'||jid::text)<>1 then raise exception 'duplicate spend';end if;
+end $test$;select 'PASS: atomic legacy reserve+create, duplicate reuse, hold protected, conflicting idempotency rejected, reviewed refund once, balance unchanged, service-only permissions, expiry once, started and premature expiry blocked, cancellation once, odd fee rounding, other holds and ownership protected, ambiguous failure holds preserved, no retry or automatic refund, atomic video settlement fixture passed' result;rollback;

@@ -5,9 +5,7 @@ import { join } from "node:path";
 import { assertFfmpegAvailable, resolveFfmpegPath } from "@/lib/ffmpeg-runtime";
 import { adminRequiredResponse, isAdminRequest } from "@/lib/admin-guard";
 import { apiCostGuardConfig, enforceRouteBudget } from "@/lib/api-cost-guard";
-import { computeProviderSuccessSpend } from "@/lib/credit-resolution";
 import { creativeActivityItem, mergeCreativeActivityLog } from "@/lib/creative-director";
-import { spendCreditBuckets } from "@/lib/credit-rollover";
 import { buildCharacterDialogueAnimationPlan } from "@/lib/pipelines/character-dialogue-pipeline";
 import { pollDedicatedFinalAssembly, pollImageToVideoJobs, runCharacterSheetGeneration, runDedicatedFinalAssembly, runImageToVideoGeneration, runSceneImageGeneration, runVoiceSegmentGeneration } from "@/lib/pipelines/character-dialogue-runtime";
 import { customerEmailForProduction, sendProductionCompletionEmail } from "@/lib/production-email";
@@ -65,6 +63,24 @@ async function refundReservedCreditsOnce(supabase: ReturnType<typeof supabaseAdm
   await supabase.from("credit_balances").upsert({ user_id: production.user_id, balance: Number(balanceRow.balance ?? 0) + amount, reserved: Math.max(0, Number(balanceRow.reserved ?? 0) - amount), updated_at: new Date().toISOString() }, { onConflict: "user_id" });
   await supabase.from("credit_events").insert({ user_id: production.user_id, type: "refund", amount, note });
   return creditResolution;
+}
+
+
+async function settleVerifiedLegacyVideo(supabase: ReturnType<typeof supabaseAdmin>, production: Record<string, any>, finalUrl: string, output: Record<string, any>) {
+  if (process.env.CRELAVO_ATOMIC_LEGACY_VIDEO_SETTLEMENT_ENABLED !== "true") return Response.json({ error: "atomic_video_settlement_not_enabled", charged: 0 }, { status: 409 });
+  const bucket = process.env.SUPABASE_PROVIDER_ASSETS_BUCKET || "provider-assets";
+  const prefix = "/storage/v1/object/public/" + bucket + "/";
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "";
+  let object = "";
+  try {
+    const url = new URL(finalUrl);
+    if (!base || url.origin !== new URL(base).origin || url.search || url.hash || !url.pathname.startsWith(prefix)) throw Error("storage_origin");
+    object = url.pathname.slice(prefix.length);
+  } catch { return Response.json({ error: "delivery_storage_unverified", charged: 0 }, { status: 409 }); }
+  const { data, error } = await supabase.rpc("studio_legacy_settle_video", { p_user: production.user_id, p_job: production.id, p_stamp: production.updated_at, p_bucket: bucket, p_object: object, p_url: finalUrl, p_output: postgresSafe(output) });
+  if (error || !data) return Response.json({ error: "video_settlement_unconfirmed", automatic_retry: false }, { status: 503 });
+  if (!["settled", "already_settled"].includes(data.state)) return Response.json({ error: "wallet_reconciliation_required", state: data.state, charged: 0 }, { status: 409 });
+  return Response.json({ production: data.production, charged: data.charged, idempotent: data.state === "already_settled" });
 }
 
 const PROVIDER_TIMEOUT_MS = 30 * 60 * 1000;
@@ -724,38 +740,10 @@ export async function POST(request: Request) {
           readySceneClipUrls: i2vPoll.readySceneClipUrls
         };
         const readyGate = productionReadyGate({ ...production, preview_url: finalUrl, delivery_link: finalUrl, delivery_zip_url: finalUrl, output_json: dedicatedReadyOutputCandidate }, dedicatedReadyOutputCandidate);
-        const existingCreditResolution = output.creditResolution && typeof output.creditResolution === "object" ? output.creditResolution as Record<string, unknown> : null;
-        let creditResolution = existingCreditResolution;
-        let finalizedReservedCredits = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
-        if (existingCreditResolution?.status !== "spent_reserved" && finalizedReservedCredits > 0) {
-          const { data: balanceRow, error: balanceReadError } = await supabase
-            .from("credit_balances")
-            .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits")
-            .eq("user_id", production.user_id)
-            .maybeSingle();
-          if (balanceReadError) throw balanceReadError;
-          const creditDecision = computeProviderSuccessSpend({
-            balance: Number(balanceRow?.balance ?? 0) || 0,
-            reserved: Number(balanceRow?.reserved ?? 0) || 0,
-            reservedCredits: finalizedReservedCredits,
-            productionTitle: production.title ?? production.id
-          });
-          const bucketSpend = spendCreditBuckets({ row: balanceRow, amount: creditDecision.spendAmount });
-          const { error: balanceUpdateError } = await supabase
-            .from("credit_balances")
-            .upsert({ user_id: production.user_id, ...bucketSpend, reserved: creditDecision.nextReserved }, { onConflict: "user_id" });
-          if (balanceUpdateError) throw balanceUpdateError;
-          if (creditDecision.event) {
-            const { error: creditEventError } = await supabase
-              .from("credit_events")
-              .insert({ user_id: production.user_id, ...creditDecision.event });
-            if (creditEventError) throw creditEventError;
-          }
-          creditResolution = creditDecision.creditResolution;
-          finalizedReservedCredits = creditDecision.finalizedReservedCredits;
-        } else if (existingCreditResolution?.status === "spent_reserved") {
-          finalizedReservedCredits = Number(output.finalizedReservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
-        }
+        if (!readyGate.passed || finalAssetMirror.status !== "mirrored_provider_url_primary" || typeof finalAssetMirror.storedUrl !== "string") return Response.json({ error: "delivery_quality_unverified", charged: 0 }, { status: 409 });
+        finalUrl = finalAssetMirror.storedUrl;
+        const creditResolution = null;
+        const finalizedReservedCredits = 0;
 
         const finalProductionState = {
           ...production,
@@ -775,51 +763,7 @@ export async function POST(request: Request) {
           creditResolution,
           finalizedReservedCredits
         });
-        const { data } = await supabase
-          .from("production_requests")
-          .update(safeUpdate({
-           status: "ready",
-           provider: effectiveProvider,
-           provider_job_id: effectiveProviderJobId,
-           automation_status: "completed",
-           generation_status: "final_video_ready",
-            preview_url: finalUrl,
-            delivery_link: finalUrl,
-            delivery_zip_url: finalUrl,
-            reserved_credits: 0,
-            output_json: finalOutput,
-            completed_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            admin_notes: "Dedicated character-dialogue animation final render is ready. Customer can preview and download."
-          }))
-          .eq("id", productionId)
-          .select("*")
-          .single();
-
-        let completionEmailResult: unknown = { skipped: true, reason: "Production update did not return a user id." };
-        try {
-          if (data?.user_id) {
-            const customerEmail = await customerEmailForProduction(String(data.user_id));
-            completionEmailResult = await sendProductionCompletionEmail({
-              to: customerEmail,
-              title: String(data.title ?? data.id ?? "Production"),
-              productionId: String(data.id),
-              deliveryUrl: data.delivery_link ?? finalUrl,
-              previewUrl: data.preview_url ?? finalUrl,
-              sourceFilesUrl: data.source_files_url ?? null,
-              readmeUrl: data.readme_url ?? null
-            });
-          }
-        } catch (emailError) {
-          completionEmailResult = { skipped: true, reason: errorMessage(emailError, "Could not send production completion email") };
-        }
-        if (data?.id) {
-          await supabase
-            .from("production_requests")
-            .update(safeUpdate({ output_json: { ...(data.output_json ?? {}), completionEmailResult } }))
-            .eq("id", data.id);
-        }
-        return Response.json({ production: data ? { ...data, output_json: { ...(data.output_json ?? {}), completionEmailResult } } : data, imageToVideoPoll: i2vPoll, finalAssemblyPoll, finalVideoUrl: finalUrl, completionEmailResult });
+        return await settleVerifiedLegacyVideo(supabase, production, finalUrl, { ...finalOutput, finalVideoUrl: finalUrl, providerStatus: "shotstack_succeeded" });
       }
 
       if (finalAssemblyPoll.finalAssemblyPollStatus === "failed") {
@@ -1231,47 +1175,9 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
           .single();
         return Response.json({ production: data, visualStatus, renderStatus, finalVideoUrl: providerFinalUrl, ready_gate: readyGate, quality_blocked: true });
       }
-      const existingCreditResolution = output.creditResolution && typeof output.creditResolution === "object" ? output.creditResolution as Record<string, unknown> : null;
-      let creditResolution = existingCreditResolution;
-      let finalizedReservedCredits = Number(production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
-
-      if (existingCreditResolution?.status !== "spent_reserved" && finalizedReservedCredits > 0) {
-        const { data: balanceRow, error: balanceReadError } = await supabase
-          .from("credit_balances")
-          .select("balance, reserved, current_subscription_credits, rolled_over_credits, topup_credits, bonus_credits")
-          .eq("user_id", production.user_id)
-          .maybeSingle();
-
-        if (balanceReadError) throw balanceReadError;
-
-        const balance = Number(balanceRow?.balance ?? 0) || 0;
-        const reserved = Number(balanceRow?.reserved ?? 0) || 0;
-        const creditDecision = computeProviderSuccessSpend({ balance, reserved, reservedCredits: finalizedReservedCredits, productionTitle: production.title ?? production.id });
-        const bucketSpend = spendCreditBuckets({ row: balanceRow, amount: creditDecision.spendAmount });
-
-        const { error: balanceUpdateError } = await supabase
-          .from("credit_balances")
-          .upsert({
-            user_id: production.user_id,
-            ...bucketSpend,
-            reserved: creditDecision.nextReserved
-          }, { onConflict: "user_id" });
-
-        if (balanceUpdateError) throw balanceUpdateError;
-
-        if (creditDecision.event) {
-          const { error: creditEventError } = await supabase
-            .from("credit_events")
-            .insert({ user_id: production.user_id, ...creditDecision.event });
-
-          if (creditEventError) throw creditEventError;
-        }
-
-        creditResolution = creditDecision.creditResolution;
-        finalizedReservedCredits = creditDecision.finalizedReservedCredits;
-      } else if (existingCreditResolution?.status === "spent_reserved") {
-        finalizedReservedCredits = Number(output.finalizedReservedCredits ?? production.reserved_credits ?? production.estimated_credits ?? 0) || 0;
-      }
+      if (!readyGate.passed) return Response.json({ error: "delivery_quality_unverified", charged: 0 }, { status: 409 });
+      const creditResolution = null;
+      const finalizedReservedCredits = 0;
 
       const effectiveReadyGate = readyGate.passed ? readyGate : (canSoftPassProviderVideo || forcePassProviderVideo) ? { ...readyGate, passed: true, warnings: [...readyGate.warnings, `${isMiniMaxSuccessfulVideo ? "minimax_completion_bridge" : isHeyGenSuccessfulVideo ? "heygen_video_agent_completion_bridge" : "soft_pass_missing"}:${readyGate.missing.join(",")}`], missing: [] } : readyGate;
       let finalUrl = providerFinalUrl;
@@ -1361,55 +1267,7 @@ const qualityOutputCandidate = { ...outputWithRenderJob, visualStatus, renderSta
        finalOutput.outputRegistry = buildOutputRegistry({ ...finalProductionState, output_json: finalOutput });
        finalOutput.workflowState = buildProductionWorkflowState({ ...finalProductionState, output_json: finalOutput });
 
-      const { data } = await supabase
-        .from("production_requests")
-        .update(safeUpdate({
-          status: "ready",
-          provider: effectiveProvider,
-          provider_job_id: effectiveProviderJobId,
-          automation_status: "completed",
-          generation_status: "final_video_ready",
-          preview_url: finalUrl,
-          delivery_link: finalUrl,
-          delivery_zip_url: finalUrl,
-          reserved_credits: 0,
-           output_json: finalOutput,
-
-          automation_steps: updatedSteps(production.automation_steps, successfulStatus),
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          admin_notes: "Final ad video is ready. Customer can preview, download or export."
-        }))
-        .eq("id", productionId)
-        .select("*")
-        .single();
-
-      let completionEmailResult: unknown = { skipped: true, reason: "Production update did not return a user id." };
-      try {
-        if (data?.user_id) {
-          const customerEmail = await customerEmailForProduction(String(data.user_id));
-          completionEmailResult = await sendProductionCompletionEmail({
-            to: customerEmail,
-            title: String(data.title ?? data.id ?? "Production"),
-            productionId: String(data.id),
-            deliveryUrl: data.delivery_link ?? finalUrl,
-            previewUrl: data.preview_url ?? finalUrl,
-            sourceFilesUrl: data.source_files_url ?? null,
-            readmeUrl: data.readme_url ?? null
-          });
-        }
-      } catch (emailError) {
-        completionEmailResult = { skipped: true, reason: errorMessage(emailError, "Could not send production completion email") };
-      }
-
-      if (data?.id) {
-        await supabase
-          .from("production_requests")
-          .update(safeUpdate({ output_json: { ...(data.output_json ?? {}), completionEmailResult } }))
-          .eq("id", data.id);
-      }
-
-      return Response.json({ production: data ? { ...data, output_json: { ...(data.output_json ?? {}), completionEmailResult } } : data, visualStatus, renderStatus, finalVideoUrl: finalUrl, completionEmailResult });
+      return await settleVerifiedLegacyVideo(supabase, production, finalUrl, finalOutput);
     }
 
     const { data } = await supabase

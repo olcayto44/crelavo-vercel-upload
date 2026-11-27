@@ -184,3 +184,42 @@ begin
 end $$;
 revoke all on function public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean) from public,anon,authenticated;
 grant execute on function public.studio_legacy_hold_failed_start(uuid,uuid,text,boolean) to service_role;
+
+-- Candidate: settle only server-validated, stored video delivery.
+create or replace function public.studio_legacy_settle_video(p_user uuid,p_job uuid,p_stamp timestamptz,p_bucket text,p_object text,p_url text,p_output jsonb)
+returns jsonb language plpgsql security invoker set search_path=public,pg_temp as $$
+declare w credit_balances%rowtype; j production_requests%rowtype; a int; n int; rem int; r int; c int; b int; t int; take int;
+begin
+ if p_user is null or p_job is null or p_stamp is null or p_bucket is null or p_object is null or p_url is null or p_output is null then raise exception 'invalid_settlement'; end if;
+ if p_bucket !~ '^[a-zA-Z0-9_-]{1,100}$' or p_object !~ ('^'||p_job::text||'/(final-render|provider-visual|character-dialogue-final-render)[.]mp4$') then raise exception 'invalid_object'; end if;
+ if p_url !~ '^https://' or right(p_url,length('/storage/v1/object/public/'||p_bucket||'/'||p_object)) <> '/storage/v1/object/public/'||p_bucket||'/'||p_object then raise exception 'invalid_delivery_url'; end if;
+ if not exists(select 1 from production_requests where id=p_job and user_id=p_user) then return jsonb_build_object('state','not_found'); end if;
+ select * into w from credit_balances where user_id=p_user for update;
+ if not found then return jsonb_build_object('state','reconcile_required'); end if;
+ select * into j from production_requests where id=p_job and user_id=p_user for update;
+ if not found then return jsonb_build_object('state','not_found'); end if;
+ if j.status='ready' and j.reserved_credits=0 and j.output_json#>>'{creditResolution,atomicLegacyVideoSettlement}'='true' then
+  if j.delivery_link is distinct from p_url then return jsonb_build_object('state','reconcile_required'); end if;
+  return jsonb_build_object('state','already_settled','production',to_jsonb(j),'charged',0);
+ end if;
+ a:=j.reserved_credits;
+ if j.updated_at is distinct from p_stamp or j.status not in ('queued','in_production') or coalesce(j.output_json,'{}'::jsonb) ? 'creditResolution' or a is null or a<=0 then return jsonb_build_object('state','reconcile_required'); end if;
+ if (j.request_metadata->'atomicCreateReservedCredits') is distinct from to_jsonb(a) then return jsonb_build_object('state','reconcile_required'); end if;
+ if (p_output#>>'{readyGate,passed}') is distinct from 'true' or (p_output#>'{readyGate,missing}') is distinct from '[]'::jsonb or (p_output#>>'{qualityGate,status}') is distinct from 'passed' then return jsonb_build_object('state','quality_unverified'); end if;
+ if (p_output#>>'{finalAssetMirror,status}') is distinct from 'mirrored_provider_url_primary' or (p_output#>>'{finalAssetMirror,storedUrl}') is distinct from p_url or (p_output->>'finalVideoUrl') is distinct from p_url or coalesce(p_output->>'providerStatus','') !~ '_succeeded$' then return jsonb_build_object('state','artifact_unverified'); end if;
+ if not exists(select 1 from storage.objects where bucket_id=p_bucket and name=p_object and metadata->>'mimetype'='video/mp4' and (case when metadata->>'size' ~ '^[0-9]{1,12}$' then (metadata->>'size')::bigint>32 else false end)) then return jsonb_build_object('state','artifact_missing'); end if;
+ select count(*) into n from credit_events where user_id=p_user and type='reserve' and note='legacy-production:'||p_job::text and amount=a;
+ if n<>1 or exists(select 1 from credit_events where user_id=p_user and note='legacy-video-spend:'||p_job::text) or w.reserved<a or w.reserved>w.balance or least(w.balance,w.reserved,w.rolled_over_credits,w.current_subscription_credits,w.bonus_credits,w.topup_credits)<0 or w.balance<>w.rolled_over_credits+w.current_subscription_credits+w.bonus_credits+w.topup_credits then return jsonb_build_object('state','reconcile_required'); end if;
+ rem:=a;r:=w.rolled_over_credits;c:=w.current_subscription_credits;b:=w.bonus_credits;t:=w.topup_credits;
+ take:=least(r,rem);r:=r-take;rem:=rem-take;
+ take:=least(c,rem);c:=c-take;rem:=rem-take;
+ take:=least(b,rem);b:=b-take;rem:=rem-take;
+ take:=least(t,rem);t:=t-take;rem:=rem-take;
+ if rem<>0 then raise exception 'wallet_bucket_mismatch'; end if;
+ update credit_balances set balance=balance-a,reserved=reserved-a,rolled_over_credits=r,current_subscription_credits=c,bonus_credits=b,topup_credits=t,updated_at=now() where user_id=p_user;
+ insert into credit_events(user_id,type,amount,note) values(p_user,'spend',a,'legacy-video-spend:'||p_job::text);
+ update production_requests set status='ready',automation_status='completed',generation_status='final_video_ready',preview_url=p_url,delivery_link=p_url,delivery_zip_url=null,reserved_credits=0,output_json=p_output||jsonb_build_object('creditResolution',jsonb_build_object('status','spent_reserved','spentCredits',a,'atomicLegacyVideoSettlement',true,'finalizedAt',now()),'finalizedReservedCredits',a),completed_at=now(),updated_at=now() where id=p_job returning * into j;
+ return jsonb_build_object('state','settled','production',to_jsonb(j),'charged',a);
+end $$;
+revoke all on function public.studio_legacy_settle_video(uuid,uuid,timestamptz,text,text,text,jsonb) from public,anon,authenticated;
+grant execute on function public.studio_legacy_settle_video(uuid,uuid,timestamptz,text,text,text,jsonb) to service_role;
