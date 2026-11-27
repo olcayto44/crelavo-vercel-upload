@@ -33,7 +33,7 @@ function requirement(key: string, label: string, requiredEnv: string[], affects:
 
 export function providerRequirementsForProduction(productionType: string, packageId = "") {
   const type = productionType || "general";
-  const hasPlanningBrain = hasAnyConfiguredEnv(["OPENAI_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_API_KEY"]);
+  const hasPlanningBrain = hasProviderEnv("openai") || hasProviderEnv("gemini");
   const requirements: ProviderRequirement[] = [
     {
       key: "planning_brain",

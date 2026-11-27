@@ -119,7 +119,7 @@ export async function GET() {
       verification: "configuration_presence_only",
       providers: [
         {id:"openai",configured:hasProviderEnv("openai")},
-        {id:"gemini",configured:hasAnyEnv(["GOOGLE_GENERATIVE_AI_API_KEY","GOOGLE_API_KEY"])},
+        {id:"gemini",configured:hasProviderEnv("gemini")},
         {id:"minimax",configured:hasProviderEnv("minimax"),videoGroupConfigured:hasProviderEnv("minimaxGroupId")},
         {id:"heygen",configured:hasProviderEnv("heygen")},
         {id:"runway",configured:hasProviderEnv("runway")},
