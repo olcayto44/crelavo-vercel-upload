@@ -21,7 +21,11 @@ const db={auth:{admin:{getUserById:async id=>({data:{user:{id,email:owner}},erro
  owner="other@example.test";await assert.rejects(()=>commitVerifiedWhopPurchase(db,input),/owner_review_required/);assert.equal(calls,4);owner=profile.email;
  await assert.rejects(()=>commitVerifiedWhopPurchase(db,{...input,credits:1}),/terms_review_required/);assert.equal(calls,4);
  process.env.STUDIO_WHOP_ATOMIC_PURCHASE_ENABLED="false";await assert.rejects(()=>commitVerifiedWhopPurchase(db,input),/disabled/);assert.equal(calls,4);
- for(const p of ["src/app/api/webhooks/whop/route.ts","src/app/api/whop/reconcile-payment/route.ts"]){const src=fs.readFileSync(p,"utf8");assert(src.includes("if (whopAtomicPurchaseEnabled()) return commitVerifiedWhopPurchase"));assert(src.indexOf("if (whopAtomicPurchaseEnabled()) return commitVerifiedWhopPurchase")<src.indexOf('.from("credit_events")'));}
+ for(const p of ["src/app/api/webhooks/whop/route.ts","src/app/api/whop/reconcile-payment/route.ts"]){
+ const src=fs.readFileSync(p,"utf8"),branch=/if\s*\(\s*whopAtomicPurchaseEnabled\(\)\s*\)\s*\{\s*return\s+commitVerifiedWhopPurchase\(/.exec(src);
+ assert(branch,"atomic purchase must return directly from the verified entry point");
+ assert(branch.index<src.indexOf('.from("credit_events")'),"atomic purchase must precede legacy writes");
+}
  console.log("Whop atomic candidate: same entry boundary, canonical owner, exact terms, no fallback on uncertain RPC (offline)");
  }finally{for(const k of Object.keys(process.env))if(!(k in before))delete process.env[k];Object.assign(process.env,before);}
 })().catch(e=>{console.error(e);process.exitCode=1;});
