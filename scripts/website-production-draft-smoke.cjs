@@ -20,6 +20,10 @@ const {renderWebsiteDesignCandidate}=load("src/lib/website-design-candidate.ts")
  assert.equal(websitePilotProviderKey({...pilot,STUDIO_AGENT_TEST_PROVIDER_KEY:"",STUDIO_WEBSITE_REUSE_PREVIEW_OPENAI:"true",OPENAI_API_KEY:"general-key"}),"");
  assert.equal(websiteImagePilotConnection({...pilot,STUDIO_WEBSITE_REUSE_PREVIEW_MINIMAX:"true",MINIMAX_API_KEY:"general-key"}).apiKey,"");
  assert.equal(websiteImagePilotConnection({...pilot,STUDIO_IMAGE_TEST_PROVIDER_KEY:"fixture-image",STUDIO_IMAGE_TEST_USER_ID:actor}).apiKey,"fixture-image");
+ const assistantRoute=fs.readFileSync("src/app/api/studio/conversation/route.ts","utf8");
+ assert(assistantRoute.includes('isolated&&!websitePilotScope()'));
+ assert(assistantRoute.includes('isolated?createClient("https://bwzxdxqgrgbsvndinmrv.supabase.co"'));
+ assert(assistantRoute.includes('!websitePilotCanary(data.user.id)'));
  console.log("website commercial preview: dedicated credentials only, exact isolated origin and verified canary fences");
  console.log("website production draft: schema, owner-scoped storage, compare-and-swap, preview and paid export fence");
 })().catch(e=>{console.error(e);process.exitCode=1;});
