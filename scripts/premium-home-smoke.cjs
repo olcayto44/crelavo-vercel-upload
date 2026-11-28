@@ -52,3 +52,19 @@ assert(rehearsalWorker.includes('testsrc2=')&&rehearsalWorker.includes('finalize
 assert(receiptSql.includes("unique(provider,provider_receipt_id)")&&receiptSql.includes("grant select on public.model_provider_cost_receipts to service_role"));
 assert(rehearsalAdmin.includes('session?.email!==owner')&&read("src/components/models/ModelPlanner.tsx").includes("<ModelRehearsalPanel"));
 console.log("PASS model pipeline rehearsal guards, test-only reservation and delivery, owner admin and read-only actual cost receipts (static).");
+
+const {prepareCommercialDispatch,reconcileCostEvidence}=load("src/lib/model-commercial-preflight.ts");
+const commercialRequest={mode:"text",prompt:"Test",duration:4,ratio:"16:9",audio:false,assets:[]};
+const proof={provider:"higgsfield",modelId:"magi-2",commercialAgreementDigest:"a".repeat(64),accessTestDigest:"b".repeat(64),schemaTestDigest:"c".repeat(64),settlementTestDigest:"d".repeat(64),tariffRevision:1,creditQuote:10,maximumMicroUsd:320000};
+assert.equal(prepareCommercialDispatch("higgsfield",commercialRequest,"https://media.crelavo.com",proof).allowed,false);
+const receiptExpected={provider:"higgsfield",jobId:"33333333-3333-4333-8333-333333333333",taskId:"fixture-task",maximumMicroUsd:320000};
+const receiptFixture={provider:"higgsfield",jobId:receiptExpected.jobId,providerTaskId:"fixture-task",providerReceiptId:"fixture-receipt",sourceKind:"provider_invoice",receiptDigest:"a".repeat(64),currency:"USD",actualMicroUsd:100000};
+assert.equal(reconcileCostEvidence(receiptFixture,receiptExpected).reason,"receipt_provenance_unverified");
+assert.equal(reconcileCostEvidence({...receiptFixture,actualMicroUsd:999999},receiptExpected).reason,"cost_limit_exceeded");
+assert.equal(reconcileCostEvidence({...receiptFixture,providerTaskId:"wrong"},receiptExpected).reason,"receipt_identity_mismatch");
+const largeMediaRoute=read("src/app/api/models/large-media/route.ts"),catalogDraftSql=read("scripts/sql/model-catalog-drafts.sql"),catalogRoute=read("src/app/api/admin/model-catalog-drafts/route.ts");
+assert(largeMediaRoute.includes('createSignedUploadUrl')&&largeMediaRoute.includes('model_reserve_large_media')&&largeMediaRoute.includes('VERCEL_ENV==="preview"'));
+assert(read("src/components/models/OriginalModelMedia.tsx").includes("uploadToSignedUrl"));
+assert(catalogDraftSql.includes("check(not production_enabled)")&&catalogDraftSql.includes("revision_conflict"));
+assert(catalogRoute.includes("session?.email===owner")&&catalogRoute.includes('INVALID_ORIGIN'));
+console.log("PASS model commercial gate, receipt evidence rejection, private large-upload and catalog draft guards (offline).");
