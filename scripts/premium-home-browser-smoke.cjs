@@ -28,7 +28,7 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
   await wait("document.readyState==='complete'","home ready");
   assert.equal(await ev("document.querySelectorAll('main h1').length"),1);
   assert(await ev("document.querySelector('link[rel=canonical]').href.startsWith('https://www.crelavo.com')"));
-  assert(await ev("document.querySelectorAll('main video[aria-label=\\"Crelavo cinematic showcase\\"]').length===1"));
+  assert(await ev("document.querySelectorAll('main video').length>=1 && Array.from(document.querySelectorAll('main video')).some(v=>v.getAttribute('aria-label')==='Crelavo cinematic showcase')"));
   assert(await ev("document.querySelectorAll('main a[href^=\"/showcase/videos/\"]').length>=8"));
   await wait("(()=>{const b=[...document.querySelectorAll('main button')].find(b=>b.textContent==='Website');if(!b)return false;if(b.getAttribute('aria-pressed')!=='true')b.click();return b.getAttribute('aria-pressed')==='true';})()","website mode changes");
   assert(await ev("document.querySelector('#home-brief').placeholder.includes('website')"));

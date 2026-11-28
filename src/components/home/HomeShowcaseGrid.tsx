@@ -14,7 +14,7 @@ function FilmCard({film}:{film:ShowcaseFilm}){
  return <article className={styles.film}><div ref={root} className={styles.filmMedia} data-orientation={film.landscape?"landscape":"portrait"} data-playing={activated}>
  <div className={styles.filmFallback}><Film aria-hidden="true" size={26}/><strong>{film.title}</strong><span>{failed?"Preview unavailable · watch example":"Video example"}</span></div>
  {film.poster&&!posterFailed&&<img src={film.poster} alt={film.title+" preview"} loading="lazy" decoding="async" width={320} height={400} onError={()=>setPosterFailed(true)}/>}
- {near&&<video ref={video} src={film.video+"#t=0.1"} playsInline preload="metadata" controls={activated} aria-label={film.title} style={{opacity:ready?1:0}} onLoadedData={()=>{setReady(true);setFailed(false)}} onError={()=>{setFailed(true);setReady(false)}}/>}
+ {near&&<video ref={video} src={film.video+"#t=0.1"} playsInline preload={film.poster&&!posterFailed?"metadata":"auto"} controls={activated} aria-label={film.title} style={{opacity:ready||activated?1:0}} onLoadedData={()=>{setReady(true);setFailed(false)}} onError={()=>{setFailed(true);setReady(false)}}/>}
  {near&&!failed&&!activated&&<button className={styles.filmPlay} aria-label={"Play "+film.title} type="button" onClick={play}><Play aria-hidden="true"/></button>}
  {failed&&<span className={styles.filmUnavailable}>Video preview unavailable</span>}</div>
  <div className={styles.filmText}><small>{film.kicker}</small><h3>{film.title}</h3><a href={film.href} aria-label={"Watch "+film.title}>Open full example →</a></div></article>;
