@@ -44,3 +44,11 @@ assert(plannedRoute.includes('VERCEL_ENV==="preview"')&&plannedRoute.includes('d
 assert(plannedSql.includes("unique(user_id,request_key)")&&plannedSql.includes("pg_advisory_xact_lock")&&plannedSql.includes("check (reserved_credits=0)")&&plannedSql.includes("check (spent_credits=0)"));
 assert(!plannedRoute.includes("credit_balances")&&!plannedRoute.includes("buildMagiPayload"));
 console.log("PASS blocked model job plan validation, deterministic hash, owner gate, idempotency and no debit (offline).");
+
+const rehearsalSql=read("scripts/sql/model-pipeline-rehearsal.sql"),rehearsalRoute=read("src/app/api/models/rehearsal/route.ts"),rehearsalWorker=read("scripts/model-rehearsal-worker.cjs"),receiptSql=read("scripts/sql/model-provider-cost-receipts.sql"),rehearsalAdmin=read("src/components/models/ModelRehearsalAdmin.tsx");
+for(const needle of ["for update skip locked","reserved=reserved+10","reserved=reserved-10","reconcile_required","missing_delivery","actual_micro_usd is null"])assert(rehearsalSql.includes(needle),needle);
+assert(rehearsalRoute.includes('VERCEL_ENV==="preview"')&&rehearsalRoute.includes('.eq("user_id",a.owner)')&&rehearsalRoute.includes('createSignedUrl')&&rehearsalRoute.includes('synthetic:true'));
+assert(rehearsalWorker.includes('testsrc2=')&&rehearsalWorker.includes('finalize("reconcile_required")')&&!rehearsalWorker.includes("api.higgsfield.ai"));
+assert(receiptSql.includes("unique(provider,provider_receipt_id)")&&receiptSql.includes("grant select on public.model_provider_cost_receipts to service_role"));
+assert(rehearsalAdmin.includes('session?.email!==owner')&&read("src/components/models/ModelPlanner.tsx").includes("<ModelRehearsalPanel"));
+console.log("PASS model pipeline rehearsal guards, test-only reservation and delivery, owner admin and read-only actual cost receipts (static).");
