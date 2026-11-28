@@ -7,6 +7,7 @@ import {HomeBrief} from "@/components/home/HomeBrief";
 import {HeroReel} from "@/components/home/HeroReel";
 import {HomeShowcaseGrid} from "@/components/home/HomeShowcaseGrid";
 import {getConfiguredSiteContentConfig} from "@/lib/site-content-loader";
+import {featuredVideoMirror} from "@/lib/featured-video-mirror.generated";
 import {getConfiguredShowcaseVideos} from "@/lib/showcase-video-config";
 import {categoryPublicPaths} from "@/lib/category-public-routes";
 import {categoryHeroArt} from "@/lib/category-detail-content";
@@ -37,7 +38,7 @@ export default async function HomePage(){
  // Use the matching bundled 1920×1080 cinematic fashion reel and poster (desktop/mobile variants).
  // Explicit homepage creative refresh: replace the previous creator introduction.
  const localPoster=(url:string)=>/^\/showcase\/uploads\/[a-z0-9-]+\.mp4$/i.test(url)?url.replace("/uploads/","/posters/").replace(/\.mp4$/i,".webp"):undefined;
- const films=published.map(v=>({href:"/showcase/videos/"+v.id,kicker:v.kicker,title:v.title,poster:v.id==="crelavo-giant-fashion-city"?"/hero/hero-04-giant-fashion-city-poster.jpg":localPoster(v.videoUrl)||v.imageUrl,video:v.id==="crelavo-giant-fashion-city"?"/hero/hero-04-giant-fashion-city-1080x1920.mp4":v.videoUrl,landscape:v.orientation==="landscape"}));
+ const films=published.map(v=>{const mirror=featuredVideoMirror[v.id];const video=v.id==="crelavo-giant-fashion-city"?"/hero/hero-04-giant-fashion-city-1080x1920.mp4":mirror?.source===v.videoUrl?mirror.local:v.videoUrl;return {href:"/showcase/videos/"+v.id,kicker:v.kicker,title:v.title,poster:v.id==="crelavo-giant-fashion-city"?"/hero/hero-04-giant-fashion-city-poster.jpg":localPoster(video)||v.imageUrl,video,landscape:v.orientation==="landscape"};});
  const graph={"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":origin+"/#organization",name:"Crelavo",url:origin+"/",logo:{"@type":"ImageObject",url:origin+"/icon-512.png",width:512,height:512}},{"@type":"WebSite","@id":origin+"/#website",name:"Crelavo",url:origin+"/",publisher:{"@id":origin+"/#organization"}},{"@type":"WebPage","@id":origin+"/#home",url:origin+"/",name:title,description,isPartOf:{"@id":origin+"/#website"}}]};
  return <><Header navLinks={site.navLinks} premium/><main className={"cr-premium public-home-page "+styles.home}><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(graph).replace(/</g,"\\u003c")}}/><style>{".public-side-rail,.ad-rail,.ad-rail-right,.trial-fomo-rail,.trial-fomo-flash{display:none!important} @media(max-width:980px){header.site-main-nav{display:none!important}}"}</style>
  <section className={styles.hero}><div className={styles.media}><HeroReel/></div><div className={styles.veil}/><div className={styles.wrap+" "+styles.heroInner}><span className={styles.eyebrow}>Your AI creative workspace</span><h1>One idea. <span>Endless creations.</span><span style={{display:"block",fontSize:".43em",letterSpacing:"-.02em",marginTop:14,color:"var(--cr-text)"}}>AI video, image & website studio</span></h1><p className={styles.lead}>Explore 28 creative production categories, plan your next project and discover what's possible in Crelavo Studio.</p><HomeBrief/><p className={styles.disclaimer}>Explore the catalog without an account. Production availability and credit requirements vary by category.</p></div></section>
