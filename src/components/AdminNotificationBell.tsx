@@ -23,6 +23,7 @@ type RecentLead = {
 
 type NotificationState = {
   total: number;
+  available?:boolean;
   items: NotificationItem[];
   recentLeads?: RecentLead[];
 };
@@ -72,8 +73,8 @@ export function AdminNotificationBell() {
         metricsResponse.json().catch(() => ({}))
       ]);
       if (cancelled) return;
-      if (typeof notifications.total === "number") {
-        setState({ total: notifications.total, items: notifications.items ?? [], recentLeads: notifications.recentLeads ?? [] });
+      if (notificationsResponse.ok&&typeof notifications.total === "number") {
+        setState({ total: notifications.total, available:notifications.available===true, items: notifications.items ?? [], recentLeads: notifications.recentLeads ?? [] });
         setMode("live");
       } else {
         setMode("error");
@@ -117,12 +118,12 @@ export function AdminNotificationBell() {
       {metrics?.acquisitionBillingAvailable && metrics.planBreakdown ? <p style={{ marginTop: 10 }}>Plans: {Object.entries(metrics.planBreakdown).map(([plan, count]) => `${plan} (${count})`).join(" · ") || "None"}</p> : null}
       <div className="admin-notification-head">
         <span className="badge">Notifications</span>
-        <strong>{mode === "loading" ? "..." : hasAlerts ? `${state.total} new` : "Clear"}</strong>
+        <strong>{mode === "loading" ? "..." : mode==="error"?"Veri yok":!state.available?`${state.total} · Eksik veri`:hasAlerts ? `${state.total} işlem` : "Bekleyen işlem yok"}</strong>
       </div>
-      <p>{hasAlerts ? "User messages, productions, leads, payments, or commissions need attention." : "No critical user notifications are waiting."}</p>
+      <p>{mode==="error"||!state.available?"Bazı bildirim kaynakları doğrulanamadı. Sayılar eksik olabilir.":hasAlerts ? "Mesaj, üretim ve komisyon incelemeleri bekliyor." : "İzlenen kaynaklarda bekleyen işlem bulunmadı."}</p>
       {state.items.length > 0 ? (
         <div className="admin-notification-list">
-          {state.items.slice(0, 4).map((item) => (
+          {state.items.map((item) => (
             <Link href={item.href} key={item.label}>
               <span>{item.label}</span>
               <strong>{item.count}</strong>

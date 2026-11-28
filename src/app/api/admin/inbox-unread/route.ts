@@ -18,7 +18,7 @@ export async function GET(request:Request){
  if(read.error)throw read.error;
  readIds.push(...(read.data??[]).map(r=>String(r.key).slice(base.length)));
  }
- return reply({unread:ids.length-readIds.length,unreadIds:ids.filter(id=>!readIds.includes(id)),window:300});
+ const unreadIds=ids.filter(id=>!readIds.includes(id));return reply({unread:unreadIds.length,unreadIds,ids,window:300});
  }catch{return reply({error:"Inbox notification data unavailable"},503)}
 }
 export async function POST(request:Request){
