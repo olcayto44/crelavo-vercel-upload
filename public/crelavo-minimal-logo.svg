@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 202 56" role="img" aria-labelledby="title">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 214 56" role="img" aria-labelledby="title">
 <title id="title">Crelavo</title>
 <g transform="translate(2 2) scale(.65)">
 <path d="M60 20 A28 28 0 1 0 60 60" fill="none" stroke="#A78BFA" stroke-width="12" stroke-linecap="round"/>
@@ -11,6 +11,6 @@
 <path d="M128 9 V39"/>
 <path d="M138 20 Q144 15 151 18 Q156 20 156 28 V39 M156 29 Q137 23 137 33 C137 43 152 41 156 34"/>
 <path d="M163 18 L173 39 L183 18"/>
-<path d="M199 28 C199 13 184 13 184 28 C184 43 199 43 199 28Z" transform="translate(0 0)"/>
+<path d="M208 28 C208 13 189 13 189 28 C189 43 208 43 208 28Z"/>
 </g>
 </svg>
