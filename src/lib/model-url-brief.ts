@@ -1,5 +1,5 @@
 import type {ModelLocale} from "./ai-models";
-// This is a local brief only. Never retrieve or resolve these URLs from the server.
+// General brief URL normalization only; server retrieval additionally requires an explicit product allowlist and network validation.
 export function normalizeVideoBriefUrl(raw:string):string|null{
  const input=raw.trim();if(!input||input.length>400||/[\\\s\u0000-\u001f]/.test(input))return null;
  try{const u=new URL(input);if(u.protocol!=="https:"||u.username||u.password||u.port||!u.hostname.includes(".")||u.hostname.endsWith(".")||u.hostname.startsWith("[")||/^\d+(?:\.\d+){3}$/.test(u.hostname)||/\.(local|localhost|internal|test|invalid|example|onion)$/i.test(u.hostname))return null;
