@@ -1,5 +1,5 @@
 export type BrandConfig = { logoUrl: string; alt: string; fit: "cover" | "contain" };
-export const defaultBrandConfig: BrandConfig = { logoUrl: "/crelavo-brand-approved.png", alt: "Crelavo", fit: "cover" };
+export const defaultBrandConfig: BrandConfig = { logoUrl: "/crelavo-minimal-logo.svg", alt: "Crelavo", fit: "contain" };
 export const BRAND_CONFIG_KEY = "site_branding";
 export function validateBrandConfig(input: unknown): BrandConfig {
   if (!input || typeof input !== "object") throw new Error("Geçersiz logo ayarları.");
