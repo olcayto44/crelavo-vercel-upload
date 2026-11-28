@@ -31,3 +31,6 @@
 .footer .socialLinks a{min-height:32px;align-items:center}
 .footer .legalLinks a{min-height:30px;display:inline-flex;align-items:center}
 @media(max-width:600px){.footer .group a{padding:5px 0}.footer .utilityRow :global(.site-footer-payment){flex-wrap:wrap;max-width:100%}}
+
+/* Compact editorial footer; all crawlable links stay present. */
+.footer:global(#cl-site-footer){gap:18px;padding-block:28px 22px}.brandRow{align-items:flex-start;gap:6px}.description{text-align:left;max-width:640px}.columns{gap:22px 30px;padding:20px 0}.group h2{margin-bottom:12px;font-size:15px}.group ul{gap:7px}.footer .group a{font-size:14px;line-height:1.5}.bottom{padding-top:14px}.footer .brandLink{max-width:220px}@media(max-width:600px){.columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 18px}.footer .group a{font-size:13px}.footer:global(#cl-site-footer){gap:18px}.description{font-size:13px}}@media(max-width:360px){.columns{grid-template-columns:minmax(0,1fr)}}
