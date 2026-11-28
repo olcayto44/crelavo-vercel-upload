@@ -55,3 +55,6 @@
 .paymentMethods{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:0;list-style:none}.paymentMethods li{display:flex;align-items:center;justify-content:center;width:62px;height:38px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;box-sizing:border-box;margin:0;padding:5px 8px}.paymentMethods img{display:block;width:44px;height:26px;object-fit:contain}.paymentNote{margin:0;color:var(--cr-muted);font-size:11px;line-height:1.6;max-width:410px}
 .billingLinks{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}.footer .billingLinks a{display:inline-flex;align-items:center;min-height:30px;color:var(--cr-muted);font-size:13px;text-decoration:none}.footer .billingLinks a:hover{color:var(--cr-accent);text-decoration:underline;text-underline-offset:3px}
 @media(max-width:720px){.trustRow{grid-template-columns:minmax(0,1fr);gap:18px}.billingHelp{padding-top:16px;border-top:1px solid var(--cr-line)}.footer .billingLinks a{min-height:38px}.paymentMethods li{width:62px;height:38px}}
+
+/* Digital wallet labels use the same local, accessible payment tile system. */
+.paymentMethods li.walletMark{width:86px;padding-inline:6px;color:#202124;font-family:Arial,Helvetica,sans-serif;font-weight:650;white-space:nowrap;font-size:12px;letter-spacing:-.25px}.paymentMethods li.walletMark span{line-height:1.15;text-align:center}

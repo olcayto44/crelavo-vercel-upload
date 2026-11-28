@@ -42,10 +42,12 @@ export function SiteFooter() {
             <span className={styles.trustIcon}><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 1 1 8 0v3M12 14v3"/></svg></span>
             <div><h2 id="footer-payment-heading">Secure checkout</h2><p>Payments processed through Whop.</p></div>
           </div>
-          <ul className={styles.paymentMethods} aria-label="Card payment brands">
+          <ul className={styles.paymentMethods} aria-label="Card and digital wallet payment methods">
             <li><img src="/payment/visa.svg" alt="Visa" width="44" height="24" loading="lazy" decoding="async"/></li>
             <li><img src="/payment/mastercard.svg" alt="Mastercard" width="44" height="24" loading="lazy" decoding="async"/></li>
             <li><img src="/payment/american-express.svg" alt="American Express" width="44" height="24" loading="lazy" decoding="async"/></li>
+            <li className={styles.walletMark}><span>Apple Pay</span></li>
+            <li className={styles.walletMark}><span>Google Pay</span></li>
           </ul>
           <p className={styles.paymentNote}>Available payment methods are shown at checkout and may vary by location and plan.</p>
         </div>
