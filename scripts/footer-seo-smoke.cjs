@@ -5,7 +5,7 @@ const ts=require('typescript');
 const vm=require('node:vm');
 const root=path.resolve(__dirname,'..');
 const read=file=>fs.readFileSync(path.resolve(root,file),'utf8');
-function load(file){const module={exports:{}};const code=ts.transpileModule(read(file),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2020}}).outputText;vm.runInNewContext(code,{module,exports:module.exports});return module.exports;}
+const {load}=require("./studio-agent-test-loader.cjs");
 const {footerSeoGroups:groups}=load('src/lib/footer-seo-links.ts');
 const {productionSeoPages,productionPagePath}=load('src/lib/production-seo-pages.ts');
 const {defaultBrandConfig}=load('src/lib/brand-config.ts');
