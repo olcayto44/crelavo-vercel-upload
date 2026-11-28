@@ -113,3 +113,15 @@ assert.throws(()=>kieMagiRequest({...params,mode:"reference",assets:[{kind:"vide
 assert.deepEqual(estimateKieMagiDraft(4),{microUsd:352000,milliKieCredits:70400,approved:false});
 assert.equal(estimateKieMagiDraft(31),null);
 console.log("PASS Kie MAGI image/reference offline payloads, trusted assets and unapproved tariff estimate");
+
+const {readKieUsage}=load("src/lib/model-kie-task-contract.ts");
+const observed={code:200,data:{taskId:"fixture-usage",model:"magi-2/text-to-video",state:"success",creditsConsumed:70.4}};
+assert.deepEqual(readKieUsage(observed,"fixture-usage"),{model:"magi-2/text-to-video",state:"success",reportedKieCredits:70.4,settlement:"not_verified"});
+assert.equal(readKieUsage({...observed,data:{...observed.data,state:"generating"}},"fixture-usage").reportedKieCredits,null);
+assert.equal(readKieUsage({...observed,data:{...observed.data,creditsConsumed:null}},"fixture-usage").reportedKieCredits,null);
+assert.throws(()=>readKieUsage(observed,"wrong-task"));
+assert.throws(()=>readKieUsage({...observed,data:{...observed.data,creditsConsumed:-1}},"fixture-usage"));
+assert.throws(()=>readKieUsage({...observed,code:401},"fixture-usage"));
+const kieUsageRoute=read("src/app/api/admin/kie-task-usage/route.ts");
+assert(kieUsageRoute.includes('method:"GET"')&&kieUsageRoute.includes("session?.email!==owner")&&kieUsageRoute.includes("private, no-store")&&!kieUsageRoute.includes("createTask"));
+console.log("PASS Kie usage evidence, owner-only read-only lookup, no automatic billing");
