@@ -55,7 +55,32 @@ async function run(){
  const db=createClient(TEST_ORIGIN,process.env.MODEL_MEDIA_TEST_SERVICE_KEY,{auth:{persistSession:false,autoRefreshToken:false}});
  const owner=process.env.MODEL_MEDIA_PILOT_USER_ID;
  const config=await db.storage.getBucket(BUCKET);if(config.error||config.data?.public!==false)throw Error("storage_unavailable");
- const {data:row,error}=await db.from("model_media_assets").select("id,user_id,model_id,kind,mime,bytes,object_key,state,sha256").eq("user_id",owner).eq("model_id","magi-2").eq("state","quarantined").order("created_at",{ascending:true}).limit(1).maybeSingle();
+ let fixtureId=null;
+ if(process.env.MODEL_MEDIA_SEED_ONCE==="true"){
+  fixtureId="dc6e28a1-f9c7-43d5-920a-39ff68bd9b72";
+  const key=owner+"/"+fixtureId+"/original";
+  const previous=await db.from("model_media_assets").select("id,user_id,state,object_key,bytes").eq("id",fixtureId).eq("user_id",owner).maybeSingle();
+  if(previous.error)throw Error("fixture_lookup_failed");
+  if(previous.data?.state==="verified"){console.log("model-media-worker: fixture already verified");return}
+  if(previous.data)throw Error("fixture_reconciliation_required");
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"model-large-fixture-"));
+  let fixture;
+  try{const file=path.join(dir,"test.wav");
+   execFileSync("ffmpeg",["-v","error","-f","lavfi","-i","sine=frequency=440:sample_rate=48000:duration=15","-ac","2","-c:a","pcm_s24le",file],{timeout:20000});
+   fixture=fs.readFileSync(file);
+  }finally{fs.rmSync(dir,{recursive:true,force:true})}
+  if(fixture.length<=3000000||fixture.length>=15000000)throw Error("fixture_size");
+  const reserved=await db.rpc("model_reserve_large_media",{p_user:owner,p_id:fixtureId,p_kind:"audio",p_mime:"audio/wav",p_bytes:fixture.length});
+  if(reserved.error||reserved.data?.object_key!==key)throw Error("fixture_reservation_failed");
+  const grant=await db.storage.from(BUCKET).createSignedUploadUrl(key,{upsert:false});
+  if(grant.error||!grant.data?.token)throw Error("fixture_grant_failed");
+  const upload=await db.storage.from(BUCKET).uploadToSignedUrl(key,grant.data.token,fixture,{contentType:"audio/wav",upsert:false});
+  if(upload.error)throw Error("fixture_upload_failed");
+  console.log("model-media-worker: signed upload fixture bytes="+fixture.length);
+ }
+ let query=db.from("model_media_assets").select("id,user_id,model_id,kind,mime,bytes,object_key,state,sha256").eq("user_id",owner).eq("model_id","magi-2").eq("state","quarantined");
+ if(fixtureId)query=query.eq("id",fixtureId);
+ const {data:row,error}=await query.order("created_at",{ascending:true}).limit(1).maybeSingle();
  if(error)throw Error("query_failed");if(!row){console.log("model-media-worker: idle");return}
  checkIdentity(row,owner);
  const download=await db.storage.from(BUCKET).download(row.object_key);
@@ -65,7 +90,7 @@ async function run(){
  const update=db.from("model_media_assets").update({state:"verified",duration_ms:result.duration_ms,sha256:digest(bytes)}).eq("id",row.id).eq("user_id",owner).eq("model_id","magi-2").eq("state","quarantined");
  const updated=await (row.sha256===null?update.is("sha256",null):update.eq("sha256",row.sha256)).select("id").maybeSingle();
  if(updated.error||!updated.data)throw Error("update_unconfirmed");
- console.log("model-media-worker: verified one asset");
+ console.log("model-media-worker: verified one asset; bytes="+row.bytes+"; duration_ms="+result.duration_ms);
 }
 module.exports={enabled,inspect,checkIdentity,digest};
 if(require.main===module)run().catch(()=>{console.error("model-media-worker: execution unconfirmed");process.exitCode=1});
