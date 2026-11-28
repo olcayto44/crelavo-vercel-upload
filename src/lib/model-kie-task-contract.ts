@@ -38,10 +38,8 @@ export function kieMagiRequest(input:MagiRequest,approvedMediaOrigin:string){
  const images=byKind("image"),audio=byKind("audio"),video=byKind("video");
  // The image-mode output inherits the source image ratio; do not send aspect_ratio.
  if(input.mode==="image")return {provider:"kie" as const,url:"https://api.kie.ai/api/v1/jobs/createTask",body:{model:"magi-2/image-to-video",input:{...common,first_frame_url:images[0]}}};
- // The published reference example confirms image/audio field names. Fail closed
- // on video references until the exact provider schema is independently verified.
- if(video.length)throw Error("kie_video_reference_schema_pending");
- return {provider:"kie" as const,url:"https://api.kie.ai/api/v1/jobs/createTask",body:{model:"magi-2/reference-to-video",input:{...common,aspect_ratio:input.ratio,...(images.length?{reference_image_urls:images}:{}),...(audio.length?{reference_audio_urls:audio}:{})}}};
+ // Provider model page documents separate video reference URLs (max 5, duration validated above).
+ return {provider:"kie" as const,url:"https://api.kie.ai/api/v1/jobs/createTask",body:{model:"magi-2/reference-to-video",input:{...common,aspect_ratio:input.ratio,...(images.length?{reference_image_urls:images}:{}),...(audio.length?{reference_audio_urls:audio}:{}),...(video.length?{reference_video_urls:video}:{})}}};
 }
 // Account-screen quotation captured 2026-11-28. Not an authoritative live tariff or a receipt.
 export const kieMagiDraftPrice={observedAt:"2026-11-28",source:"account_pricing_screen_user_reported",microUsdPerSecond:88000,milliKieCreditsPerSecond:17600,approved:false} as const;
