@@ -23,3 +23,9 @@ for(const bad of [{state:"quarantined"},{user_id:mediaId},{model_id:"other"},{sh
 assert.throws(()=>verifiedModelReferences(mediaOwner,"magi-2",[verifiedAsset,verifiedAsset],origin));
 assert.throws(()=>preflightModelJob(mediaOwner,"kie",mediaInput,[verifiedAsset],origin));
 console.log("PASS model media identity, quarantine, ownership, duration and non-dispatch preflight (offline).");
+
+const originalRoute=read("src/app/api/models/original-media/route.ts"),originalPanel=read("src/components/models/OriginalModelMedia.tsx");
+for(const marker of ['VERCEL_ENV==="preview"','MODEL_MEDIA_PILOT_ENABLED==="true"','===TEST_ORIGIN','db.auth.getUser(token)','data.user.id!==process.env.MODEL_MEDIA_PILOT_USER_ID','modelAssetKey(a.owner,id)','state:"quarantined"','config.data?.public!==false','bytes>MAX','upsert:false','renderingEnabled:false'])assert(originalRoute.includes(marker),marker);
+assert(!/credit_balances|createSignedUrl|createSignedUploadUrl|buildMagiPayload/.test(originalRoute));assert(originalPanel.includes("if(!enabled)return null")&&originalPanel.includes('x-model-media-rights'));
+assert(read("src/components/models/ModelPlanner.tsx").includes("<OriginalModelMedia locale={locale}/>"));
+console.log("PASS original media pilot static gate, owner, bounded body, rights and quarantine contract (offline; real storage upload not tested).");
