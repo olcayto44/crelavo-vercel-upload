@@ -5,6 +5,8 @@ import {categoryDetailMeta} from "@/lib/category-detail-meta";
 import { notFound } from "next/navigation";
 import { footerInfoPageMap, footerInfoPages } from "@/lib/footer-info-pages";
 import { CampaignWorkspaceBody } from "@/components/CampaignWorkspaceBody";
+import { Header } from "@/components/Header";
+import { getConfiguredSiteContentConfig } from "@/lib/site-content-loader";
 import { InnerMobileNav } from "@/components/InnerMobileNav";
 import {categoryForPublicPath,categoryWorkspace} from "@/lib/category-public-routes";
 
@@ -46,10 +48,11 @@ export default async function FooterInfoPage({ params }: { params: Promise<{ slu
   if(categoryId)return <CategoryDetailPage id={categoryId}/>;
   if (slug === "text-to-campaign") return <><InnerMobileNav /><CampaignWorkspaceBody /></>;
 
+  const site = await getConfiguredSiteContentConfig();
   return (
     <>
-      <InnerMobileNav />
-      <main className="container section product-detail-page">
+      <Header navLinks={site.navLinks} /><InnerMobileNav />
+      <main className="container section product-detail-page cr-public-page cr-legacy-product">
       <section className="production-hero-card admin-overview-hero">
         <nav aria-label="Breadcrumb" style={{fontSize:12,marginBottom:12}}><Link href="/">Home</Link> / <Link href="/categories">Categories</Link> / {page.title}</nav>
         <span className="badge">{page.badge}</span>
