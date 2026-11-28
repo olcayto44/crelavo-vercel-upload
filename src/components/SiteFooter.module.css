@@ -46,3 +46,12 @@
 @media(max-width:1050px){.footer .socialRow{align-items:flex-start;flex-direction:column;gap:14px}.socialIntro{flex:0 0 auto}.footer .socialLinks{justify-content:flex-start}}
 @media(max-width:600px){.footer .socialLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}.footer .socialLinks a{justify-content:flex-start;min-height:44px;padding-inline:12px}.footer .socialRow{padding-block:15px}}
 @media(prefers-reduced-motion:reduce){.footer .socialLinks a{transition:none}}
+
+/* Payment and billing help: local payment assets, restrained trust messaging. */
+.trustRow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px 36px;padding:18px 0;border-top:1px solid var(--cr-line);min-width:0}
+.paymentInfo,.billingHelp{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:11px}
+.trustHeading{display:flex;align-items:center;gap:10px;min-width:0}.trustHeading h2{margin:0 0 3px;color:var(--cr-text);font-size:15px;font-weight:650;line-height:1.4}.trustHeading p{margin:0;color:var(--cr-muted);font-size:12px;line-height:1.55}
+.trustIcon{width:36px;height:36px;flex:0 0 36px;display:grid;place-items:center;background:var(--cr-surface);color:var(--cr-accent);border:1px solid var(--cr-line);border-radius:9px;box-sizing:border-box}.trustIcon svg{width:20px;height:20px}
+.paymentMethods{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0;padding:0;list-style:none}.paymentMethods li{display:flex;align-items:center;justify-content:center;width:62px;height:38px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;box-sizing:border-box;margin:0;padding:5px 8px}.paymentMethods img{display:block;width:44px;height:26px;object-fit:contain}.paymentNote{margin:0;color:var(--cr-muted);font-size:11px;line-height:1.6;max-width:410px}
+.billingLinks{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px}.footer .billingLinks a{display:inline-flex;align-items:center;min-height:30px;color:var(--cr-muted);font-size:13px;text-decoration:none}.footer .billingLinks a:hover{color:var(--cr-accent);text-decoration:underline;text-underline-offset:3px}
+@media(max-width:720px){.trustRow{grid-template-columns:minmax(0,1fr);gap:18px}.billingHelp{padding-top:16px;border-top:1px solid var(--cr-line)}.footer .billingLinks a{min-height:38px}.paymentMethods li{width:62px;height:38px}}
