@@ -15,7 +15,7 @@ export function encryptConnectedToken(token: string) {
   const clean = token.trim();
   if (!clean) return null;
   const secret = encryptionSecret();
-  if (!secret) return `plain:${Buffer.from(clean, "utf8").toString("base64url")}`;
+  if (!secret) throw Error("Secure connected-account token storage is not configured.");
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv("aes-256-gcm", keyFromSecret(secret), iv);
   const encrypted = Buffer.concat([cipher.update(clean, "utf8"), cipher.final()]);
@@ -25,7 +25,7 @@ export function encryptConnectedToken(token: string) {
 
 export function decryptConnectedToken(value?: string | null) {
   if (!value) return "";
-  if (value.startsWith("plain:")) return Buffer.from(value.slice(6), "base64url").toString("utf8");
+  if (value.startsWith("plain:")) return "";
   if (!value.startsWith("v1:")) return "";
   const secret = encryptionSecret();
   if (!secret) return "";

@@ -7,6 +7,7 @@ import { AdminLogoutButton } from "@/components/AdminLoginPanel";
 import { AdminNotificationBell } from "@/components/AdminNotificationBell";
 import { AdminSidebarAlert } from "@/components/AdminSidebarAlert";
 import { adminMenu, adminMenuGroups } from "@/lib/admin";
+import {useInboxUnread} from "@/lib/use-inbox-unread";
 import styles from "./AdminShell.module.css";
 
 function isActiveAdminHref(pathname: string, href: string) {
@@ -26,6 +27,7 @@ const menuLabels: Record<string, string> = {
 };
 export function AdminShell({ children, title, description }: { children: React.ReactNode; title: string; description?: string }) {
   const pathname = usePathname();
+  const unread=useInboxUnread();
   const router = useRouter();
   const [menuQuery, setMenuQuery] = useState("");
   const [mobileNavigation, setMobileNavigation] = useState(false);
@@ -35,7 +37,7 @@ export function AdminShell({ children, title, description }: { children: React.R
   return <main className={"container section admin-shell-layout " + styles.layout}>
     <div className="nav admin-topbar" style={{ paddingTop: 0 }}>
       <Link className="logo" href="/admin"><SiteBrandLogo compact/><span className={styles.adminBadge}>ADMIN</span></Link>
-      <div className={styles.topActions}><button className="btn secondary" type="button" onClick={() => router.back()}>Geri</button><Link className="btn secondary" href="/admin">Genel bakış</Link><Link className="btn secondary" href="/">Siteyi aç</Link><AdminLogoutButton /></div>
+      <div className={styles.topActions}><button className="btn secondary" type="button" onClick={() => router.back()}>Geri</button><Link className="btn secondary" href="/admin">Genel bakış</Link><Link className="btn secondary" href="/admin/inbox" aria-label={"Gelen kutusu, "+(unread?.unread??"bilinmeyen")+" okunmamış"}>Gelen kutusu <span className={styles.inboxCount} data-alert={Boolean(unread?.unread)} aria-live="polite">{unread?.unread??"—"}</span></Link><Link className="btn secondary" href="/">Siteyi aç</Link><AdminLogoutButton /></div>
     </div>
     <div className="admin-shell">
       <aside className={"admin-sidebar-card " + (!mobileNavigation ? styles.sidebarCollapsed : "")}>
@@ -43,7 +45,7 @@ export function AdminShell({ children, title, description }: { children: React.R
         <AdminSidebarAlert />
         <label className={styles.navSearch}><span>Menüde ara</span><input type="search" maxLength={100} value={menuQuery} onChange={event => setMenuQuery(event.target.value)} placeholder="Üyeler, ödeme, SEO…" /></label>
         <nav id="admin-navigation" aria-label="Admin bölümleri">
-          {!term&&<div className={styles.dailyNav}><span>GÜNLÜK İŞLEMLER</span>{dailyLinks.map(href=><Link className={isActiveAdminHref(pathname,href)?styles.dailyActive:undefined} aria-current={isActiveAdminHref(pathname,href)?"page":undefined} key={href} href={href} onClick={()=>setMobileNavigation(false)}>{menuLabels[href]||adminMenu.find(x=>x.href===href)?.label||href}</Link>)}</div>}
+          {!term&&<div className={styles.dailyNav}><span>GÜNLÜK İŞLEMLER</span>{dailyLinks.map(href=><Link className={isActiveAdminHref(pathname,href)?styles.dailyActive:undefined} aria-current={isActiveAdminHref(pathname,href)?"page":undefined} key={href} href={href} onClick={()=>setMobileNavigation(false)}>{menuLabels[href]||adminMenu.find(x=>x.href===href)?.label||href}{href==="/admin/inbox"&&<span className={styles.inboxCount} data-alert={Boolean(unread?.unread)}>{unread?.unread??"—"}</span>}</Link>)}</div>}
           <div className={styles.moduleLabel}>YÖNETİM MODÜLLERİ</div>
           {adminMenuGroups.map(group => {
             const items = filteredMenu.filter(item => item.group === group);

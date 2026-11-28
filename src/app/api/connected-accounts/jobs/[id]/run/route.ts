@@ -25,6 +25,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (jobError) return Response.json({ error: jobError.message }, { status: 500 });
   if (!job) return Response.json({ error: "Connected account job not found." }, { status: 404 });
+  if(["completed","running","processing"].includes(job.status))return Response.json({error:"This job cannot be dispatched again."},{status:409});
+  if(job.payload?.mode==="production_publish_plan")return Response.json({error:"This is a saved publication plan. Live publishing is not enabled."},{status:409});
   if (!job.connected_account_id) return Response.json({ error: "Job has no connected_account_id." }, { status: 400 });
   if (job.approval_required && !finalApproval) return Response.json({ error: "final_user_approval=true is required before running this worker plan." }, { status: 400 });
 
