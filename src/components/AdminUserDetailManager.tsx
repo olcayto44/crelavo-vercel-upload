@@ -23,12 +23,13 @@ type UserDetail = {
   available: number;
   bonus_credits: number;
   credit_value_usd: number;
-  purchased_credits: number;
+  purchased_credits: number|null;
+  paid_usd:number|null;paid_credits:number|null;balance_verified:boolean;subscription_credits:number|null;rollover_credits:number|null;topup_credits:number|null;
   subscription_status?:string|null;
   subscription_package?:string|null;
   subscription_billing?:string|null;
   subscription_cycle_end?:string|null;
-  spent_credits: number;
+  spent_credits: number|null;
   purchased_packages: string[];
   balance_updated_at?: string | null;
 };
@@ -43,6 +44,8 @@ type OutgoingEmail = { id?: string; recipient_email?: string | null; subject?: s
 type DetailState = {
   user: UserDetail;
   creditEvents: CreditEvent[];
+  stageJobs:{id:string;category:string;title:string;state:string;total_credits:number;spent_credits:number;created_at:string}[]|null;stageCount:number|null;
+  ledger:{id:string;delta:number;reason:string;job_id:string|null;created_at:string}[]|null;ledgerCount:number|null;
   ipHistory: IpHistory[];
   paymentFulfillments: PaymentFulfillment[];
   productions: ProductionItem[];
@@ -55,9 +58,10 @@ function formatDate(value?: string | null) {
   if (!value) return "-";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleString("tr-TR", { timeZone:"Europe/Istanbul", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
+function number(value:number|null|undefined){return value==null?"Veri yok":value.toLocaleString("tr-TR")}
 function messageText(item: MessageItem) {
   const metadata = item.metadata ?? {};
   return String(metadata.message ?? metadata.note ?? item.offer ?? "No message body recorded.");
@@ -146,7 +150,7 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
   const allProductions = [...detail.productions, ...detail.legacyVideoRequests];
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
+    <div style={{ display: "grid", gap: 12 }}>
       <section className="card selected-billing-card">
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
           <div>
@@ -162,14 +166,17 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
           <div><span>Ülke / şehir</span><strong>{user.country}</strong><small>{user.city}</small></div>
           <div><span>Kayıt tarihi</span><strong>{formatDate(user.created_at)}</strong><small>Son giriş: {formatDate(user.last_sign_in_at)}</small></div>
           <div><span>Abonelik (cüzdan kaydı)</span><strong>{user.subscription_package??"Doğrulanmadı"}</strong><small>{user.subscription_status??"—"} · {user.subscription_billing??"—"} · Dönem bitişi: {formatDate(user.subscription_cycle_end)}</small><small>Kesintisiz ücretli abonelik süresi: Whop geçmişi gerekli.</small></div>
-          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Son en fazla 80 kredi olayı içindeki satın alma: {user.purchased_credits.toLocaleString()}</small></div>
-          <div><span>Kullanılan kredi</span><strong>{user.spent_credits.toLocaleString()}</strong><small>Üretim harcaması</small></div>
-          <div><span>Kalan kredi</span><strong>{user.available.toLocaleString()}</strong><small>Toplam {user.credits.toLocaleString()} · Reserved {user.reserved.toLocaleString()}</small></div>
+          <div><span>Alınan kredi paketi</span><strong>{user.purchased_packages.length ? user.purchased_packages.join(", ") : "-"}</strong><small>Kredi olayları toplamı: {number(user.purchased_credits)}</small></div>
+          <div><span>Kullanılan kredi</span><strong>{number(user.spent_credits)}</strong><small>Üretim harcaması</small></div>
+          <div><span>Kalan kredi</span><strong>{user.balance_verified?number(user.available):"Veri yok"}</strong><small>Toplam {user.balance_verified?number(user.credits):"—"} · Rezerve {user.balance_verified?number(user.reserved):"—"}</small></div>
+          <div><span>Whop kayıtlı brüt ödeme</span><strong>{user.paid_usd==null?"Veri yok":new Intl.NumberFormat("tr-TR",{style:"currency",currency:"USD"}).format(user.paid_usd)}</strong><small>Ödeme ile verilen kredi: {number(user.paid_credits)}</small></div>
+          <div><span>Cüzdan dağılımı</span><strong>Abonelik {number(user.subscription_credits)}</strong><small>Devir {number(user.rollover_credits)} · Ek paket {number(user.topup_credits)} · Bonus {user.balance_verified?number(user.bonus_credits):"—"}</small></div>
           <div><span>Hesap durumu</span><strong>{user.banned_until ? "Askıda" : "Aktif"}</strong><small>{user.banned_until ? `Şu tarihe kadar: ${formatDate(user.banned_until)}` : "Aktif engel yok"}</small></div>
         </div>
       </section>
 
-      <section className="card admin-wide-card">
+      <nav aria-label="Üye detay bölümleri" style={{display:"flex",flexWrap:"wrap",gap:8}}>{[["Ödemeler","payments"],["Kredi hareketleri","credits"],["Üretimler","productions"],["Studio işleri","studio"],["Destek","support"],["Güvenlik","security"],["Hesap işlemleri","actions"]].map(([label,id])=><a className="btn secondary" href={"#"+id} key={id}>{label}</a>)}</nav>
+      <details id="actions" className="card admin-wide-card"><summary>Kredi ve hesap işlemleri</summary>
         <span className="badge">Kredi ve hesap aksiyonları</span>
         <h2>Kredi yükleme, engelleme, askıya alma ve silme</h2>
         <div className="admin-production-editor">
@@ -186,26 +193,28 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
           <button className="btn danger" type="button" disabled={loading} onClick={() => runUserAction("delete_user")}>Sil</button>
           {message ? <span className="badge">{message}</span> : null}
         </div>
-      </section>
+      </details>
 
-      <section className="card admin-wide-card">
+      <section id="credits" className="card admin-wide-card">
         <span className="badge">Kredi geçmişi</span>
-        <h2>Alınan, kullanılan ve manuel değişen krediler</h2>
+        <h2>Alınan, kullanılan ve manuel değişen krediler</h2><p>Son 80 kredi olayı. Yeni kredi defteri ayrı gösterilir; kayıtlar iki kez toplanmaz.</p>
         <div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Tip</th><th>Miktar</th><th>Not / paket</th></tr></thead><tbody>
           {detail.creditEvents.map((event, index) => <tr key={event.id ?? index}><td>{formatDate(event.created_at)}</td><td>{event.type}</td><td>{Number(event.amount ?? 0).toLocaleString()}</td><td>{event.note ?? "-"}</td></tr>)}
         </tbody></table></div>
       </section>
 
-      <section className="card admin-wide-card">
+      <section className="card admin-wide-card"><h2>Yeni kredi defteri</h2><p>{detail.ledgerCount==null?"Kaynak okunamadı":detail.ledgerCount+" kayıt · son 80"}</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Değişim</th><th>Neden</th><th>İş</th></tr></thead><tbody>{detail.ledger?.map(x=><tr key={x.id}><td>{formatDate(x.created_at)}</td><td>{number(x.delta)}</td><td>{x.reason}</td><td>{x.job_id??"—"}</td></tr>)}</tbody></table></div></section>
+      <section id="studio" className="card admin-wide-card"><h2>Studio üretim işleri</h2><p>{detail.stageCount==null?"Kaynak okunamadı":detail.stageCount+" kayıt · son 80"}</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Kategori</th><th>Durum</th><th>Planlanan kredi</th><th>Harcanan kredi</th></tr></thead><tbody>{detail.stageJobs?.map(x=><tr key={x.id}><td>{formatDate(x.created_at)}</td><td>{x.title}</td><td>{x.category}</td><td>{x.state}</td><td>{number(x.total_credits)}</td><td>{number(x.spent_credits)}</td></tr>)}</tbody></table></div></section>
+      <section id="productions" className="card admin-wide-card">
         <span className="badge">Üretim geçmişi</span>
-        <h2>Kredileri hangi üretimde kullanmış</h2>
+        <h2>Kredileri hangi üretimde kullanmış</h2><p>Son 80 üretim talebi ve son 40 eski video talebi; tahmini/rezerve kredi gerçek harcama değildir.</p>
         <div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Tip/paket</th><th>Durum</th><th>Kredi</th><th>İstek konusu</th><th>Çıktı</th></tr></thead><tbody>
           {allProductions.map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td><strong>{item.title ?? "Untitled"}</strong><br /><small>{item.id}</small></td><td>{item.production_type ?? "video"}<br /><small>{item.package_id ?? "-"}</small></td><td>{item.status ?? "-"}<br /><small>{item.automation_status ?? ""}</small></td><td>{Number(item.reserved_credits ?? item.estimated_credits ?? 0).toLocaleString()}</td><td>{item.prompt ?? "-"}</td><td>{item.final_video_url||item.delivery_link ? <a href={item.final_video_url||item.delivery_link||"#"} target="_blank" rel="noopener noreferrer">Aç</a> : "-"}</td></tr>)}
         </tbody></table></div>
         {!allProductions.length ? <p className="form-message">Bu üyeye ait üretim kaydı bulunamadı.</p> : null}
       </section>
 
-      <section className="card admin-wide-card">
+      <section id="support" className="card admin-wide-card">
         <span className="badge">Gelen mesajlar</span>
         <h2>Şikayet, bilgi, problem ve support kayıtları</h2>
         <div className="admin-message-thread">
@@ -220,8 +229,8 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
         </div>
       </section>
 
-      <section className="card admin-wide-card"><span className="badge">IP history</span><h2>Login IP and device history</h2><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>IP</th><th>User agent</th></tr></thead><tbody>{detail.ipHistory.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.seen_at)}</td><td>{item.ip ?? "-"}</td><td>{item.user_agent ?? "-"}</td></tr>)}</tbody></table></div>{!detail.ipHistory.length ? <p className="form-message">No IP history recorded.</p> : null}</section>
-      <section className="card admin-wide-card"><span className="badge">Payment packages</span><h2>Purchased credit packages</h2><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>Package</th><th>Credits</th><th>Amount</th><th>Status</th></tr></thead><tbody>{detail.paymentFulfillments.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.created_at)}</td><td>{item.product_title ?? item.plan_id ?? "-"}</td><td>{Number(item.credits ?? 0).toLocaleString()}</td><td>${Number(item.amount_usd ?? 0).toFixed(2)}</td><td>{item.status ?? "-"}</td></tr>)}</tbody></table></div>{!detail.paymentFulfillments.length ? <p className="form-message">No payment fulfillment records.</p> : null}</section>
+      <section id="security" className="card admin-wide-card"><span className="badge">IP history</span><h2>Login IP and device history</h2><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>IP</th><th>User agent</th></tr></thead><tbody>{detail.ipHistory.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.seen_at)}</td><td>{item.ip ?? "-"}</td><td>{item.user_agent ?? "-"}</td></tr>)}</tbody></table></div>{!detail.ipHistory.length ? <p className="form-message">No IP history recorded.</p> : null}</section>
+      <section id="payments" className="card admin-wide-card"><span className="badge">Payment packages</span><h2>Satın alınan kredi paketleri</h2><p>Son 50 Whop fulfillment kaydı.</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Date</th><th>Package</th><th>Credits</th><th>Amount</th><th>Status</th></tr></thead><tbody>{detail.paymentFulfillments.map((item, index) => <tr key={item.id ?? index}><td>{formatDate(item.created_at)}</td><td>{item.product_title ?? item.plan_id ?? "-"}</td><td>{Number(item.credits ?? 0).toLocaleString()}</td><td>{item.amount_usd==null?"Veri yok":"$"+Number(item.amount_usd).toFixed(2)}</td><td>{item.status ?? "-"}</td></tr>)}</tbody></table></div>{!detail.paymentFulfillments.length ? <p className="form-message">No payment fulfillment records.</p> : null}</section>
       <AdminEmailComposer
         title="Bu üyeye cevap yaz"
         description="Kullanıcıya support, kredi, üretim veya hesap cevabını buradan gönder. Gönderim başarılı olursa admin e-posta log tablosu varsa cevap geçmişinde tutulur."

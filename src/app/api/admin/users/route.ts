@@ -95,16 +95,16 @@ export async function GET(request: Request) {
       if (row.user_id && country && !latestCountryMap.has(row.user_id)) latestCountryMap.set(row.user_id, country);
     }
 
-    const countryBackfillRows: { user_id: string; guest_id: null; path: string; ip: string; country: string; device: string; seen_at: string }[] = [];
+    // Country inference must not create fake live presence records.
     for (const userId of userIds) {
       if (latestCountryMap.has(userId)) continue;
       const ip = String(latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? "");
       const country = resolveCountry(ip);
       if (country === "Unknown") continue;
       latestCountryMap.set(userId, country);
-      countryBackfillRows.push({ user_id: userId, guest_id: null, path: "/admin-country-backfill", ip, country, device: "backfill", seen_at: new Date().toISOString() });
+
     }
-    if (countryBackfillRows.length) await supabase.from("presence").insert(countryBackfillRows);
+
     const acceptanceMap = new Map<string, { latest: any; count: number }>();
     for (const acceptance of safeAcceptances) {
       const current = acceptanceMap.get(acceptance.user_id) ?? { latest: acceptance, count: 0 };
@@ -159,7 +159,7 @@ export async function GET(request: Request) {
         ip: latestIpMap.get(userId)?.ip ?? latestPresenceMap.get(userId)?.ip ?? latestLegal?.ip_address ?? "-",
         country: countryLabel(latestCountryMap.get(userId) || meaningfulLocation(authUser?.user_metadata?.country) || meaningfulLocation(authUser?.user_metadata?.country_code) || meaningfulLocation(authUser?.app_metadata?.country)),
         city: meaningfulLocation(authUser?.user_metadata?.city) || "Bilinmiyor",
-        role: String(profile?.role ?? authUser?.user_metadata?.role ?? (configuredAdminEmails.has(email.toLowerCase()) ? "admin" : "user")),
+        role: String(profile?.role ?? (configuredAdminEmails.has(email.toLowerCase()) ? "admin" : "user")),
         provider,
         email_confirmed: emailConfirmed,
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
@@ -167,7 +167,7 @@ export async function GET(request: Request) {
         reserved: balance?.reserved ?? 0,
         available: credits - (balance?.reserved ?? 0),
         value: `$${estimateCreditValueUsd(credits)}`,
-        created_at: profile?.created_at ?? authUser?.created_at ?? null,
+        created_at: authUser?.created_at ?? profile?.created_at ?? null,
         updated_at: balance?.updated_at ?? null,
         legal_acceptance_count: legal?.count ?? 0,
         latest_legal_acceptance: latestLegal,

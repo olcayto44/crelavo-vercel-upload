@@ -4,9 +4,9 @@ import { AdminUsersManager } from "@/components/AdminUsersManager";
 
 export default function AdminUsersPage() {
   return (
-    <AdminShell title="Members" description="Manage normal users, admin users, user IP/location, credit operations and admin account creation.">
-      <AdminCreateAdminManager />
+    <AdminShell title="Üyeler ve aboneler" description="Üyeyi seçerek ödeme, kredi, üretim ve destek geçmişini aç.">
       <AdminUsersManager />
+      <details className="card admin-wide-card"><summary>Yönetici hesabı oluştur</summary><AdminCreateAdminManager /></details>
     </AdminShell>
   );
 }

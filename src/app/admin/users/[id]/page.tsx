@@ -7,7 +7,7 @@ export default async function AdminUserDetailPage({ params }: PageProps) {
   const { id } = await params;
 
   return (
-    <AdminShell title="Member detail" description="View one member's ID, email, country, registration date, credits, packages, production usage, admin actions and support replies.">
+    <AdminShell title="Üye detayları" description="Hesap, abonelik, ödeme, kredi ve üretim geçmişi.">
       <AdminUserDetailManager userId={id} />
     </AdminShell>
   );

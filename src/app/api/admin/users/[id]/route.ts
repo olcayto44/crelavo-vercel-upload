@@ -25,12 +25,12 @@ async function safeTable<T>(loader: () => PromiseLike<{ data: T | null; error: a
 }
 
 export async function GET(request: Request, { params }: RouteContext) {
-  const access = await requireAdminPermission(request, ["users", "support", "finance"]);
+  const access = await requireAdminPermission(request, "owner");
   if (!access.ok) return access.response;
 
   const { id } = await params;
   const userId = String(id ?? "").trim();
-  if (!userId) return Response.json({ error: "User id is required." }, { status: 400 });
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) return Response.json({ error: "User id is required." }, { status: 400 });
 
   try {
     const supabase = supabaseAdmin();
@@ -51,7 +51,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     if (!profile && !authUser) return Response.json({ error: "User not found." }, { status: 404 });
 
     const balance = await safeTable(
-      () => supabase.from("credit_balances").select("user_id, balance, reserved, bonus_credits, updated_at, subscription_status, billing_cycle_ends_at, active_subscription_package, active_subscription_billing").eq("user_id", userId).maybeSingle(),
+      () => supabase.from("credit_balances").select("user_id, balance, reserved, bonus_credits, current_subscription_credits, rolled_over_credits, topup_credits, updated_at, subscription_status, billing_cycle_ends_at, active_subscription_package, active_subscription_billing").eq("user_id", userId).maybeSingle(),
       null as any
     );
 
@@ -65,7 +65,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const productions = await safeTable(
       () => supabase
         .from("production_requests")
-        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, delivery_link, created_at, updated_at, output_json")
+        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, delivery_link, created_at, updated_at")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(80),
@@ -116,6 +116,22 @@ export async function GET(request: Request, { params }: RouteContext) {
         )
       : [];
 
+    // Exact totals are separate from the bounded recent-history tables.
+    async function exactTotal(table:"credit_events"|"payment_fulfillments",field:"amount"|"amount_usd"|"credits",filter:string,value:string,absolute=false){
+      try{const r=await supabase.from(table).select(field,{count:"exact"}).eq("user_id",userId).eq(filter,value).limit(1000);
+       if(r.error||!r.data||r.count!==r.data.length)return null;
+       const values=(r.data as unknown as Record<string,unknown>[]).map(x=>x[field]);
+       if(values.some(x=>x===null||x===""||!Number.isFinite(Number(x))))return null;
+       return values.reduce<number>((a,x)=>a+(absolute?Math.abs(Number(x)):Number(x)),0);
+      }catch{return null}
+    }
+    const [totalBought,totalSpent,totalPaid,totalPaidCredits,stageResult,ledgerResult,presenceResult]=await Promise.all([
+      exactTotal("credit_events","amount","type","purchase"),exactTotal("credit_events","amount","type","spend",true),
+      exactTotal("payment_fulfillments","amount_usd","status","fulfilled"),exactTotal("payment_fulfillments","credits","status","fulfilled"),
+      supabase.from("studio_stage_jobs").select("id,category,title,state,total_credits,spent_credits,created_at,updated_at",{count:"exact"}).eq("user_id",userId).order("created_at",{ascending:false}).limit(80),
+      supabase.from("credit_ledger").select("id,delta,reason,job_id,created_at",{count:"exact"}).eq("user_id",userId).order("created_at",{ascending:false}).limit(80),
+      supabase.from("presence").select("ip,country,path,seen_at").eq("user_id",userId).order("seen_at",{ascending:false}).limit(1).maybeSingle()
+    ]);
     const purchasedPackages = new Set<string>();
     let purchasedCredits = 0;
     let spentCredits = 0;
@@ -141,27 +157,30 @@ export async function GET(request: Request, { params }: RouteContext) {
         role: profile?.role ?? "user",
         provider: authUser?.app_metadata?.provider ?? "email",
         email_confirmed: Boolean(authUser?.email_confirmed_at || authUser?.confirmed_at),
-        created_at: profile?.created_at ?? authUser?.created_at ?? null,
+        created_at: authUser?.created_at ?? profile?.created_at ?? null,
         last_sign_in_at: authUser?.last_sign_in_at ?? null,
         banned_until: authUser?.banned_until ?? null,
-        country: String(authUser?.user_metadata?.country ?? latestLegal?.country ?? "Unknown"),
+        country: String(presenceResult.data?.country ?? authUser?.user_metadata?.country ?? "Unknown"),
         city: String(authUser?.user_metadata?.city ?? "Unknown"),
-        ip: latestLegal?.ip_address ?? "IP later",
+        ip: ipHistory[0]?.ip ?? presenceResult.data?.ip ?? latestLegal?.ip_address ?? "—",
         credits: balanceTotal,
         reserved,
         available: balanceTotal - reserved,
         bonus_credits: Number(balance?.bonus_credits ?? 0) || 0,
         credit_value_usd: estimateCreditValueUsd(balanceTotal),
-        purchased_credits: purchasedCredits,
+        purchased_credits: totalBought,
+        paid_usd:totalPaid,paid_credits:totalPaidCredits,balance_verified:Boolean(balance),subscription_credits:balance?.current_subscription_credits??null,rollover_credits:balance?.rolled_over_credits??null,topup_credits:balance?.topup_credits??null,
         subscription_status:balance?.subscription_status??null,
         subscription_package:balance?.active_subscription_package??null,
         subscription_billing:balance?.active_subscription_billing??null,
         subscription_cycle_end:balance?.billing_cycle_ends_at??null,
-        spent_credits: spentCredits,
+        spent_credits: totalSpent,
         purchased_packages: Array.from(purchasedPackages),
         balance_updated_at: balance?.updated_at ?? null
       },
       creditEvents,
+      stageJobs:stageResult.error?null:stageResult.data,stageCount:stageResult.error?null:stageResult.count,
+      ledger:ledgerResult.error?null:ledgerResult.data,ledgerCount:ledgerResult.error?null:ledgerResult.count,
       ipHistory,
       paymentFulfillments,
       productions,
