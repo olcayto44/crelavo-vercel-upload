@@ -109,7 +109,7 @@ const kieRef=kieMagiRequest({...params,mode:"reference",assets:[asset,kieAudio]}
 assert.deepEqual(kieRef.body.input.reference_image_urls,[asset.url]);
 assert.deepEqual(kieRef.body.input.reference_audio_urls,[kieAudio.url]);
 assert.throws(()=>kieMagiRequest({...params,mode:"image",assets:[{...asset,url:"https://evil.example/model-assets/a.jpg"}]},origin));
-assert.throws(()=>kieMagiRequest({...params,mode:"reference",assets:[{kind:"video",url:origin+"/model-assets/v.mp4",mime:"video/mp4",bytes:10000,seconds:5}]},origin));
+const kieVideo=kieMagiRequest({...params,mode:"reference",assets:[{kind:"video",url:origin+"/model-assets/v.mp4",mime:"video/mp4",bytes:10000,seconds:5}]},origin);assert.deepEqual(kieVideo.body.input.reference_video_urls,[origin+"/model-assets/v.mp4"]);assert.throws(()=>kieMagiRequest({...params,mode:"reference",assets:[{kind:"video",url:origin+"/model-assets/v.mp4",mime:"video/mp4",bytes:10000,seconds:31}]},origin));
 assert.deepEqual(estimateKieMagiDraft(4),{microUsd:352000,milliKieCredits:70400,approved:false});
 assert.equal(estimateKieMagiDraft(31),null);
 console.log("PASS Kie MAGI image/reference offline payloads, trusted assets and unapproved tariff estimate");
@@ -125,3 +125,8 @@ assert.throws(()=>readKieUsage({...observed,code:401},"fixture-usage"));
 const kieUsageRoute=read("src/app/api/admin/kie-task-usage/route.ts");
 assert(kieUsageRoute.includes('method:"GET"')&&kieUsageRoute.includes("session?.email!==owner")&&kieUsageRoute.includes("private, no-store")&&!kieUsageRoute.includes("createTask"));
 console.log("PASS Kie usage evidence, owner-only read-only lookup, no automatic billing");
+
+const trialRoute=read("src/app/api/admin/kie-internal-trial/route.ts");
+assert(trialRoute.includes('MODEL_KIE_PILOT_ENABLED!=="true"')&&trialRoute.includes("session?.email===owner")&&trialRoute.includes("MAGI2_TRIAL_4S_70_4")&&trialRoute.includes("bwzxdxqgrgbsvndinmrv.supabase.co")&&trialRoute.indexOf('rpc("kie_claim_internal_trial"')<trialRoute.indexOf('fetch(task.url'));
+assert(!trialRoute.includes("credit_balances")&&!trialRoute.includes("credit_events"));
+console.log("PASS isolated Kie one-shot trial guards and video reference validation (offline)");
