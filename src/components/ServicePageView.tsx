@@ -328,7 +328,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
           <span className="badge">FAQ</span>
           <h2>{page.title} questions</h2>
-          <div className="admin-category-grid">
+          <div className="admin-category-grid cr-editorial-faq">
             {page.faqItems.map((item) => <div className="card admin-category-card" key={item.question}><h3>{item.question}</h3><p>{item.answer}</p></div>)}
           </div>
         </section>
