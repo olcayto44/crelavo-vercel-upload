@@ -1,4 +1,5 @@
 export const adminMenu = [
+  {label:"AI Model Manager",href:"/admin/ai-models",group:"Production"},
   {
     "label": "Genel bakış",
     "href": "/admin",

@@ -1,5 +1,5 @@
 export const mobileNavigationLinks = [
-  { label: "Create", href: "/categories" }, { label: "Tools", href: "/tools" }, { label: "Pricing", href: "/pricing" },
+  { label: "Create", href: "/categories" }, { label: "Tools", href: "/tools" }, { label: "AI Models", href: "/models" }, { label: "Pricing", href: "/pricing" },
   { label: "Assistant", href: "/dashboard/studio" }, { label: "Dashboard", href: "/dashboard" }, { label: "Studio", href: "/studio" }, { label: "Video Editor", href: "/tools/video-editor" }, { label: "Image Editor", href: "/tools/image-editor" }, { label: "Media Library", href: "/tools/media-library" },
   { label: "Profile / Settings", href: "/dashboard/settings" }, { label: "Credits", href: "/dashboard/credits" },
   { label: "My Productions", href: "/dashboard/productions" }, { label: "Live Sales", href: "/live-sales-credits" },

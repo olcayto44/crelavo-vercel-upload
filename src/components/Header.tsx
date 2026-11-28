@@ -76,6 +76,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, pre
       </Link>
       <nav className="cr-primary-nav" aria-label="Primary navigation">
         <PublicMegaMenu id="create" label="Create" href="/categories" groups={[...createGroups,{title:"Studio & editors",links:[{label:"Crelavo Studio",href:"/studio"},{label:"Video Editor",href:"/tools/video-editor"},{label:"Image Editor",href:"/tools/image-editor"},{label:"Media Library",href:"/tools/media-library"},{label:"My projects",href:"/dashboard/productions"}]}]}/>
+        <PublicMegaMenu id="models" label="AI Models" href="/models" groups={[{title:"Video models",links:[{label:"MAGI-2",href:"/models/magi-2"}]},{title:"Explore",links:[{label:"All AI models",href:"/models"}]}]}/>
         {activeNavLinks.map(item=>item.label==="Tools"?<PublicMegaMenu key="tools" id="tools" label="Tools" href="/tools" groups={[{title:"Studio tools",links:[{label:"Crelavo Studio",href:"/studio"},{label:"Video Editor",href:"/tools/video-editor"},{label:"Image Editor",href:"/tools/image-editor"},{label:"Media Library",href:"/tools/media-library"}]},...footerGroups.slice(0,3).map(g=>({title:g.title,links:g.links.slice(0,4)}))]}/>:<LocalizedNavLink href={item.href} key={item.href+"-"+item.label} label={item.label} languageOverride={languageOverride}/>)}
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">

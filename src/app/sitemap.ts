@@ -1,3 +1,4 @@
+import {modelLocales,modelPath,modelAlternates} from "@/lib/ai-models";
 import {isRetiredCategoryPath} from "@/lib/retired-categories";
 import {localizedCategoryArt,localizedWebsiteConcepts} from "@/lib/category-localized-art";
 import { studioSurfaces } from "@/lib/studio-surfaces";
@@ -27,6 +28,7 @@ function canonicalSiteUrl() {
 }
 
 const publicRoutes = [
+  ...modelLocales.flatMap(locale=>[modelPath(locale),modelPath(locale,"magi-2")].map(path=>({path,priority:0.85,changeFrequency:"weekly" as const}))),
   ...studioSurfaces.map(surface => ({ path: surface.path, priority: 0.85, changeFrequency: "monthly" as const })),
   { path: "", priority: 1, changeFrequency: "weekly" as const },
   { path: "/categories", priority: 0.9, changeFrequency: "weekly" as const },
@@ -158,6 +160,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const languages = Object.fromEntries(Object.entries(paths).map(([tag, path]) => [tag, baseUrl + path]));
     for (const path of Object.values(paths)) languageAlternates.set(path, languages);
   }
+  for(const id of [undefined,"magi-2"]){const paths=modelAlternates(id);if(Object.values(paths).every(path=>eligiblePaths.has(path))){const languages=Object.fromEntries(Object.entries(paths).map(([tag,path])=>[tag,baseUrl+path]));for(const path of Object.values(paths))languageAlternates.set(path,languages)}}
   return eligible.map((route) => ({
       url: `${baseUrl}${route.path}`,
       ...(route.lastModified?{lastModified:route.lastModified}:{}),
