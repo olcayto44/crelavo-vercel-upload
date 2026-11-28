@@ -751,11 +751,11 @@ addEventListener('message',event=>{
  void previewWebsite(id);
 });
 addEventListener('resize',resizePreview);new ResizeObserver(resizePreview).observe($('.canvas'));
-addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}epoch++;session=incoming;status=null;walletCache=null;liveProductionBalance=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{status=await request('/api/studio/conversation');
+addEventListener('message',async event=>{if(event.source!==parent||event.origin!==parent.location.origin||event.data?.type!=='crelavo-studio-session')return;const incoming=event.data.accessToken&&event.data.userId?{accessToken:event.data.accessToken,userId:event.data.userId}:null;if(session&&incoming&&session.userId===incoming.userId){session=incoming;return;}const initEpoch=++epoch;session=incoming;status=null;walletCache=null;liveProductionBalance=null;$('#prompt').value='';$('#file').value='';$('#b2-attachment').textContent='';referenceFile=null;project=null;mockState='';busy=false;pending=null;uiError='';resetProjectNav();clearCanvas();setup();if(!session)return;try{const initialStatus=await request('/api/studio/conversation');if(initEpoch!==epoch)return;status=initialStatus;
  try{
   const credits=await request('/api/credits/balance?user_id='+encodeURIComponent(session.userId));
-  liveProductionBalance=Number.isFinite(credits.available)?credits.available:null;
- }catch(_error){liveProductionBalance=null;}
+  if(initEpoch!==epoch)return;liveProductionBalance=Number.isFinite(credits.available)?credits.available:null;
+ }catch(_error){if(initEpoch!==epoch)return;liveProductionBalance=null;}
  setup();
  if(status.realEnabled||status.mockAllowed){
   await restore();
@@ -764,7 +764,8 @@ addEventListener('message',async event=>{if(event.source!==parent||event.origin!
   if(current.id!=='website')restoreLocalCategoryChat();
   else draw();
   void loadReadyVideoCanvas();
- }}catch(error){showError(error)}});
+ }if(initEpoch===epoch&&session&&!$('#prompt').disabled)parent.postMessage({type:'crelavo-studio-composer-ready',userId:session.userId},parent.location.origin);
+ }catch(error){if(initEpoch===epoch)showError(error)}});
 let localeRefreshPending=false,localeRefreshActive=false;
 const localizeObserver=new MutationObserver(()=>{
  if(localeRefreshActive||localeRefreshPending)return;

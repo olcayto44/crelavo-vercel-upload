@@ -13,3 +13,6 @@
 
 /* Explicit layers: media never paints over readable content; reel control remains reachable. */
 .hero .media{background:transparent;z-index:auto}.hero .media video{z-index:0}.hero .veil{z-index:1}.hero .heroInner{position:relative;z-index:2}.hero .heroControl{z-index:3}
+
+/* An unavailable image never leaves a white broken-image box. */
+.filmMedia img{color:transparent;background:var(--cr-surface);transition:opacity .15s ease}.filmMedia[data-orientation=landscape] img{object-fit:contain}.filmFallback{justify-content:flex-start;padding:20px 14px}.filmFallback strong{max-width:100%;overflow-wrap:anywhere}.filmFallback span{line-height:1.4}.filmMedia .playIcon{flex-shrink:0}

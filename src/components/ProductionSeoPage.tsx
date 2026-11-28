@@ -26,7 +26,7 @@ export async function ProductionSeoPage({ page }: { page: Page }) {
   return <>
     <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeProductionJsonLd(productionStructuredData(page)) }} />
     <Header navLinks={siteContent.navLinks} />
-    <main className={styles.page}>
+    <main className={styles.page+" cr-public-page cr-editorial-production"}>
       <nav className={styles.breadcrumb} aria-label="Breadcrumb"><Link href="/">Home</Link><span aria-hidden="true">/</span><Link href={"/" + page.section}>{sectionLabel}</Link><span aria-hidden="true">/</span><span aria-current="page">{page.label}</span></nav>
       <header className={styles.hero}>
         <span className={styles.eyebrow}>{page.section === "blog" ? "Crelavo production guide" : "Crelavo AI production studio"}</span>
