@@ -14,18 +14,27 @@ const copy={
 } as const;
 export function OriginalModelMedia({locale}:{locale:ModelLocale}){
  const auth=useAuth(),c=copy[locale],owner=auth.user?.id;
- const [enabled,setEnabled]=useState(false),[assets,setAssets]=useState<Asset[]>([]),[rights,setRights]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
+ const [large,setLarge]=useState(false),[enabled,setEnabled]=useState(false),[assets,setAssets]=useState<Asset[]>([]),[rights,setRights]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState("");
  const lock=useRef(false),input=useRef<HTMLInputElement>(null),alive=useRef(false);
  async function token(){const {data}=await supabaseBrowser().auth.getSession();return data.session?.user.id===owner?data.session?.access_token:null}
- useEffect(()=>{let cancelled=false;alive.current=true;setEnabled(false);setAssets([]);setRights(false);setMessage("");
- if(owner)void (async()=>{try{const t=await token();if(!t)return;const r=await fetch("/api/models/original-media",{headers:{Authorization:"Bearer "+t},cache:"no-store"}),d=await r.json();if(!cancelled&&r.ok&&d.enabled===true){setAssets(Array.isArray(d.assets)?d.assets:[]);setEnabled(true)}}catch{}})();
+ useEffect(()=>{let cancelled=false;alive.current=true;setEnabled(false);setLarge(false);setAssets([]);setRights(false);setMessage("");
+ if(owner)void (async()=>{try{const t=await token();if(!t)return;const r=await fetch("/api/models/original-media",{headers:{Authorization:"Bearer "+t},cache:"no-store"}),d=await r.json();if(!cancelled&&r.ok&&d.enabled===true){setAssets(Array.isArray(d.assets)?d.assets:[]);setEnabled(true);const lr=await fetch("/api/models/large-media",{headers:{Authorization:"Bearer "+t},cache:"no-store"}),ld=await lr.json();if(!cancelled&&lr.ok&&ld.enabled===true)setLarge(true)}}catch{}})();
  return()=>{cancelled=true;alive.current=false};
  // Owner changes reset the private test panel.
  // eslint-disable-next-line react-hooks/exhaustive-deps
  },[owner]);
- async function upload(file:File){if(!enabled||!rights||lock.current)return;if(!file.size||file.size>3000000||!["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","audio/mpeg","audio/wav"].includes(file.type)){setMessage(c.failed);return}
+ async function upload(file:File){if(!enabled||!rights||lock.current)return;if(!file.size||file.size>(large?50000000:3000000)||!["image/jpeg","image/png","image/webp","video/mp4","video/quicktime","audio/mpeg","audio/wav"].includes(file.type)){setMessage(c.failed);return}
  lock.current=true;setBusy(true);setMessage("");
- try{const t=await token();if(!t)throw Error("session");const r=await fetch("/api/models/original-media",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":file.type,"x-model-media-rights":"accepted"},body:file}),d=await r.json();if(!r.ok||!d.asset)throw Error("upload");if(alive.current){setAssets(a=>[d.asset,...a].slice(0,20));setMessage(c.success)}}catch{if(alive.current)setMessage(c.failed)}finally{lock.current=false;if(alive.current)setBusy(false)}}
+ try{const t=await token();if(!t)throw Error("session");let asset:Asset;
+ if(file.size>3000000){
+ const r=await fetch("/api/models/large-media",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":"application/json"},body:JSON.stringify({mime:file.type,bytes:file.size,rights:true})}),d=await r.json();
+ if(!r.ok||!d.token||!d.path||!d.assetId||!alive.current)throw Error("ticket");
+ const result=await supabaseBrowser().storage.from("model-original-quarantine").uploadToSignedUrl(d.path,d.token,file,{contentType:file.type,upsert:false});
+ if(result.error)throw Error("upload");
+ asset={id:d.assetId,kind:file.type.split("/")[0],mime:file.type,bytes:file.size,state:"quarantined"};
+ }else{
+ const r=await fetch("/api/models/original-media",{method:"POST",headers:{Authorization:"Bearer "+t,"Content-Type":file.type,"x-model-media-rights":"accepted"},body:file}),d=await r.json();if(!r.ok||!d.asset)throw Error("upload");asset=d.asset;
+ }if(alive.current){setAssets(a=>[asset,...a].slice(0,20));setMessage(c.success)}}catch{if(alive.current)setMessage(c.failed)}finally{lock.current=false;if(alive.current)setBusy(false)}}
  if(!enabled)return null;
- return <div className={styles.refArea}><strong>{c.title}</strong><p className={styles.muted}>{c.notice}</p><label className={styles.check}><input type="checkbox" checked={rights} disabled={busy} onChange={e=>setRights(e.target.checked)}/>{c.rights}</label><input ref={input} hidden type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,audio/mpeg,audio/wav" disabled={busy||!rights} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(f)void upload(f)}}/><button type="button" className="cr-action" disabled={busy||!rights} onClick={()=>input.current?.click()}>{busy?c.busy:c.upload}</button>{message&&<p role="status">{message}</p>}{assets.map(a=><small key={a.id}>{a.mime} · {Math.ceil(a.bytes/1024)} KB · {a.state}</small>)}</div>
+ return <div className={styles.refArea}><strong>{c.title}</strong><p className={styles.muted}>{large?c.notice.replace(/3 (MB|Mo)/,"50 $1"):c.notice}</p><label className={styles.check}><input type="checkbox" checked={rights} disabled={busy} onChange={e=>setRights(e.target.checked)}/>{c.rights}</label><input ref={input} hidden type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime,audio/mpeg,audio/wav" disabled={busy||!rights} onChange={e=>{const f=e.target.files?.[0];e.target.value="";if(f)void upload(f)}}/><button type="button" className="cr-action" disabled={busy||!rights} onClick={()=>input.current?.click()}>{busy?c.busy:c.upload}</button>{message&&<p role="status">{message}</p>}{assets.map(a=><small key={a.id}>{a.mime} · {Math.ceil(a.bytes/1024)} KB · {a.state}</small>)}</div>
 }
