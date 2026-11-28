@@ -16,7 +16,7 @@ create table public.model_media_assets (
  check ((kind='image' and mime in ('image/jpeg','image/png','image/webp') and bytes < 30000000 and duration_ms is null)
  or (kind='video' and mime in ('video/mp4','video/quicktime'))
  or (kind='audio' and mime in ('audio/mpeg','audio/wav') and bytes < 15000000)),
- check (state <> 'verified' or (sha256 is not null and (kind='image' or duration_ms between 2000 and 30000)))
+ check (state <> 'verified' or (sha256 is not null and (kind='image' or (duration_ms is not null and duration_ms between 2000 and 30000))))
 );
 alter table public.model_media_assets enable row level security;
 revoke all on public.model_media_assets from public, anon, authenticated;
