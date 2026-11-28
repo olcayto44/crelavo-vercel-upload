@@ -34,3 +34,15 @@
 
 /* Compact editorial footer; all crawlable links stay present. */
 .footer:global(#cl-site-footer){gap:18px;padding-block:28px 22px}.brandRow{align-items:flex-start;gap:6px}.description{text-align:left;max-width:640px}.columns{gap:22px 30px;padding:20px 0}.group h2{margin-bottom:12px;font-size:15px}.group ul{gap:7px}.footer .group a{font-size:14px;line-height:1.5}.bottom{padding-top:14px}.footer .brandLink{max-width:220px}@media(max-width:600px){.columns{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 18px}.footer .group a{font-size:13px}.footer:global(#cl-site-footer){gap:18px}.description{font-size:13px}}@media(max-width:360px){.columns{grid-template-columns:minmax(0,1fr)}}
+
+/* Official social profiles — a compact, accessible, consistent brand strip. */
+.footer .socialRow{display:flex;align-items:center;justify-content:space-between;gap:16px 28px;padding:18px 0;border-top:1px solid var(--cr-line);min-width:0}
+.socialIntro{flex:1 1 230px;min-width:0}.socialIntro h2{font-size:15px;font-weight:650;line-height:1.4;margin:0 0 4px;color:var(--cr-text)}.socialIntro p{font-size:12px;line-height:1.55;margin:0;color:var(--cr-muted)}
+.footer .socialLinks{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;min-width:0}
+.footer .socialLinks a{--social-color:#c4b5fd;display:inline-flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;min-height:44px;padding:7px 10px;border:1px solid var(--cr-line);border-radius:9px;background:var(--cr-surface);color:var(--cr-text);font-size:12px;font-weight:550;line-height:1.3;text-decoration:none;box-shadow:none;transition:background .15s ease,border-color .15s ease}
+.footer .socialLinks a[data-platform=youtube]{--social-color:#ff555d}.footer .socialLinks a[data-platform=instagram]{--social-color:#ef91c4}.footer .socialLinks a[data-platform=tiktok]{--social-color:#72ece2}.footer .socialLinks a[data-platform=linkedin]{--social-color:#70b4f5}.footer .socialLinks a[data-platform=x]{--social-color:#f4f4f5}.footer .socialLinks a[data-platform=pinterest]{--social-color:#ff6c83}.footer .socialLinks a[data-platform=reddit]{--social-color:#ff905d}
+.socialIcon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 19px;color:var(--social-color)}.footer .socialLinks svg{width:19px;height:19px;flex:0 0 19px}.socialLabel{white-space:nowrap}
+.footer .socialLinks a:hover{border-color:var(--social-color);background:var(--cr-raised);color:var(--cr-text)}.footer .socialLinks a:focus-visible{outline:2px solid var(--cr-accent);outline-offset:3px;border-radius:9px}
+@media(max-width:1050px){.footer .socialRow{align-items:flex-start;flex-direction:column;gap:14px}.socialIntro{flex:0 0 auto}.footer .socialLinks{justify-content:flex-start}}
+@media(max-width:600px){.footer .socialLinks{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));width:100%;gap:8px}.footer .socialLinks a{justify-content:flex-start;min-height:44px;padding-inline:12px}.footer .socialRow{padding-block:15px}}
+@media(prefers-reduced-motion:reduce){.footer .socialLinks a{transition:none}}
