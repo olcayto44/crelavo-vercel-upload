@@ -44,7 +44,7 @@ async function inspect(row,bytes,owner){
  if(ms<2000||ms>30000)throw Error("invalid_duration");
  // Compare bounded decoding progress against declared duration.
  const progress=tool("ffmpeg",["-nostdin","-xerror","-threads","1",...common,"-i","fd:","-map","0:v?","-map","0:a?","-t","31","-threads","1","-progress","pipe:1","-f","null","-"],bytes).toString("utf8");
- const measured=Math.max(0,...Array.from(progress.matchAll(/out_time_us=(\\d+)/g),m=>Number(m[1])))/1000;
+ const measured=Math.max(0,...Array.from(progress.matchAll(/out_time_us=([0-9]+)/g),m=>Number(m[1])))/1000;
  if(!progress.includes("progress=end")||measured<1950||measured>30050||Math.abs(measured-ms)>500)throw Error("decode_duration_mismatch");
  return {duration_ms:ms};
 }
