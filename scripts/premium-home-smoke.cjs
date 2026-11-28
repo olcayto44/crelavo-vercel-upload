@@ -29,3 +29,18 @@ for(const marker of ['VERCEL_ENV==="preview"','MODEL_MEDIA_PILOT_ENABLED==="true
 assert(!/credit_balances|createSignedUrl|createSignedUploadUrl|buildMagiPayload/.test(originalRoute));assert(originalPanel.includes("if(!enabled)return null")&&originalPanel.includes('x-model-media-rights'));
 assert(read("src/components/models/ModelPlanner.tsx").includes("<OriginalModelMedia locale={locale}/>"));
 console.log("PASS original media pilot static gate, owner, bounded body, rights and quarantine contract (offline; real storage upload not tested).");
+
+const {ModelJobInput,prepareBlockedModelJob}=load("src/lib/model-job-planning.ts");
+const queueInput={requestKey:"33333333-3333-4333-8333-333333333333",modelId:"magi-2",provider:"higgsfield",mode:"text",prompt:"Product video",duration:10,ratio:"16:9",audio:true,assetIds:[]};
+const queueOwner="11111111-1111-4111-8111-111111111111";
+const blockedPlan=prepareBlockedModelJob(queueOwner,queueInput,[]);
+assert.equal(blockedPlan.estimate,800000);assert.equal(blockedPlan.preflight.dispatchAllowed,false);
+assert.equal(blockedPlan.planHash,prepareBlockedModelJob(queueOwner,queueInput,[]).planHash);
+assert.notEqual(blockedPlan.planHash,prepareBlockedModelJob(queueOwner,{...queueInput,prompt:"Different scene"},[]).planHash);
+assert(!ModelJobInput.safeParse({...queueInput,price:1}).success);
+assert.throws(()=>prepareBlockedModelJob(queueOwner,{...queueInput,mode:"image"},[]));
+const plannedRoute=read("src/app/api/models/planned-jobs/route.ts"),plannedSql=read("scripts/sql/model-production-planning-queue.sql");
+assert(plannedRoute.includes('VERCEL_ENV==="preview"')&&plannedRoute.includes('db.auth.getUser(token)')&&plannedRoute.includes('.eq("user_id",a.owner)')&&plannedRoute.includes('renderingEnabled:false'));
+assert(plannedSql.includes("unique(user_id,request_key)")&&plannedSql.includes("pg_advisory_xact_lock")&&plannedSql.includes("check (reserved_credits=0)")&&plannedSql.includes("check (spent_credits=0)"));
+assert(!plannedRoute.includes("credit_balances")&&!plannedRoute.includes("buildMagiPayload"));
+console.log("PASS blocked model job plan validation, deterministic hash, owner gate, idempotency and no debit (offline).");
