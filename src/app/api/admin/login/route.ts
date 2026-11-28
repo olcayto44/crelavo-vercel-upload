@@ -1,73 +1,51 @@
-import { createClient } from "@supabase/supabase-js";
-import { ADMIN_SESSION_COOKIE, adminSessionCookieHeader, clearAdminSessionCookieHeader, createAdminSessionToken, getExpectedAdminEmail, getExpectedAdminPassword, getExpectedAdminUsername, verifyAdminSessionToken } from "@/lib/admin-session";
-import { supabaseAdmin } from "@/lib/supabase";
-
-export async function GET(request: Request) {
-  const cookie = request.headers.get("cookie") ?? "";
-  const sessionCookie = cookie.split(";").map((item) => item.trim()).find((item) => item.startsWith(`${ADMIN_SESSION_COOKIE}=`));
-  const token = sessionCookie ? decodeURIComponent(sessionCookie.slice(ADMIN_SESSION_COOKIE.length + 1)) : "";
-  return Response.json({ authenticated: verifyAdminSessionToken(token) }, { headers: { "Cache-Control": "no-store" } });
+import {createClient} from "@supabase/supabase-js";
+import {timingSafeEqual} from "node:crypto";
+import {ADMIN_SESSION_COOKIE,adminSessionCookieHeader,clearAdminSessionCookieHeader,createAdminSessionToken,getExpectedAdminEmail,getExpectedAdminPassword,getExpectedAdminUsername,getAdminSessionPayload,getCookieValue} from "@/lib/admin-session";
+import {supabaseAdmin} from "@/lib/supabase";
+import {clientIpFromRequest,rateLimit,rateLimitResponse} from "@/lib/security";
+export const dynamic="force-dynamic";
+const headers={"Cache-Control":"no-store"};
+const reply=(data:unknown,status=200)=>Response.json(data,{status,headers});
+function settings(){
+ const email=getExpectedAdminEmail(),password=getExpectedAdminPassword();
+ const url=(process.env.NEXT_PUBLIC_SUPABASE_URL||process.env.NEXT_PUBLIC_SUPABASE||"").trim();
+ const key=(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||"").trim();
+ const session=Boolean((process.env.ADMIN_SESSION_SECRET||process.env.ADMIN_API_TOKEN||process.env.NEXTAUTH_SECRET||"").trim());
+ const envLogin=Boolean(email.includes("@")&&password),supabaseLogin=Boolean(email.includes("@")&&url&&key&&process.env.SUPABASE_SERVICE_ROLE_KEY);
+ return {email,password,url,key,ready:session&&(envLogin||supabaseLogin),envLogin,supabaseLogin};
 }
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json().catch(() => ({}));
-    const identifier = String(body.identifier ?? body.email ?? body.username ?? "").trim().toLowerCase();
-    const password = String(body.password ?? "");
-    const expectedEmail = getExpectedAdminEmail();
-    const expectedUsername = getExpectedAdminUsername();
-    const expectedPassword = getExpectedAdminPassword();
-
-    const envIdentifierOk = Boolean(expectedEmail && expectedPassword && (identifier === expectedEmail || identifier === expectedUsername));
-    const envPasswordOk = Boolean(expectedPassword && password === expectedPassword);
-
-    if (envIdentifierOk && envPasswordOk) {
-      const token = createAdminSessionToken(expectedEmail);
-      if (!token) {
-        return Response.json({ error: "Admin session could not be created." }, { status: 500, headers: { "Cache-Control": "no-store" } });
-      }
-
-      return Response.json(
-        { ok: true, email: expectedEmail, source: "env" },
-        { headers: { "Set-Cookie": adminSessionCookieHeader(token), "Cache-Control": "no-store" } }
-      );
-    }
-
-    if (identifier.includes("@")) {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE ?? "";
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-      if (supabaseUrl && supabaseAnonKey) {
-        const supabase = createClient(supabaseUrl, supabaseAnonKey, { auth: { persistSession: false } });
-        const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
-        const user = data.user;
-        if (!error && user?.id && user.email) {
-          const { data: profile, error: profileError } = await supabaseAdmin()
-            .from("profiles")
-            .select("role, email")
-            .eq("id", user.id)
-            .maybeSingle();
-
-          if (!profileError && String(profile?.role ?? "").toLowerCase() === "admin" && user.app_metadata?.role==="admin" && user.email.toLowerCase()===expectedEmail) {
-            const token = createAdminSessionToken(user.email.toLowerCase());
-            if (!token) {
-              return Response.json({ error: "Admin session could not be created." }, { status: 500, headers: { "Cache-Control": "no-store" } });
-            }
-
-            return Response.json(
-              { ok: true, email: user.email.toLowerCase(), source: "supabase" },
-              { headers: { "Set-Cookie": adminSessionCookieHeader(token), "Cache-Control": "no-store" } }
-            );
-          }
-        }
-      }
-    }
-
-    return Response.json({ error: "Admin username/email or password is incorrect." }, { status: 401, headers: { "Cache-Control": "no-store" } });
-  } catch {
-    return Response.json({ error: "Admin login failed." }, { status: 500, headers: { "Cache-Control": "no-store" } });
-  }
+function equal(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&x.length>0&&timingSafeEqual(x,y)}
+function validOrigin(r:Request){const origin=r.headers.get("origin");return !origin||origin===new URL(r.url).origin}
+export async function GET(request:Request){
+ const config=settings();
+ let session=null;try{session=getAdminSessionPayload(getCookieValue(request.headers.get("cookie"),ADMIN_SESSION_COOKIE))}catch{}
+ return reply({authenticated:Boolean(session&&session.email===config.email),available:config.ready,revision:"admin-login-v2"});
 }
-
-export async function DELETE() {
-  return Response.json({ ok: true }, { headers: { "Set-Cookie": clearAdminSessionCookieHeader(), "Cache-Control": "no-store" } });
+export async function POST(request:Request){
+ if(!validOrigin(request))return reply({error:"Invalid request origin."},403);
+ const limit=rateLimit({key:"admin-login:"+clientIpFromRequest(request),limit:8,windowMs:60_000});
+ if(!limit.allowed)return rateLimitResponse(limit.resetAt);
+ const config=settings();
+ if(!config.ready){console.warn("admin_login_configuration_unavailable");return reply({error:"Yönetici girişi bu dağıtımda yapılandırılmamış. Vercel ortam ayarlarını kontrol edin.",code:"admin_configuration_unavailable"},503);}
+ try{
+ const body=await request.json().catch(()=>({}));
+ const identifier=String(body.identifier??body.email??body.username??"").trim().toLowerCase(),password=String(body.password??"");
+ if(!identifier||!password||identifier.length>254||password.length>1024)return reply({error:"Yönetici kullanıcı adı/e-posta veya parola hatalı."},401);
+ const owner=identifier===config.email||identifier===getExpectedAdminUsername();
+ const success=()=>{const token=createAdminSessionToken(config.email);return token?Response.json({ok:true},{headers:{...headers,"Set-Cookie":adminSessionCookieHeader(token)}}):reply({error:"Yönetici oturumu oluşturulamadı."},503)};
+ if(owner&&config.envLogin&&equal(password,config.password))return success();
+ if(owner&&config.supabaseLogin){
+ const client=createClient(config.url,config.key,{auth:{persistSession:false,autoRefreshToken:false}});
+ const {data,error}=await client.auth.signInWithPassword({email:config.email,password});
+ const user=data.user;
+ if(!error&&user?.id&&user.email?.toLowerCase()===config.email){
+ const {data:profile,error:profileError}=await supabaseAdmin().from("profiles").select("role").eq("id",user.id).maybeSingle();
+ if(!profileError&&String(profile?.role??"").toLowerCase()==="admin"&&user.app_metadata?.role==="admin")return success();
+ console.warn("admin_login_owner_role_verification_failed");
+ return reply({error:"Parola doğrulandı ancak yönetici yetkisi doğrulanamadı. Site sahibi rolü kontrol edilmeli.",code:"admin_role_unverified"},403);
+ }
+ }
+ return reply({error:"Yönetici kullanıcı adı/e-posta veya parola hatalı. Test ortamı giriş bilgilerinizi kontrol edin."},401);
+ }catch{console.warn("admin_login_request_failed");return reply({error:"Yönetici giriş hizmetine erişilemedi."},503)}
 }
+export async function DELETE(request:Request){if(!validOrigin(request))return reply({error:"Invalid request origin."},403);return Response.json({ok:true},{headers:{...headers,"Set-Cookie":clearAdminSessionCookieHeader()}})}
