@@ -18,8 +18,19 @@ function equal(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return
 function validOrigin(r:Request){const origin=r.headers.get("origin");return !origin||origin===new URL(r.url).origin}
 export async function GET(request:Request){
  const config=settings();
+ if(!config.ready){
+  // Only booleans, never environment values, credentials, account identifiers or tokens.
+  console.warn("admin_login_config_check",JSON.stringify({
+   ownerEmailConfigured:config.email.includes("@"),
+   passwordConfigured:Boolean(config.password),
+   sessionSigningConfigured:Boolean((process.env.ADMIN_SESSION_SECRET||process.env.ADMIN_API_TOKEN||process.env.NEXTAUTH_SECRET||"").trim()),
+   supabaseUrlConfigured:Boolean(config.url),
+   supabasePublicKeyConfigured:Boolean(config.key),
+   supabaseServiceRoleConfigured:Boolean((process.env.SUPABASE_SERVICE_ROLE_KEY||"").trim())
+  }));
+ }
  let session=null;try{session=getAdminSessionPayload(getCookieValue(request.headers.get("cookie"),ADMIN_SESSION_COOKIE))}catch{}
- return reply({authenticated:Boolean(session&&session.email===config.email),available:config.ready,revision:"admin-login-v2"});
+ return reply({authenticated:Boolean(session&&session.email===config.email),available:config.ready,revision:"admin-login-v3"});
 }
 export async function POST(request:Request){
  if(!validOrigin(request))return reply({error:"Invalid request origin."},403);

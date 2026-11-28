@@ -42,7 +42,7 @@ export function AdminLoginPanel() {
         <div className="logo admin-login-logo"><span className="logo-mark">▶</span><span>Crelavo Admin</span></div>
         <span className="badge">Secure admin login</span>
         <h1>Yönetim paneli girişi</h1>
-        <p>Site sahibi hesabının kullanıcı adı veya e-posta adresi ile giriş yap.</p>{available===false&&<p role="alert" className="form-message">Bu test dağıtımında yönetici giriş yapılandırması eksik. Parola değiştirmeden Vercel ayarlarını kontrol et.</p>}<small>Giriş sürümü: admin-login-v2</small>
+        <p>Site sahibi hesabının kullanıcı adı veya e-posta adresi ile giriş yap.</p>{available===false&&<p role="alert" className="form-message">Bu test dağıtımında yönetici giriş yapılandırması eksik. Parola değiştirmeden Vercel ayarlarını kontrol et.</p>}<small>Giriş sürümü: admin-login-v3</small>
         <form onSubmit={submitLogin} className="admin-login-form">
           <div className="field">
             <label>Username or email</label>
