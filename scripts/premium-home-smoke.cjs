@@ -68,3 +68,17 @@ assert(read("src/components/models/OriginalModelMedia.tsx").includes("uploadToSi
 assert(catalogDraftSql.includes("check(not production_enabled)")&&catalogDraftSql.includes("revision_conflict"));
 assert(catalogRoute.includes("session?.email===owner")&&catalogRoute.includes('INVALID_ORIGIN'));
 console.log("PASS model commercial gate, receipt evidence rejection, private large-upload and catalog draft guards (offline).");
+
+const {kieTextRequest,kieTaskStatusUrl,readKieCreated,readKieStatus,requireKieCommercialActivation}=load("src/lib/model-kie-task-contract.ts");
+const kieFixture=kieTextRequest({mode:"text",prompt:"A landscape",duration:4,ratio:"16:9",audio:true,assets:[]});
+assert.equal(kieFixture.url,"https://api.kie.ai/api/v1/jobs/createTask");
+assert.equal(kieFixture.body.model,"magi-2/text-to-video");
+assert.equal(kieTaskStatusUrl("test-task"),"https://api.kie.ai/api/v1/jobs/recordInfo?taskId=test-task");
+assert.equal(readKieCreated({code:200,data:{taskId:"test-task"}}),"test-task");
+assert.throws(()=>readKieCreated({code:401,data:{taskId:"test-task"}}));
+assert.equal(readKieStatus({code:200,data:{taskId:"test-task",state:"generating"}},"test-task").state,"pending");
+assert.equal(readKieStatus({code:200,data:{taskId:"test-task",state:"fail"}},"test-task").state,"reconcile_required");
+assert.equal(readKieStatus({code:200,data:{taskId:"test-task",state:"success",resultJson:JSON.stringify({resultUrls:["https://example.com/result.mp4"]})}},"test-task").state,"reconcile_required");
+assert.throws(()=>readKieStatus({code:200,data:{taskId:"other",state:"success"}},"test-task"));
+assert.throws(()=>requireKieCommercialActivation());
+console.log("PASS Kie task contract, provider response validation, no live generation or settlement");
