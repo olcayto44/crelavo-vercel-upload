@@ -37,13 +37,14 @@ type UserDetail = {
 type IpHistory = { id?: string; ip?: string | null; user_agent?: string | null; seen_at?: string | null };
 type PaymentFulfillment = { id?: string; plan_id?: string | null; product_title?: string | null; amount_usd?: number | null; credits?: number | null; status?: string | null; created_at?: string | null };
 type CreditEvent = { id?: string; type: string; amount: number; note?: string | null; created_at?: string | null };
-type ProductionItem = { id: string; title?: string | null; prompt?: string | null; production_type?: string | null; status?: string | null; automation_status?: string | null; package_id?: string | null; estimated_credits?: number | null; reserved_credits?: number | null; final_video_url?: string | null; delivery_link?:string|null; created_at?: string | null; updated_at?: string | null };
+type ProductionItem = { provider_name?:string|null;estimated_api_usd?:number|null;actual_api_usd?:number|null; id: string; title?: string | null; prompt?: string | null; production_type?: string | null; status?: string | null; automation_status?: string | null; package_id?: string | null; estimated_credits?: number | null; reserved_credits?: number | null; final_video_url?: string | null; delivery_link?:string|null; created_at?: string | null; updated_at?: string | null };
 type MessageItem = { id?: string; email?: string | null; source?: string | null; offer?: string | null; status?: string | null; page_url?: string | null; metadata?: any; created_at?: string | null };
 type OutgoingEmail = { id?: string; recipient_email?: string | null; subject?: string | null; body?: string | null; status?: string | null; created_at?: string | null };
 
 type DetailState = {
   user: UserDetail;
   creditEvents: CreditEvent[];
+  stageSteps:{job_id:string;ordinal:number;operation:string;state:string;credits:number;provider:string|null;model:string|null;estimated_api_usd:number|null;cost_state:string|null;actual_api_usd:number|null}[]|null;
   stageJobs:{id:string;category:string;title:string;state:string;total_credits:number;spent_credits:number;created_at:string}[]|null;stageCount:number|null;
   ledger:{id:string;delta:number;reason:string;job_id:string|null;created_at:string}[]|null;ledgerCount:number|null;
   ipHistory: IpHistory[];
@@ -62,6 +63,7 @@ function formatDate(value?: string | null) {
 }
 
 function number(value:number|null|undefined){return value==null?"Veri yok":value.toLocaleString("tr-TR")}
+function cost(value:number|null|undefined){return value==null?"Doğrulanmadı":"$"+value.toFixed(6).replace(/0+$/,"").replace(/\.$/,".00")}
 function messageText(item: MessageItem) {
   const metadata = item.metadata ?? {};
   return String(metadata.message ?? metadata.note ?? item.offer ?? "No message body recorded.");
@@ -204,12 +206,12 @@ export function AdminUserDetailManager({ userId }: { userId: string }) {
       </section>
 
       <section className="card admin-wide-card"><h2>Yeni kredi defteri</h2><p>{detail.ledgerCount==null?"Kaynak okunamadı":detail.ledgerCount+" kayıt · son 80"}</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Değişim</th><th>Neden</th><th>İş</th></tr></thead><tbody>{detail.ledger?.map(x=><tr key={x.id}><td>{formatDate(x.created_at)}</td><td>{number(x.delta)}</td><td>{x.reason}</td><td>{x.job_id??"—"}</td></tr>)}</tbody></table></div></section>
-      <section id="studio" className="card admin-wide-card"><h2>Studio üretim işleri</h2><p>{detail.stageCount==null?"Kaynak okunamadı":detail.stageCount+" kayıt · son 80"}</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Kategori</th><th>Durum</th><th>Planlanan kredi</th><th>Harcanan kredi</th></tr></thead><tbody>{detail.stageJobs?.map(x=><tr key={x.id}><td>{formatDate(x.created_at)}</td><td>{x.title}</td><td>{x.category}</td><td>{x.state}</td><td>{number(x.total_credits)}</td><td>{number(x.spent_credits)}</td></tr>)}</tbody></table></div></section>
+      <section id="studio" className="card admin-wide-card"><h2>Studio üretim işleri</h2><p>{detail.stageCount==null?"Kaynak okunamadı":detail.stageCount+" kayıt · son 80"}</p><div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Kategori</th><th>Durum</th><th>Planlanan kredi</th><th>Harcanan kredi</th><th>API adımları / maliyet</th></tr></thead><tbody>{detail.stageJobs?.map(x=><tr key={x.id}><td>{formatDate(x.created_at)}</td><td>{x.title}</td><td>{x.category}</td><td>{x.state}</td><td>{number(x.total_credits)}</td><td>{number(x.spent_credits)}</td><td>{detail.stageSteps===null?<span>Kaynak okunamadı</span>:<details><summary>İşlem detayları</summary>{detail.stageSteps.filter(s=>s.job_id===x.id).map(s=><p key={s.ordinal}>{s.operation} · {s.provider??"—"} {s.model??""} · {s.state} · {number(s.credits)} kredi · Tahmin: {cost(s.estimated_api_usd)} · Gerçek: {cost(s.actual_api_usd)}</p>)}</details>}</td></tr>)}</tbody></table></div></section>
       <section id="productions" className="card admin-wide-card">
         <span className="badge">Üretim geçmişi</span>
-        <h2>Kredileri hangi üretimde kullanmış</h2><p>Son 80 üretim talebi ve son 40 eski video talebi; tahmini/rezerve kredi gerçek harcama değildir.</p>
-        <div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Tip/paket</th><th>Durum</th><th>Kredi</th><th>İstek konusu</th><th>Çıktı</th></tr></thead><tbody>
-          {allProductions.map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td><strong>{item.title ?? "Untitled"}</strong><br /><small>{item.id}</small></td><td>{item.production_type ?? "video"}<br /><small>{item.package_id ?? "-"}</small></td><td>{item.status ?? "-"}<br /><small>{item.automation_status ?? ""}</small></td><td>{Number(item.reserved_credits ?? item.estimated_credits ?? 0).toLocaleString()}</td><td>{item.prompt ?? "-"}</td><td>{item.final_video_url||item.delivery_link ? <a href={item.final_video_url||item.delivery_link||"#"} target="_blank" rel="noopener noreferrer">Aç</a> : "-"}</td></tr>)}
+        <h2>Kredileri hangi üretimde kullanmış</h2><p>Son 80 üretim talebi ve son 40 eski video talebi. Gerçek API faturası mevcut değilse doğrulanmadı gösterilir; tahmin ve kredi ayrı tutulur.</p>
+        <div className="admin-table-wrap"><table className="table"><thead><tr><th>Tarih</th><th>Üretim</th><th>Tip/paket</th><th>Durum</th><th>Kredi</th><th>Sağlayıcı</th><th>Tahmini API</th><th>Gerçek API</th><th>İstek konusu</th><th>Çıktı</th></tr></thead><tbody>
+          {allProductions.map((item) => <tr key={item.id}><td>{formatDate(item.created_at)}</td><td><strong>{item.title ?? "Untitled"}</strong><br /><small>{item.id}</small></td><td>{item.production_type ?? "video"}<br /><small>{item.package_id ?? "-"}</small></td><td>{item.status ?? "-"}<br /><small>{item.automation_status ?? ""}</small></td><td>{Number(item.reserved_credits ?? item.estimated_credits ?? 0).toLocaleString()}</td><td>{item.provider_name??"—"}</td><td>{cost(item.estimated_api_usd)}</td><td>{cost(item.actual_api_usd)}</td><td>{item.prompt ?? "-"}</td><td>{item.final_video_url||item.delivery_link ? <a href={item.final_video_url||item.delivery_link||"#"} target="_blank" rel="noopener noreferrer">Aç</a> : "-"}</td></tr>)}
         </tbody></table></div>
         {!allProductions.length ? <p className="form-message">Bu üyeye ait üretim kaydı bulunamadı.</p> : null}
       </section>

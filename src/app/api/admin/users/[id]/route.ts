@@ -65,7 +65,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const productions = await safeTable(
       () => supabase
         .from("production_requests")
-        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, delivery_link, created_at, updated_at")
+        .select("id, title, prompt, production_type, status, automation_status, package_id, estimated_credits, reserved_credits, delivery_link, created_at, updated_at, output_json")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(80),
@@ -132,6 +132,15 @@ export async function GET(request: Request, { params }: RouteContext) {
       supabase.from("credit_ledger").select("id,delta,reason,job_id,created_at",{count:"exact"}).eq("user_id",userId).order("created_at",{ascending:false}).limit(80),
       supabase.from("presence").select("ip,country,path,seen_at").eq("user_id",userId).order("seen_at",{ascending:false}).limit(1).maybeSingle()
     ]);
+    const stageIds=(stageResult.data??[]).map(x=>x.id);
+    const stepResult=stageIds.length?await supabase.from("studio_stage_steps").select("job_id,ordinal,operation,state,credits,receipt",{count:"exact"}).in("job_id",stageIds).limit(1000):null;
+    const obj=(x:unknown):Record<string,unknown>=>x&&typeof x==="object"&&!Array.isArray(x)?x as Record<string,unknown>:{};
+    const money=(x:unknown)=>typeof x==="number"&&Number.isFinite(x)&&x>=0?x:null;
+    const productionCosts=productions.map(p=>{const o=obj(p.output_json),plan=obj(obj(o.requestMetadata).outputPlan),profit=obj(plan.profitEstimate);
+      const {output_json,...publicRow}=p;
+      return {...publicRow,provider_name:typeof o.provider==="string"?o.provider:typeof o.imageProvider==="string"?o.imageProvider:null,estimated_api_usd:money(profit.estimatedProviderCostUsd),actual_api_usd:null};
+    });
+    const stageSteps=stepResult?.error||!stepResult||stepResult.count!==stepResult.data?.length?null:stepResult.data.map(x=>{const receipt=obj(x.receipt);const micro=money(receipt.estimatedProviderMicroUSD);return {job_id:x.job_id,ordinal:x.ordinal,operation:x.operation,state:x.state,credits:x.credits,provider:typeof receipt.provider==="string"?receipt.provider:null,model:typeof receipt.model==="string"?receipt.model:null,estimated_api_usd:micro===null?null:micro/1000000,cost_state:typeof receipt.costState==="string"?receipt.costState:null,actual_api_usd:null}});
     const purchasedPackages = new Set<string>();
     let purchasedCredits = 0;
     let spentCredits = 0;
@@ -183,7 +192,8 @@ export async function GET(request: Request, { params }: RouteContext) {
       ledger:ledgerResult.error?null:ledgerResult.data,ledgerCount:ledgerResult.error?null:ledgerResult.count,
       ipHistory,
       paymentFulfillments,
-      productions,
+      productions:productionCosts,
+      stageSteps,
       legacyVideoRequests,
       legalAcceptances,
       incomingMessages,
