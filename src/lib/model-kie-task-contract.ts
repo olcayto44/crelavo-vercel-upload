@@ -49,3 +49,12 @@ export function estimateKieMagiDraft(seconds:number){
  if(!Number.isInteger(seconds)||seconds<4||seconds>30)return null;
  return {microUsd:seconds*kieMagiDraftPrice.microUsdPerSecond,milliKieCredits:seconds*kieMagiDraftPrice.milliKieCreditsPerSecond,approved:false as const};
 }
+
+// Provider-reported credit consumption is observational evidence, not a paid invoice.
+// This parser deliberately never accepts unknown tasks, models or negative/invalid consumption.
+export function readKieUsage(raw:unknown,expectedId:string){
+ const d=z.object({code:z.literal(200),data:z.object({taskId,model:z.string().regex(/^[a-zA-Z0-9_./-]{1,150}$/),state:z.enum(["waiting","queuing","generating","success","fail"]),creditsConsumed:z.number().finite().min(0).max(100000000).nullable().optional()})}).parse(raw).data;
+ if(d.taskId!==taskId.parse(expectedId))throw Error("provider_task_mismatch");
+ const terminal=d.state==="success"||d.state==="fail";
+ return {model:d.model,state:d.state,reportedKieCredits:terminal?d.creditsConsumed??null:null,settlement:"not_verified" as const};
+}
