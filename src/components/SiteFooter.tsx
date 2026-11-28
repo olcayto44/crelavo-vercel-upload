@@ -5,10 +5,10 @@ import styles from "./SiteFooter.module.css";
 
 export function SiteFooter() {
   return (
-    <footer id="cl-site-footer" className={"container footer clean-feed-section site-footer " + styles.footer} lang="en" data-no-translate>
+    <footer id="cl-site-footer" className={"container footer clean-feed-section site-footer cr-premium-footer " + styles.footer} lang="en" data-no-translate>
       <div className={styles.brandRow}>
         <a className={styles.brandLink} href="/" aria-label="Crelavo home"><SiteBrandLogo /></a>
-        <p className={styles.description}>Crelavo is an AI production studio providing live and autonomous agents for e-commerce growth.</p>
+        <p className={styles.description}>Crelavo is an AI creative workspace for video, images, websites and more. Explore tools, plan projects and manage creative work.</p>
       </div>
       <div className={styles.columns} data-footer-seo-columns>
         {footerSeoGroups.map((group, index) => <section className={styles.group} aria-labelledby={"footer-seo-heading-" + index} key={group.title}>

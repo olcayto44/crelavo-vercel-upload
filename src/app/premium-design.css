@@ -9,3 +9,19 @@
 .cr-premium .cr-action-primary{background:var(--cr-primary);border-color:#aa91f9;color:white}
 .cr-premium .cr-action:hover{border-color:var(--cr-accent)}
 @media(prefers-reduced-motion:reduce){.cr-premium *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Home-only header opt-in. All account actions still use the shared AuthProvider. */
+html body .nav.site-main-nav.cr-premium-nav{background:var(--cr-bg)!important;border-bottom:1px solid var(--cr-line)!important;max-width:1280px!important;min-height:70px!important;box-shadow:none!important}
+html body .nav.site-main-nav.cr-premium-nav .primary-nav-links a,html body .nav.site-main-nav.cr-premium-nav .tools-mega-trigger{color:var(--cr-text)!important;font-size:13px!important;font-weight:600!important}
+html body .nav.site-main-nav.cr-premium-nav .tools-mega-menu{background:var(--cr-surface)!important;border-color:var(--cr-line)!important;border-radius:14px!important;box-shadow:0 20px 45px #0008!important}
+html body .nav.site-main-nav.cr-premium-nav .tools-mega-wrap:focus-within .tools-mega-menu{display:grid!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important}
+html body .nav.site-main-nav.cr-premium-nav .crelavo-auth-join{background:var(--cr-primary)!important;color:white!important;border:1px solid var(--cr-accent)!important;border-radius:10px!important}
+html body .nav.site-main-nav.cr-premium-nav a:focus-visible,html body .nav.site-main-nav.cr-premium-nav button:focus-visible{outline:2px solid var(--cr-accent);outline-offset:3px}
+@media(min-width:981px){html body .nav.site-main-nav.cr-premium-nav .primary-nav-links{overflow:visible!important;gap:12px!important}}
+@media(max-width:980px){html body .nav.site-main-nav.cr-premium-nav{display:none!important}}
+/* Customer auth presentation only: no change to OTP, Google, signup or payment. */
+.crelavo-auth-backdrop .crelavo-auth-card{background:var(--cr-surface);border-color:var(--cr-line);color:var(--cr-text);max-height:calc(100dvh - 32px)}
+.crelavo-auth-backdrop .crelavo-auth-card p,.crelavo-auth-backdrop .crelavo-auth-card small{color:var(--cr-muted)}
+.crelavo-auth-backdrop .crelavo-auth-eyebrow,.crelavo-auth-backdrop .crelavo-auth-switch{color:var(--cr-accent)}
+.crelavo-auth-backdrop .crelavo-auth-email{background:var(--cr-primary);color:white;min-height:46px;border-radius:10px}
+.crelavo-auth-backdrop :focus-visible{outline:2px solid var(--cr-accent);outline-offset:3px}

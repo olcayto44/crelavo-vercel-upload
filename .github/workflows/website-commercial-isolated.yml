@@ -42,6 +42,7 @@ jobs:
           node scripts/dashboard-signin-smoke.cjs
           node scripts/premium-auth-protection-smoke.cjs
           node scripts/premium-home-smoke.cjs
+          node scripts/footer-seo-smoke.cjs
           npx tsc --noEmit
           node scripts/website-paid-production-gate-smoke.cjs
           node scripts/website-atomic-flow-smoke.cjs

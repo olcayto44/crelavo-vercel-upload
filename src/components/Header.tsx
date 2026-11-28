@@ -10,6 +10,7 @@ import { defaultPublicNavLinks, type PublicNavLink } from "@/lib/site-content-co
 type HeaderProps = {
   navLinks?: PublicNavLink[];
   languageOverride?: string;
+  premium?: boolean;
 };
 
 const canonicalNavLabels: Record<string, string> = {
@@ -49,11 +50,11 @@ function normalizeNavLabel(label: string) {
 
 const createGroups = [
   { title: "Build", links: [{ label: "Website Builder", href: "/ai-website-builder" }, { label: "SaaS & App Builder", href: "/ai-app-builder" }, { label: "E-commerce Builder", href: "/ai-ecommerce-builder" }] },
-  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "Social Media Content", href: "/ai-social-media-ai" }] },
-  { title: "Grow", links: [{ label: "Brand & Social", href: "/ai-social-media-ai" }, { label: "Ad Performance", href: "/ai-ad-performance-score-checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
+  { title: "Create Media", links: [{ label: "AI Video", href: "/ai-video-generator" }, { label: "Product Ad Video", href: "/ai-product-video-generator" }, { label: "AI Image", href: "/products/image" }] },
+  { title: "Grow", links: [{ label: "Brand Kit", href: "/ai-brand-kit-builder" }, { label: "Ad Performance", href: "/ai-ad-performance-score-checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
 ];
 
-export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: HeaderProps) {
+export function Header({ navLinks = defaultPublicNavLinks, languageOverride, premium = false }: HeaderProps) {
   const activeNavLinks = navLinks
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
@@ -68,11 +69,11 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
     })
     .filter((item, index, items) => ["Tools", "Pricing", "Assistant", "Dashboard"].includes(item.label) && items.findIndex((candidate) => candidate.label === item.label) === index);
   return (
-    <header className="container nav site-main-nav">
+    <header className={"container nav site-main-nav"+(premium?" cr-premium-nav":"")}>
       <Link className="logo" href="/">
         <SiteBrandLogo />
       </Link>
-      <nav className="nav-links primary-nav-links">
+      <nav className="nav-links primary-nav-links" aria-label="Primary navigation">
         <div className="tools-mega-wrap create-mega-wrap">
           <LocalizedNavLink className="tools-mega-trigger" href="/categories" label="Create" languageOverride={languageOverride} />
           <div className="tools-mega-menu create-mega-menu">
@@ -114,7 +115,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride }: H
           <LanguagePageLinks />
         </div>
         <HeaderCreditPill />
-        <AuthHeaderControls />
+        <AuthHeaderControls premium={premium} />
       </div>
     </header>
   );
