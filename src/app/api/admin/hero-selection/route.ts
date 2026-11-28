@@ -22,6 +22,7 @@ export async function POST(request:Request){
  const r=current.revision===null?await db.from("platform_configs").insert(row).select("updated_at").single():await db.from("platform_configs").update(row).eq("key",HOME_HERO_KEY).eq("updated_at",current.revision).select("updated_at").maybeSingle();
  if(r.error?.code==="23505"||(!r.error&&!r.data))return reply({error:"Ayarlar değişti. Yeniden yükleyin."},409);
  if(r.error)throw r.error;
+ if(!r.data)return reply({error:"Ayarlar değişti. Yeniden yükleyin."},409);
  return reply({ids,revision:r.data.updated_at,customized:true});
  }catch{return reply({error:"Hero ayarları kaydedilemedi."},503)}
 }
