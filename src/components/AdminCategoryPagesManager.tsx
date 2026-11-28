@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AdminCredentialFields } from "@/components/AdminCredentialFields";
+import {editorialSeoDraft} from "@/lib/seo-draft-assist";
 import { adminApiHeaders } from "@/lib/admin-client-auth";
 import { defaultCategoryPages, type CategoryPage } from "@/lib/category-pages";
 import { supabaseBrowser } from "@/lib/supabase";
@@ -101,6 +102,7 @@ export function AdminCategoryPagesManager({ initialPages = defaultCategoryPages 
     setMessage(data.fallback ? "Default category pages loaded." : "Category pages loaded from admin config.");
   }
 
+  function prepareSeo(){try{const d=editorialSeoDraft(selectedPage.title,selectedPage.summary+" "+selectedPage.sections.map(x=>x.text).join(" "));const slug=selectedPage.slug.startsWith("custom-category-")&&selectedPage.status==="draft"&&d.slug&&!pages.some(x=>x!==selectedPage&&x.slug===d.slug)?d.slug:selectedPage.slug;updatePage({slug,keyword:d.keywordCandidate,summary:d.seoDescription});setMessage("SEO taslağı hazır. URL ve açıklamayı yayın öncesi kontrol edin; dil çevirileri ve arama hacmi doğrulanmadı.");}catch(e){setMessage(e instanceof Error?e.message:"SEO taslağı hazırlanamadı");}}
   async function savePages() {
     setState("loading");
     setMessage("");
@@ -166,7 +168,7 @@ export function AdminCategoryPagesManager({ initialPages = defaultCategoryPages 
           <span className="badge">SEO identity</span>
           <div className="brief-two-col"><div className="field"><label>Slug</label><input value={selectedPage.slug} onChange={(event) => updatePage({ slug: normalizeId(event.target.value) })} /></div><div className="field"><label>Keyword</label><input value={selectedPage.keyword} onChange={(event) => updatePage({ keyword: event.target.value })} /></div></div>
           <div className="brief-two-col"><div className="field"><label>Title / H1</label><input value={selectedPage.title} onChange={(event) => updatePage({ title: event.target.value })} /></div><div className="field"><label>Turkish title</label><input value={selectedPage.turkishTitle} onChange={(event) => updatePage({ turkishTitle: event.target.value })} /></div></div>
-          <div className="field"><label>Summary / meta description</label><textarea value={selectedPage.summary} onChange={(event) => updatePage({ summary: event.target.value })} /></div>
+          <button type="button" className="btn secondary" onClick={prepareSeo}>SEO taslağı hazırla</button><div className="field"><label>Summary / meta description</label><textarea value={selectedPage.summary} onChange={(event) => updatePage({ summary: event.target.value })} /></div>
           <div className="field"><label>Best for</label><textarea value={selectedPage.bestFor} onChange={(event) => updatePage({ bestFor: event.target.value })} /></div>
         </div>
 

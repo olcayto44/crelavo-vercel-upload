@@ -13,7 +13,8 @@ function isActiveAdminHref(pathname: string, href: string) {
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(href + "/");
 }
-const groupLabels: Record<string, string> = { Overview: "Kontrol merkezi", Commerce: "Ticari yönetim", Production: "Üretim merkezi", Content: "İçerik ve site", Growth: "SEO ve büyüme", Communication: "İletişim", System: "Teknik yönetim" };
+const groupLabels: Record<string, string> = { Overview: "Trafik ve analiz", Commerce: "Ödeme ve ortaklık", Production: "Üretim ve Studio", Content: "İçerik ve site", Growth: "SEO / GEO ve büyüme", Communication: "E-posta ve iletişim", System: "API ve güvenlik" };
+const dailyLinks=["/admin","/admin/live","/admin/users","/admin/credits","/admin/finance","/admin/productions","/admin/inbox"];
 const menuLabels: Record<string, string> = {
   "/admin/blog": "Blog / SEO yazıları",
   "/admin": "Genel bakış", "/admin/live": "Canlı ziyaretçiler", "/admin/users": "Üyeler / aboneler",
@@ -30,7 +31,7 @@ export function AdminShell({ children, title, description }: { children: React.R
   const [mobileNavigation, setMobileNavigation] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const term = menuQuery.trim().toLocaleLowerCase("tr-TR");
-  const filteredMenu = adminMenu.filter(item => !term || (item.label + " " + (menuLabels[item.href] || "") + " " + item.group + " " + (groupLabels[item.group] || "")).toLocaleLowerCase("tr-TR").includes(term));
+  const filteredMenu = adminMenu.filter(item => (term || !dailyLinks.includes(item.href)) && (!term || (item.label + " " + (menuLabels[item.href] || "") + " " + item.group + " " + (groupLabels[item.group] || "")).toLocaleLowerCase("tr-TR").includes(term)));
   return <main className={"container section admin-shell-layout " + styles.layout}>
     <div className="nav admin-topbar" style={{ paddingTop: 0 }}>
       <Link className="logo" href="/admin"><SiteBrandLogo compact/><span className={styles.adminBadge}>ADMIN</span></Link>
@@ -42,6 +43,8 @@ export function AdminShell({ children, title, description }: { children: React.R
         <AdminSidebarAlert />
         <label className={styles.navSearch}><span>Menüde ara</span><input type="search" maxLength={100} value={menuQuery} onChange={event => setMenuQuery(event.target.value)} placeholder="Üyeler, ödeme, SEO…" /></label>
         <nav id="admin-navigation" aria-label="Admin bölümleri">
+          {!term&&<div className={styles.dailyNav}><span>GÜNLÜK İŞLEMLER</span>{dailyLinks.map(href=><Link className={isActiveAdminHref(pathname,href)?styles.dailyActive:undefined} aria-current={isActiveAdminHref(pathname,href)?"page":undefined} key={href} href={href} onClick={()=>setMobileNavigation(false)}>{menuLabels[href]||adminMenu.find(x=>x.href===href)?.label||href}</Link>)}</div>}
+          <div className={styles.moduleLabel}>YÖNETİM MODÜLLERİ</div>
           {adminMenuGroups.map(group => {
             const items = filteredMenu.filter(item => item.group === group);
             if (!items.length) return null;

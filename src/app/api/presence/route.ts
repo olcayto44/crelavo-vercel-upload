@@ -4,7 +4,7 @@ import { getSessionUser } from "@/lib/crelavo/sessionCookie";
 import { resolveCountry } from "@/lib/ip-geolocation";
 
 function clean(value: unknown, max: number, fallback = "") { return String(value ?? fallback).replace(/[\u0000-\u001f\u007f]/g, "").trim().slice(0, max); }
-function safePath(value: unknown) { const path = clean(value, 500, "/").split("?")[0].split("#")[0]; return path.startsWith("/") ? path : `/${path}`; }
+function safePath(value: unknown) { const path = clean(value, 500, "/").split("?")[0].split("#")[0]; return path.startsWith("/") && !path.startsWith("//") && !path.includes("\\") && !/^\/(admin|api|auth)(\/|$)/i.test(path) ? path : "/"; }
 async function currentUser(request: Request) { const token = bearerTokenFromRequest(request); if (token) { const { data } = await supabaseAdmin().auth.getUser(token).catch(() => ({ data: { user: null } })); if (data.user) return data.user; } return getSessionUser(); }
 
 export async function POST(request: Request) {
@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => ({}));
   const user = await currentUser(request);
   const admin = supabaseAdmin();
-  if (user?.id && user.email) { await admin.from("profiles").upsert({ id: user.id, email: user.email, full_name: null, role: "user" }, { onConflict: "id" }); }
+  if (user?.id && user.email) { await admin.from("profiles").upsert({ id: user.id, email: user.email, full_name: null, role: "user" }, { onConflict: "id", ignoreDuplicates: true }); }
   const country = await resolveCountry(ip, request.headers.get("x-vercel-ip-country") || request.headers.get("x-vercel-ip-country-code") || request.headers.get("cf-ipcountry"));
   const { error } = await supabaseAdmin().from("presence").insert({
     user_id: user?.id ?? null,

@@ -1,15 +1,16 @@
 export const ADMIN_API_TOKEN_STORAGE_KEY = "clipora_admin_api_token";
 
+let temporaryAdminToken="";
 export function getStoredAdminApiToken() {
   if (typeof window === "undefined") return "";
-  return window.localStorage.getItem(ADMIN_API_TOKEN_STORAGE_KEY) ?? "";
+  try{window.localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)}catch{}
+  return temporaryAdminToken;
 }
 
 export function rememberAdminApiToken(token: string) {
   if (typeof window === "undefined") return;
-  const clean = token.trim();
-  if (clean) window.localStorage.setItem(ADMIN_API_TOKEN_STORAGE_KEY, clean);
-  else window.localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY);
+  temporaryAdminToken=token.trim();
+  try{window.localStorage.removeItem(ADMIN_API_TOKEN_STORAGE_KEY)}catch{}
 }
 
 export function adminApiHeaders(adminEmail: string, adminToken: string, extraHeaders: HeadersInit = {}) {
@@ -30,5 +31,5 @@ export function adminApiBody<T extends Record<string, unknown>>(body: T, adminEm
 }
 
 export function adminApiTokenHelpText() {
-  return "Required in production when ADMIN_API_TOKEN is configured. Stored only in this browser.";
+  return "Owner session is preferred. Optional API token is kept only in memory until page reload.";
 }

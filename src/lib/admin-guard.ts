@@ -1,12 +1,11 @@
+import { timingSafeEqual } from "node:crypto";
 import { ADMIN_SESSION_COOKIE, getAdminSessionPayload, getCookieValue } from "@/lib/admin-session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 export function getAdminApiToken(request: Request, body?: Record<string, unknown>) {
-  const { searchParams } = new URL(request.url);
   return String(
     request.headers.get("x-admin-api-token") ??
     request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
-    searchParams.get("admin_token") ??
     body?.admin_token ??
     body?.adminToken ??
     ""
@@ -24,7 +23,11 @@ export function getAdminEmail(request: Request, body?: Record<string, unknown>) 
   ).trim().toLowerCase();
 }
 
+function tokenMatches(a:string,b:string){const x=Buffer.from(a),y=Buffer.from(b);return x.length===y.length&&x.length>0&&timingSafeEqual(x,y);}
+function validOrigin(request:Request){const origin=request.headers.get("origin");return !origin||["GET","HEAD","OPTIONS"].includes(request.method)||origin===new URL(request.url).origin;}
+
 export function isAdminRequest(request: Request, body?: Record<string, unknown>) {
+  if(!validOrigin(request))return false;
   const sessionToken = getCookieValue(request.headers.get("cookie"), ADMIN_SESSION_COOKIE);
   const session=getAdminSessionPayload(sessionToken);
   const owner=String(process.env.ADMIN_EMAIL??"").trim().toLowerCase();
@@ -39,7 +42,7 @@ export function isAdminRequest(request: Request, body?: Record<string, unknown>)
 
   if (!expectedAdminToken) return false;
 
-  return adminToken === expectedAdminToken;
+  return tokenMatches(adminToken,expectedAdminToken);
 }
 
 export type AdminPermission = "users" | "credits" | "productions" | "support" | "finance" | "content" | "providers" | "growth" | "owner";
@@ -52,6 +55,7 @@ function normalizePermissions(value: unknown): AdminPermission[] {
 }
 
 export async function getAdminRequestContext(request: Request, body?: Record<string, unknown>) {
+  if(!validOrigin(request))return {ok:false as const};
   const sessionToken = getCookieValue(request.headers.get("cookie"), ADMIN_SESSION_COOKIE);
   const sessionPayload = getAdminSessionPayload(sessionToken);
   const expectedAdminEmail = String(process.env.ADMIN_EMAIL ?? "").trim().toLowerCase();
@@ -60,7 +64,7 @@ export async function getAdminRequestContext(request: Request, body?: Record<str
   const requestToken = getAdminApiToken(request, body);
   const email = sessionPayload?.email ?? requestEmail;
 
-  if (expectedAdminEmail && email === expectedAdminEmail && (Boolean(sessionPayload) || Boolean(expectedAdminToken && requestToken === expectedAdminToken))) {
+  if (expectedAdminEmail && email === expectedAdminEmail && (Boolean(sessionPayload) || Boolean(expectedAdminToken && tokenMatches(requestToken,expectedAdminToken)))) {
     return { ok: true as const, email, source: sessionPayload ? "env-session" : "env-token", permissions: adminPermissions };
   }
 

@@ -25,7 +25,8 @@ export function AdminBlogManager() {
     if (!post || busy) return;
     if (!loaded) { setMessage("Yazı listesi yüklenemediği için kayıt yapılamıyor. Metninizi kopyalayın ve Yazıları yeniden yükle düğmesini kullanın."); return; }
     if (action === "delete" && !window.confirm("Bu yazı silinecek. Emin misiniz?")) return;
-    const candidate = { ...post, status: status || post.status };
+    let candidate = { ...post, status: status || post.status };
+    if(action==="save"&&post.title.trim()&&post.content.trim().length>=50){try{const d=editorialSeoDraft(post.title,post.content);candidate={...candidate,slug:post.slug||d.slug,seoTitle:post.seoTitle||d.seoTitle,excerpt:post.excerpt||d.excerpt,seoDescription:post.seoDescription||d.seoDescription,keywords:post.keywords.some(Boolean)?post.keywords:[d.keywordCandidate]};}catch{/* Manual fields remain editable. */}}
     try { if (action === "save") validateBlogPost(candidate); } catch (error) { setMessage(error instanceof Error ? error.message : "Alanları kontrol edin."); return; }
     setBusy(true); setMessage("");
     try {

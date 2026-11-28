@@ -22,6 +22,7 @@ function normalizeStringArray(value: unknown) {
   return Array.isArray(value) ? value.map(normalizeString).filter(Boolean) : [];
 }
 
+function safeMediaUrl(value:string){if(!value||/[\\\u0000-\u0020]/.test(value))return false;if(value.startsWith("/")&&!value.startsWith("//"))return /^\/(showcase|hero|images|videos)\//.test(value);try{const u=new URL(value);return u.protocol==="https:"&&!u.username&&!u.password}catch{return false}}
 function normalizeVideo(value: unknown, fallbackOrder: number): ConfiguredShowcaseVideo | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
@@ -30,7 +31,7 @@ function normalizeVideo(value: unknown, fallbackOrder: number): ConfiguredShowca
   const description = normalizeString(item.description);
   const videoUrl = normalizeString(item.videoUrl || item.contentUrl);
   const uploadDate = normalizeString(item.uploadDate);
-  if (!id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(id) || !title || !description || !/^https?:\/\//i.test(videoUrl)) return null;
+  if (!id || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(id) || !title || !description || (!safeMediaUrl(videoUrl)&&!(item.publishStatus==="draft"&&!videoUrl))) return null;
   if (uploadDate && Number.isNaN(Date.parse(uploadDate))) return null;
   const orientation = item.orientation === "landscape" ? "landscape" : "portrait";
   const details = normalizeStringArray(item.details);
@@ -41,7 +42,7 @@ function normalizeVideo(value: unknown, fallbackOrder: number): ConfiguredShowca
     kicker: normalizeString(item.kicker || item.category) || "Crelavo showcase",
     description,
     videoUrl,
-    imageUrl: normalizeString(item.imageUrl || item.thumbnailUrl) || undefined,
+    imageUrl: safeMediaUrl(normalizeString(item.imageUrl || item.thumbnailUrl))?normalizeString(item.imageUrl || item.thumbnailUrl):undefined,
     duration: normalizeString(item.duration) || undefined,
     uploadDate: uploadDate || new Date().toISOString(),
     details: details.length ? details : [description],

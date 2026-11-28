@@ -1,38 +1,31 @@
-﻿import { isAdminRequest, adminRequiredResponse } from "@/lib/admin-guard";
-import { uploadProviderAsset } from "@/lib/providers/storage";
-
-const maxBytes = 80 * 1024 * 1024;
-const videoTypes = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-m4v"]);
-const imageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-
-function extension(name: string, type: string) {
-  const fromName = name.toLowerCase().split(".").pop()?.replace(/[^a-z0-9]/g, "");
-  if (fromName && fromName.length <= 6) return fromName;
-  if (type.includes("webm")) return "webm";
-  if (type.includes("quicktime")) return "mov";
-  if (type.includes("png")) return "png";
-  if (type.includes("webp")) return "webp";
-  return type.startsWith("image/") ? "jpg" : "mp4";
-}
-
-export async function POST(request: Request) {
-  try {
-    const form = await request.formData();
-    const adminEmail = String(form.get("adminEmail") ?? "").trim();
-    const adminToken = String(form.get("adminToken") ?? "").trim();
-    const body = { adminEmail, adminToken };
-    if (!isAdminRequest(request, body)) return adminRequiredResponse();
-    const file = form.get("file");
-    const kind = String(form.get("kind") ?? "video");
-    if (!(file instanceof File)) return Response.json({ error: "Bir dosya seçin." }, { status: 400 });
-    if (file.size <= 0 || file.size > maxBytes) return Response.json({ error: "Dosya boş veya 80 MB sınırını aşıyor." }, { status: 400 });
-    const contentType = String(file.type || "application/octet-stream").toLowerCase();
-    const allowed = kind === "thumbnail" ? imageTypes : videoTypes;
-    if (!allowed.has(contentType)) return Response.json({ error: kind === "thumbnail" ? "Thumbnail JPG, PNG veya WEBP olmalı." : "Video MP4, WEBM, MOV veya M4V olmalı." }, { status: 400 });
-    const filePath = `showcase/${Date.now()}-${crypto.randomUUID()}.${extension(file.name, contentType)}`;
-    const url = await uploadProviderAsset(filePath, await file.arrayBuffer(), contentType);
-    return Response.json({ url, kind, fileName: file.name });
-  } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : "Showcase dosyası yüklenemedi." }, { status: 500 });
+import { requireAdminPermission } from "@/lib/admin-guard";
+import { supabaseAdmin } from "@/lib/supabase";
+import sharp from "sharp";
+export const runtime="nodejs";
+const MAX=4*1024*1024;
+const BUCKET="public-showcase-media";
+export async function POST(request:Request){
+ const access=await requireAdminPermission(request,"content");
+ if(!access.ok)return access.response;
+ if(Number(request.headers.get("content-length")||0)>MAX+65536)return Response.json({error:"Dosya 4 MB sınırını aşıyor. Büyük videolar için doğrulanmış medya bağlantısı kullanın."},{status:413});
+ try{
+  const form=await request.formData(),file=form.get("file"),kind=form.get("kind");
+  if(!(file instanceof File)||!file.size||file.size>MAX||!["video","thumbnail"].includes(String(kind)))return Response.json({error:"Geçerli dosya seçin (en fazla 4 MB)."},{status:400});
+  let bytes:Buffer=Buffer.from(await file.arrayBuffer()),type:string,ext:string;
+  if(kind==="thumbnail"){
+   if(!["image/jpeg","image/png","image/webp"].includes(file.type))return Response.json({error:"JPG, PNG veya WebP gerekli."},{status:400});
+   try{const img=sharp(bytes,{limitInputPixels:25_000_000});const meta=await img.metadata();if(!["jpeg","png","webp"].includes(meta.format||""))throw Error("format");bytes=Buffer.from(await img.rotate().resize({width:1600,height:1600,fit:"inside",withoutEnlargement:true}).webp({quality:88}).toBuffer());}catch{return Response.json({error:"Görsel içeriği geçersiz."},{status:400})}
+   type="image/webp";ext="webp";
+  }else{
+   if(file.type!=="video/mp4"||bytes.length<24||bytes.toString("ascii",4,8)!=="ftyp")return Response.json({error:"Geçerli MP4 gerekli."},{status:400});
+   type="video/mp4";ext="mp4";
   }
+  const db=supabaseAdmin(),key="showcase/"+crypto.randomUUID()+"."+ext;
+  const bucket=await db.storage.getBucket(BUCKET);
+  if(bucket.error){const created=await db.storage.createBucket(BUCKET,{public:true,fileSizeLimit:MAX,allowedMimeTypes:["image/webp","video/mp4"]});if(created.error&&!/already exists/i.test(created.error.message))throw created.error;}
+  else if(!bucket.data.public)throw Error("public showcase bucket not configured");
+  const result=await db.storage.from(BUCKET).upload(key,bytes,{contentType:type,upsert:false});
+  if(result.error)throw result.error;
+  return Response.json({url:db.storage.from(BUCKET).getPublicUrl(key).data.publicUrl,kind,fileName:file.name},{headers:{"Cache-Control":"no-store"}});
+ }catch{return Response.json({error:"Medya kaydedilemedi. Depolama yapılandırmasını kontrol edin."},{status:503});}
 }
