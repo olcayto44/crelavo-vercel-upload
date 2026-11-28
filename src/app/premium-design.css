@@ -115,3 +115,16 @@ html body main.cr-legacy-product .btn.secondary{background:var(--cr-raised)!impo
 /* Scoped signed-out dashboard presentation, with no changes to authentication. */
 html body .crelavo-auth-gate.cr-account-gate{min-height:100dvh;display:grid!important;place-items:center;padding:24px;background:var(--cr-bg)!important;color:var(--cr-text)!important;text-align:center}
 .cr-account-gate-panel{width:min(100%,460px);box-sizing:border-box;padding:32px;background:var(--cr-surface);border:1px solid var(--cr-line);border-radius:16px;box-shadow:0 16px 48px #0003}.cr-account-gate-kicker{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--cr-accent)}.cr-account-gate-panel h1{font-size:28px;line-height:1.2;margin:12px 0;color:var(--cr-text)}.cr-account-gate-panel p{color:var(--cr-muted);font-size:15px;line-height:1.65}.cr-account-gate-panel button{display:block!important;width:100%;min-height:46px;margin:20px 0 0!important;border:1px solid var(--cr-accent)!important;border-radius:10px!important;background:var(--cr-primary)!important;color:white!important;font:650 14px Inter,system-ui,sans-serif!important;cursor:pointer}.cr-account-gate-back{display:inline-block;margin-top:16px;color:var(--cr-accent)!important;font-size:14px}
+
+/* Compact language picker: one trigger, vertically stacked native navigation links. */
+html body .header-language-links{display:flex!important;align-items:center;gap:0!important;overflow:visible!important}
+.cr-language-dropdown{position:relative;flex:0 0 auto;color:var(--cr-text);font:600 13px/1.3 Inter,system-ui,sans-serif}
+.cr-language-dropdown>summary{display:flex;align-items:center;justify-content:center;gap:7px;min-height:40px;padding:0 10px;border:1px solid var(--cr-line);border-radius:9px;cursor:pointer;list-style:none;background:var(--cr-bg);color:var(--cr-text)}
+.cr-language-dropdown>summary::-webkit-details-marker{display:none}.cr-language-dropdown>summary:hover,.cr-language-dropdown[open]>summary{border-color:var(--cr-accent)}
+.cr-language-dropdown:not([open])>.cr-language-options{display:none!important}
+html body .cr-language-dropdown .cr-language-options{position:absolute;display:flex!important;flex-direction:column;align-items:stretch;gap:3px;right:0;top:calc(100% + 8px);min-width:170px;width:max-content;max-width:calc(100vw - 24px);padding:7px;background:var(--cr-surface);border:1px solid var(--cr-line);border-radius:10px;box-shadow:0 12px 32px #0007;z-index:510}
+html body .cr-language-dropdown:not([open]) .cr-language-options{display:none!important}
+html body .cr-language-dropdown .cr-language-options a{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:10px;min-height:38px;margin:0;border:0;border-radius:6px;color:var(--cr-text);text-decoration:none;background:transparent;white-space:nowrap;font-size:13px}
+.cr-language-options a small{color:var(--cr-muted);font-size:11px}.cr-language-options a:hover,.cr-language-options a[aria-current=page]{background:var(--cr-raised)!important;color:var(--cr-accent)!important}
+.cr-language-dropdown summary:focus-visible,.cr-language-options a:focus-visible{outline:2px solid var(--cr-accent);outline-offset:2px}
+@media(max-width:980px){html body .cr-language-dropdown .cr-language-options{position:static;min-width:170px;margin-top:8px;box-shadow:none}.cr-language-dropdown>summary{justify-content:flex-start}}

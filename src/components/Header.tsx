@@ -80,7 +80,7 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, pre
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">
-          <LanguagePageLinks />
+          <LanguagePageLinks dropdown />
         </div>
         <HeaderCreditPill />
         <AuthHeaderControls premium={premium} />
