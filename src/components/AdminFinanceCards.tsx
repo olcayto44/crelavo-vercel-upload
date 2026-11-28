@@ -103,14 +103,14 @@ export function AdminFinanceCards() {
   }
 
   return (
-    <div className="grid" style={{ marginTop: 20 }}>
-      <div className="card"><span>Today's revenue</span><strong>{stats ? money(stats.todayRevenue) : "..."}</strong><p>From payment API purchase events; manual activations are tracked separately</p></div>
-      <div className="card"><span>Weekly revenue</span><strong>{stats ? money(stats.weeklyRevenue) : "..."}</strong><p>Last 7 days</p></div>
-      <div className="card"><span>Monthly revenue</span><strong>{stats ? money(stats.monthlyRevenue) : "..."}</strong><p>Last 30 days</p></div>
-      <div className="card"><span>Total credit revenue</span><strong>{stats ? money(stats.revenue) : "..."}</strong><p>Payment API purchase events only</p></div>
-      <div className="card"><span>Production revenue value</span><strong>{stats ? money(stats.productionRevenue) : "..."}</strong><p>Reserved credits converted with credit value</p></div>
-      <div className="card"><span>API/provider cost</span><strong>{stats ? money(stats.estimatedApiCost) : "..."}</strong><p>{stats ? `${stats.apiBreakdownProductionCount}/${stats.totalProductionCount} jobs have API breakdowns` : "Estimated per production"}</p></div>
-      <div className="card"><span>Production gross profit</span><strong>{stats ? money(stats.productionGrossProfit) : "..."}</strong><p>Margin: {stats ? `%${stats.productionMargin}` : "..."}</p></div>
+    <div className="grid" style={{ marginTop: 20 }}><p style={{gridColumn:"1 / -1"}}>Simulation only. Credit-based amounts and legacy cost ratios are not actual income or expenditure. Source queries may be limited by the database API.</p>
+      <div className="card"><span>Estimated credit value today</span><strong>{stats ? money(stats.todayRevenue) : "..."}</strong><p>Credit event × assumed unit value; not cash receipts</p></div>
+      <div className="card"><span>Estimated weekly credit value</span><strong>{stats ? money(stats.weeklyRevenue) : "..."}</strong><p>Last 7 days</p></div>
+      <div className="card"><span>Estimated monthly credit value</span><strong>{stats ? money(stats.monthlyRevenue) : "..."}</strong><p>Last 30 days</p></div>
+      <div className="card"><span>Estimated total credit value</span><strong>{stats ? money(stats.revenue) : "..."}</strong><p>Credit event × assumed unit value; not cash receipts</p></div>
+      <div className="card"><span>Estimated production value</span><strong>{stats ? money(stats.productionRevenue) : "..."}</strong><p>Reserved credits converted with credit value</p></div>
+      <div className="card"><span>Estimated API/provider cost</span><strong>{stats ? money(stats.estimatedApiCost) : "..."}</strong><p>{stats ? `${stats.apiBreakdownProductionCount}/${stats.totalProductionCount} jobs have API breakdowns` : "Estimated per production"}</p></div>
+      <div className="card"><span>Estimated production gross profit</span><strong>{stats ? money(stats.productionGrossProfit) : "..."}</strong><p>Margin: {stats ? `%${stats.productionMargin}` : "..."}</p></div>
       <div className="card"><span>Estimated cost</span><strong>{stats ? money(stats.estimatedCost) : "..."}</strong><p>Legacy target cost ratio</p></div>
       <div className="card"><span>Estimated gross profit</span><strong>{stats ? money(stats.estimatedGrossProfit) : "..."}</strong><p>Margin: {stats ? `%${stats.margin}` : "..."}</p></div>
       <div className="card"><span>Sold credits</span><strong>{stats ? stats.soldCredits : "..."}</strong><p>Payment purchase events</p></div>
@@ -124,7 +124,7 @@ export function AdminFinanceCards() {
       <div className="card"><span>Cancelled half-charge</span><strong>{stats ? stats.cancelledHalfSpentProductions : "..."}</strong><p>{stats ? `${stats.finalizedReleasedReservedCredits.toLocaleString()} credits released after 50% cut` : "Member cancellation policy"}</p></div>
       {stats?.packageSalesSummary?.length ? (
         <div className="card" style={{ gridColumn: "1 / -1" }}>
-          <span>Package sales summary</span>
+          <span>Estimated package value summary</span>
           <div className="provider-job-list" style={{ marginTop: 12 }}>
             {stats.packageSalesSummary.map((item) => (
               <div className="provider-job-chip ready" key={item.packageId}>
@@ -138,11 +138,11 @@ export function AdminFinanceCards() {
       ) : null}
       {stats?.recentPackageSales?.length ? (
         <div className="card" style={{ gridColumn: "1 / -1" }}>
-          <span>Recent package sales</span>
+          <span>Recent credit purchase records</span>
           <div className="admin-table-wrap" style={{ marginTop: 12 }}>
             <table className="table">
               <thead>
-                <tr><th>Date</th><th>User ID</th><th>Package</th><th>Billing</th><th>Credits</th><th>Revenue</th><th>Payment ref</th></tr>
+                <tr><th>Date</th><th>User ID</th><th>Package</th><th>Billing</th><th>Credits</th><th>Estimated value</th><th>Payment ref</th></tr>
               </thead>
               <tbody>
                 {stats.recentPackageSales.map((sale) => (
@@ -169,7 +169,7 @@ export function AdminFinanceCards() {
               <div className="provider-job-chip ready" key={item.packageId}>
                 <strong>{item.packageId}</strong>
                 <span>{item.productionType} · {item.count} jobs · {item.reservedCredits.toLocaleString()} credits</span>
-                <small>Revenue {money(item.revenueUsd)} · API cost {money(item.providerCostUsd)} · Profit {money(item.grossProfitUsd)} · Margin %{item.marginPercent}</small>
+                <small>Estimated value {money(item.revenueUsd)} · Estimated API cost {money(item.providerCostUsd)} · Estimated profit {money(item.grossProfitUsd)} · Margin %{item.marginPercent}</small>
               </div>
             ))}
           </div>

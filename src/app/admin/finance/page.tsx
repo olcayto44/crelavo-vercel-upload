@@ -5,9 +5,9 @@ import { supabaseAdmin } from "@/lib/supabase";
 import { productionReadinessScorePlan, providerCostLedgerPlan, providerQueueConcurrencyGuard } from "@/lib/launch-ops-readiness";
 
 const financeGuardrails = [
-  "Payment API purchase events count as revenue; manual credit activations stay visible but separate.",
+  "Whop fulfilled amounts are shown separately from credit-derived estimates and manual credit activations.",
   "Reserved credits are shown as exposure until a production is finalized, refunded or sent to admin review.",
-  "Provider/API cost is estimated from production profit metadata when available, with target cost ratio fallback.",
+  "Provider/API cost estimates are simulations only, not verified expenses.",
   "Real provider spend should remain blocked until payment, credit reservation and provider readiness checks pass.",
   "Lemon remains postponed; Whop is the active payment path for finance reconciliation."
 ];
@@ -15,12 +15,21 @@ const financeGuardrails = [
 export const dynamic = "force-dynamic";
 
 export default async function AdminFinancePage() {
-  const { data: fulfillments } = await supabaseAdmin().from("payment_fulfillments").select("status,amount_usd,credits,kind,billing_reason,created_at").order("created_at", { ascending: false }).limit(500);
-  const paid = (fulfillments ?? []).filter((row) => row.status === "fulfilled");
-  const paymentRevenue = paid.reduce((sum, row) => sum + Number(row.amount_usd || 0), 0);
-  const pendingPayments = (fulfillments ?? []).filter((row) => row.status === "pending_user").length;
+  const db=()=>supabaseAdmin();
+  const now=new Date(),day=new Date(now.getTime()+3*3600000);day.setUTCHours(0,0,0,0);
+  const since=(days:number)=>new Date(day.getTime()-3*3600000-(days-1)*86400000).toISOString();
+  async function verifiedPeriod(days:number){
+    try{
+      const r=await db().from("payment_fulfillments").select("amount_usd,credits",{count:"exact"}).eq("status","fulfilled").gte("created_at",since(days)).limit(1000);
+      if(r.error||!r.data||r.count!==r.data.length)return {days,count:r.error?null:r.count,revenue:null,credits:null};
+      const total=(key:"amount_usd"|"credits")=>r.data.some(row=>row[key]==null||row[key]===""||!Number.isFinite(Number(row[key])))?null:r.data.reduce((sum,row)=>sum+Number(row[key]),0);
+      return {days,count:r.count,revenue:total("amount_usd"),credits:total("credits")};
+    }catch{return {days,count:null,revenue:null,credits:null}}
+  }
+  const periods=await Promise.all([1,7,30].map(verifiedPeriod));
+  const fmt=(value:number|null,currency=false)=>value===null?"Veri yok":new Intl.NumberFormat("tr-TR",currency?{style:"currency",currency:"USD"}:{maximumFractionDigits:0}).format(value);
   return (
-    <AdminShell title="Finance Dashboard" description="Revenue, provider spend, reserved-credit exposure, production margin and manual payment activation review.">
+    <AdminShell title="Finans ve maliyet yönetimi" description="Whop ödeme kayıtları, kredi hareketleri ve sağlayıcı giderlerinin ayrı raporlanması.">
       <section className="card admin-wide-card">
         <span className="badge">Revenue / provider spend</span>
         <h2>Finance overview for launch-safe production spend</h2>
@@ -35,9 +44,11 @@ export default async function AdminFinancePage() {
         </div>
       </section>
 
-      <section className="admin-panel-section"><AdminFinanceCards /></section>
-      <section className="card admin-wide-card" style={{ marginTop: 20 }}><span className="badge">Live Whop reconciliation</span><h2>Gerçek fulfillment özeti</h2><div className="admin-info-grid"><div><span>Fulfilled</span><strong>{paid.length}</strong><small>Audit tablosundaki başarılı ödemeler</small></div><div><span>Revenue</span><strong>${paymentRevenue.toFixed(2)}</strong><small>Fulfillment amount toplamı</small></div><div><span>Pending user</span><strong>{pendingPayments}</strong><small>Email eşleşmesi bekleyen ödeme</small></div><div><span>Last sync</span><strong>{fulfillments?.[0]?.created_at ? new Date(fulfillments[0].created_at).toLocaleString("tr-TR") : "—"}</strong><small>Son audit kaydı</small></div></div></section>
-
+      <section className="card admin-wide-card"><h2>Whop ödeme kayıtları</h2><p>İstanbul saati. Fulfilled brüt kayıtları; banka tahsilatı, komisyon, iade ve vergi mutabakatı değildir. Eksik tutarlar veya 1.000 kaydı aşan toplamlar hesaplanmaz.</p>
+      <div className="admin-table-wrap"><table className="table"><thead><tr><th>Dönem</th><th>Tamamlanan ödeme kaydı</th><th>Brüt kayıtlı tutar</th><th>Verilen kredi</th></tr></thead><tbody>{periods.map(p=><tr key={p.days}><td>{p.days===1?"Bugün":p.days+" gün"}</td><td>{fmt(p.count)}</td><td>{fmt(p.revenue,true)}</td><td>{fmt(p.credits)}</td></tr>)}</tbody></table></div>
+      <div className="admin-info-grid"><div><span>Kesin API gideri</span><strong>Mutabakat gerekli</strong><small>Sağlayıcı faturası ile doğrulanmamış</small></div><div><span>Net kazanç</span><strong>Hesaplanmadı</strong><small>İadeler, komisyonlar, vergiler ve giderler gerekli</small></div></div>
+      </section>
+      <details className="card admin-wide-card"><summary>Eski kredi ve maliyet simülasyonu (tahmini, muhasebe raporu değil)</summary><AdminFinanceCards /></details>
       <section className="card admin-wide-card" style={{ marginTop: 20 }}>
         <span className="badge">Production readiness / credit burn</span>
         <h2>Production Readiness Score and Credit Burn Forecast</h2>
