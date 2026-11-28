@@ -115,7 +115,7 @@ export default async function BlogPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
-      <main className="container section blog-article-page">
+      <main className="container section blog-article-page cr-public-page">
         <section className="blog-hero-panel">
           <span className="badge">Blog / Content</span>
           <h1>AI production insights for websites, apps, e-commerce campaigns and AI + human QA delivery.</h1>

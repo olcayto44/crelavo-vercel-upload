@@ -37,7 +37,7 @@ export default async function ContactPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
-      <main className="container section">
+      <main className="container section cr-public-page">
         <section className="blog-hero-panel">
           <span className="badge">Contact</span>
           <h1>Contact Crelavo</h1>

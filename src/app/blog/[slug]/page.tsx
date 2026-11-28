@@ -54,7 +54,7 @@ export default async function EcommerceGuidePage({ params }: { params: Promise<{
   const post = (await getPublishedBlogPosts()).find(item => item.slug === slug);
   if (post) {
     const site = await getConfiguredSiteContentConfig();
-    return <><Header navLinks={site.navLinks} /><main className="container section blog-article-page"><article className="card admin-wide-card"><header><Link href="/blog">Blog</Link><h1>{post.title}</h1><p className="section-lead">{post.excerpt}</p><p>{post.author} · <time dateTime={post.publishedAt!}>{post.publishedAt!.slice(0, 10)}</time></p>{post.coverImage && <img src={post.coverImage} alt={post.coverAlt} style={{ maxWidth: "100%", height: "auto" }} />}</header><BlogArticleContent content={post.content} /><BlogPostDates post={post} /></article><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogArticleJsonLd(post) }} /></main></>;
+    return <><Header navLinks={site.navLinks} /><main className="container section blog-article-page cr-public-page"><article className="card admin-wide-card"><header><Link href="/blog">Blog</Link><h1>{post.title}</h1><p className="section-lead">{post.excerpt}</p><p>{post.author} · <time dateTime={post.publishedAt!}>{post.publishedAt!.slice(0, 10)}</time></p>{post.coverImage && <img src={post.coverImage} alt={post.coverAlt} style={{ maxWidth: "100%", height: "auto" }} />}</header><BlogArticleContent content={post.content} /><BlogPostDates post={post} /></article><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: blogArticleJsonLd(post) }} /></main></>;
   }
   const productionPage = getProductionSeoPage("blog", slug);
   if (productionPage) return <ProductionSeoPage page={productionPage} />;
@@ -64,7 +64,7 @@ export default async function EcommerceGuidePage({ params }: { params: Promise<{
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section blog-article-page service-page-detail">
+      <main className="container section blog-article-page service-page-detail cr-public-page">
         <section className="blog-hero-panel production-hero-card">
           <span className="badge">{guide.platform} guide</span>
           <h1>{guide.h1}</h1>

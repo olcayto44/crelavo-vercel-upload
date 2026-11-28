@@ -201,7 +201,7 @@ export function ServicePageView({ page }: { page: ServicePage }) {
   return (
     <>
       <ServicePageStructuredData page={page} />
-      <main className="container section service-page-detail public-funnel-page">
+      <main className="container section service-page-detail public-funnel-page cr-public-page">
         <section className="production-hero-card admin-overview-hero service-hero-card">
         <nav aria-label="Breadcrumb" style={{fontSize:12,marginBottom:12}}><Link href="/">Home</Link> / <Link href="/categories">Categories</Link> / {page.title}</nav>
         <span className="badge">{page.badge}</span>

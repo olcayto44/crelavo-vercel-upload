@@ -53,7 +53,7 @@ export default async function FreeToolsPage() {
         pageType="CollectionPage"
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section tools-page free-tools-page"><style id="cl-leak-3">{"/* CL-LEAK 3 */body:has(.free-tools-page) .public-side-rail{display:none!important}"}</style>
+      <main className="container section tools-page free-tools-page cr-public-page"><style id="cl-leak-3">{"/* CL-LEAK 3 */body:has(.free-tools-page) .public-side-rail{display:none!important}"}</style>
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Free AI tools</span>
           <h1>Free AI tools for ad references, TikTok hooks, product descriptions, prompts, ecommerce ads and landing page copy</h1>

@@ -84,7 +84,7 @@ export default async function AffiliatePage() {
     <>
       <PartnerStructuredData />
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
-      <main className="container section tools-page affiliate-page">
+      <main className="container section tools-page affiliate-page cr-public-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Partner Program</span>
           <h1>Earn by introducing creators and businesses to Crelavo</h1>

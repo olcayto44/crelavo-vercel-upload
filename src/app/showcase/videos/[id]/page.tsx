@@ -56,7 +56,7 @@ function VideoShowcaseCls({ video }: { video: ShowcaseVideo }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: CLS_CSS }} />
-      <main id="cls">
+      <main id="cls" className="cr-public-showcase">
         <div className="wrap">
           <a className="back" href="/showcase/explore-samples">← Back to samples</a>
           <div className="hero">

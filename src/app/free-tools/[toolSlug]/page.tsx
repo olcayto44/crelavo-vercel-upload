@@ -134,7 +134,7 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
         imageAlt={`${tool.title} Crelavo dashboard preview`}
       />
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section tools-page free-tool-detail-page">
+      <main className="container section tools-page free-tool-detail-page cr-public-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Free AI tool</span>
           <h1>{tool.title} for {tool.category}, ecommerce campaigns and production workflows</h1>

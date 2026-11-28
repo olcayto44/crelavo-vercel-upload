@@ -15,7 +15,7 @@ export default async function GrowthIntelligencePage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
-      <main className="container section pricing-page">
+      <main className="container section pricing-page cr-public-page">
         <style id="clw-css">{CLW_CSS}</style>
         <div id="clw">
           <nav className="path" aria-label="Studio">

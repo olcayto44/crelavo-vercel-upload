@@ -31,7 +31,7 @@ export default async function AlternativesPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} />
-      <main className="container section">
+      <main className="container section cr-public-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">AI tool alternatives</span>
           <h1>Crelavo alternatives for AI video, ecommerce campaigns, websites and creative production</h1>
