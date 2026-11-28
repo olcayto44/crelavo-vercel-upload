@@ -71,10 +71,11 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
   // Public page consistency: verify shared surface and horizontal bounds after navigation.
   for(const width of [1440,1024,390]){
     await resize(width);
-    for(const path of ["/tools","/pricing","/free-tools","/free-tools/ad-reference-analyzer","/blog","/contact"]){
+    for(const path of ["/tools","/pricing","/free-tools","/free-tools/ad-reference-analyzer","/blog","/contact","/products/image-to-video","/products/seedance-2-video","/products/music-video-mv"]){
       await nav(path,"location.pathname==="+JSON.stringify(path)+" && document.readyState==='complete' && !!document.querySelector('main')");
       assert(await ev("!!document.querySelector('main h1')"),"public heading "+path);
       assert(await ev("(()=>{const n=document.querySelector('main');return n.scrollWidth<=n.clientWidth+2})()"),"public page overflow "+path+" "+width);
+      if(path.startsWith("/products/")){assert(await ev("(()=>{const n=document.querySelector('.cr-legacy-product');return !!n&&getComputedStyle(n).backgroundImage==='none'})()"),"legacy product surface "+path);}
       if(path==="/free-tools/ad-reference-analyzer"){
         assert(await ev("(()=>{const n=document.querySelector('.cr-editorial-faq>div');return !!n&&getComputedStyle(n).borderTopWidth==='0px'&&getComputedStyle(n).boxShadow==='none'})()"),"FAQ must be continuous, not nested cards");
       }
@@ -95,7 +96,8 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
   await nav("/","!!document.querySelector('#home-brief')");
   await wait("(()=>{const b=[...document.querySelectorAll('main button')].find(b=>b.textContent==='Website');if(!b)return false;if(b.getAttribute('aria-pressed')!=='true')b.click();return b.getAttribute('aria-pressed')==='true';})()","website mode hydration");
   await type("#home-brief","A fixture website brief");
-  await ev("document.querySelector('#home-brief').form.querySelector('button[type=submit]').click();true");
+  await cdp("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});
+  await cdp("Input.dispatchKeyEvent",{type:"keyUp",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});
   await wait("location.pathname==='/dashboard/studio/website'","draft opens matching Studio");
   assert(await ev("(()=>{const b=sessionStorage.getItem('crelavo-home-brief-v1');const p=document.querySelector('iframe')?.contentDocument?.querySelector('#prompt');return b?JSON.parse(b).prompt==='A fixture website brief':p?.value==='A fixture website brief';})()"));
   console.log("PASS: responsive homepage, reachable video control, mobile sign-in, local draft transfer; no live account or email used.");
