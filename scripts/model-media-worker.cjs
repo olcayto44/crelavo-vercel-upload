@@ -4,13 +4,13 @@ const {execFileSync}=require("node:child_process");
 const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const TEST_ORIGIN="https://bwzxdxqgrgbsvndinmrv.supabase.co";
 const BUCKET="model-original-quarantine";
-const MAX=3000000;
+const MAX=50000000;
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const formats={"video/mp4":"mov","video/quicktime":"mov","audio/mpeg":"mp3","audio/wav":"wav"};
 const imageFormats={"image/jpeg":"jpeg","image/png":"png","image/webp":"webp"};
 const digest=b=>createHash("sha256").update(b).digest("hex");
 function checkIdentity(row,owner){
- if(!uuid.test(owner)||!uuid.test(row.id)||row.user_id!==owner||row.model_id!=="magi-2"||row.state!=="quarantined"||row.object_key!==owner+"/"+row.id+"/original"||!Number.isInteger(row.bytes)||row.bytes<1||row.bytes>MAX||!/^[0-9a-f]{64}$/.test(row.sha256??""))throw Error("invalid_asset_identity");
+ if(!uuid.test(owner)||!uuid.test(row.id)||row.user_id!==owner||row.model_id!=="magi-2"||row.state!=="quarantined"||row.object_key!==owner+"/"+row.id+"/original"||!Number.isInteger(row.bytes)||row.bytes<1||row.bytes>MAX||(row.sha256!==null&&!/^[0-9a-f]{64}$/.test(row.sha256??"")))throw Error("invalid_asset_identity");
 }
 function tool(name,args,bytes){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"model-media-"));let fd;
@@ -20,7 +20,7 @@ function tool(name,args,bytes){
 }
 async function inspect(row,bytes,owner){
  checkIdentity(row,owner);
- if(!Buffer.isBuffer(bytes)||bytes.length!==row.bytes||digest(bytes)!==row.sha256)throw Error("integrity_mismatch");
+ if(!Buffer.isBuffer(bytes)||bytes.length!==row.bytes||(row.sha256!==null&&digest(bytes)!==row.sha256))throw Error("integrity_mismatch");
  if(row.kind==="image"){
  const expected=imageFormats[row.mime];if(!expected)throw Error("invalid_format");
  const image=require("sharp")(bytes,{limitInputPixels:16000000,failOn:"warning"});
@@ -62,7 +62,8 @@ async function run(){
  if(download.error||!download.data||download.data.size!==row.bytes)throw Error("storage_unavailable");
  const bytes=Buffer.from(await download.data.arrayBuffer());
  let result;try{result=await inspect(row,bytes,owner)}catch{console.log("model-media-worker: validation failed; retained in quarantine");process.exitCode=1;return}
- const updated=await db.from("model_media_assets").update({state:"verified",duration_ms:result.duration_ms}).eq("id",row.id).eq("user_id",owner).eq("model_id","magi-2").eq("state","quarantined").eq("sha256",row.sha256).select("id").maybeSingle();
+ const update=db.from("model_media_assets").update({state:"verified",duration_ms:result.duration_ms,sha256:digest(bytes)}).eq("id",row.id).eq("user_id",owner).eq("model_id","magi-2").eq("state","quarantined");
+ const updated=await (row.sha256===null?update.is("sha256",null):update.eq("sha256",row.sha256)).select("id").maybeSingle();
  if(updated.error||!updated.data)throw Error("update_unconfirmed");
  console.log("model-media-worker: verified one asset");
 }
