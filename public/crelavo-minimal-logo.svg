@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 202 56" role="img" aria-labelledby="title">
+<title id="title">Crelavo</title>
+<g transform="translate(2 2) scale(.65)">
+<path d="M60 20 A28 28 0 1 0 60 60" fill="none" stroke="#A78BFA" stroke-width="12" stroke-linecap="round"/>
+<path d="M44 28 L61 40 L44 52Z" fill="#C4B5FD"/>
+</g>
+<g fill="none" stroke="#F5F6FB" stroke-width="4.6" stroke-linecap="round" stroke-linejoin="round">
+<path d="M76 21 Q72 17 66 17 C52 17 52 39 66 39 Q72 39 76 35"/>
+<path d="M84 39 V17 M84 24 Q89 16 97 18"/>
+<path d="M103 28 H119 C119 13 101 14 101 28 C101 40 113 43 120 36"/>
+<path d="M128 9 V39"/>
+<path d="M138 20 Q144 15 151 18 Q156 20 156 28 V39 M156 29 Q137 23 137 33 C137 43 152 41 156 34"/>
+<path d="M163 18 L173 39 L183 18"/>
+<path d="M199 28 C199 13 184 13 184 28 C184 43 199 43 199 28Z" transform="translate(0 0)"/>
+</g>
+</svg>
