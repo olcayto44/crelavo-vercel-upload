@@ -98,3 +98,18 @@ async function checkKiePreviewConnection(){
  }catch{console.log("KIE connection check: UNREACHABLE")}
 }
 void checkKiePreviewConnection();
+
+const {kieMagiRequest,estimateKieMagiDraft}=load("src/lib/model-kie-task-contract.ts");
+const kieImage=kieMagiRequest({...params,mode:"image",assets:[asset]},origin);
+assert.equal(kieImage.body.model,"magi-2/image-to-video");
+assert.equal(kieImage.body.input.first_frame_url,asset.url);
+assert(!("aspect_ratio" in kieImage.body.input));
+const kieAudio={kind:"audio",url:origin+"/model-assets/audio.wav",mime:"audio/wav",bytes:10000,seconds:5};
+const kieRef=kieMagiRequest({...params,mode:"reference",assets:[asset,kieAudio]},origin);
+assert.deepEqual(kieRef.body.input.reference_image_urls,[asset.url]);
+assert.deepEqual(kieRef.body.input.reference_audio_urls,[kieAudio.url]);
+assert.throws(()=>kieMagiRequest({...params,mode:"image",assets:[{...asset,url:"https://evil.example/model-assets/a.jpg"}]},origin));
+assert.throws(()=>kieMagiRequest({...params,mode:"reference",assets:[{kind:"video",url:origin+"/model-assets/v.mp4",mime:"video/mp4",bytes:10000,seconds:5}]},origin));
+assert.deepEqual(estimateKieMagiDraft(4),{microUsd:352000,milliKieCredits:70400,approved:false});
+assert.equal(estimateKieMagiDraft(31),null);
+console.log("PASS Kie MAGI image/reference offline payloads, trusted assets and unapproved tariff estimate");
