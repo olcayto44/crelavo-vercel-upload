@@ -1,7 +1,9 @@
 import {bearerTokenFromRequest,supabaseAdmin} from "@/lib/supabase";
 import {supportedProductUrl,parseProductMetadata} from "@/lib/model-product-metadata";
-import {retrieveProductHtml} from "@/lib/model-product-fetch";
+import sharp from "sharp";
+import {retrieveProductHtml,retrieveProductImage} from "@/lib/model-product-fetch";
 export const runtime="nodejs";
+export const maxDuration=30;
 export const dynamic="force-dynamic";
 const recent=new Map<string,{count:number;until:number}>();
 let active=0;
@@ -18,6 +20,14 @@ export async function POST(req:Request){
  const b=JSON.parse(Buffer.concat(chunks).toString("utf8"));if(typeof b.url!=="string"||b.authorized!==true)return reply({error:"INVALID_INPUT"},400);
  const url=supportedProductUrl(b.url);if(!url)return reply({error:"UNSUPPORTED_LINK"},422);
  if(active>=5||!permit(data.user.id))return reply({error:"RATE_LIMIT"},429);
- active++;try{const html=await retrieveProductHtml(url),metadata=parseProductMetadata(html,url.href);if(!metadata.title)return reply({error:"UNAVAILABLE"},422);return reply({metadata,verified:false,renderingEnabled:false})}finally{active--}
+ active++;try{const html=await retrieveProductHtml(url),metadata=parseProductMetadata(html,url.href);if(!metadata.title)return reply({error:"UNAVAILABLE"},422);let imagePreview:{name:string;jpeg:string}|null=null;
+ if(b.includeImage===true&&metadata.imageUrl){try{
+ const bytes=await retrieveProductImage(metadata.imageUrl);
+ const image=sharp(bytes,{limitInputPixels:16000000,failOn:"warning"});
+ const info=await image.metadata();if(!["jpeg","png","webp"].includes(info.format??"")||(info.pages??1)!==1||!info.width||!info.height)throw Error("Invalid image");
+ const clean=await image.rotate().resize(768,768,{fit:"inside",withoutEnlargement:true}).flatten({background:"#ffffff"}).jpeg({quality:68}).toBuffer();
+ if(clean.length<=180000)imagePreview={name:"product-preview.jpg",jpeg:clean.toString("base64")};
+ }catch{/* Metadata remains usable if image retrieval is refused or unavailable. */}}
+ return reply({metadata,imagePreview,verified:false,renderingEnabled:false})}finally{active--}
  }catch{return reply({error:"UNAVAILABLE"},422)}
 }
