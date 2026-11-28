@@ -3,8 +3,9 @@ import {useEffect,useRef,useState} from "react";
 import {Play,Film} from "lucide-react";
 import styles from "./PremiumHome.module.css";
 type ShowcaseFilm={href:string;kicker:string;title:string;poster?:string;video:string;landscape:boolean};
-const featuredIds=["crelavo-ai-workspace-creative-woman-city","elegant-woman-green-dress-luxury-perfume","luxury-black-leather-duffle-bag-nova-form","cozy-couples-conversation-card-game","crelavo-premium-skincare-gift-box-set","inspiring-youth-soccer-dream-journey","wireless-earbuds-modern-neon-studio","luxury-crystal-perfume-bottle-cinematic-zoom"];
-function rank(film:ShowcaseFilm){const index=featuredIds.indexOf(film.href.split("/").pop()??"");return index>=0?index:film.video.startsWith("/showcase/uploads/")?100:film.poster?200:300;}
+const featuredIds=["crelavo-dog-dental-care","crelavo-emerald-satin-dress","crelavo-giant-fashion-city","crelavo-coastal-bag-escape","crelavo-dog-sweater-fashion","crelavo-luxury-skincare-gift-box-unboxing","elegant-woman-green-dress-luxury-perfume","crelavo-holiday-skincare-set","crelavo-premium-skincare-gift-box-set","crelavo-summer-face-mist","luxury-leopard-faux-fur-bag-gold-chain","cozy-couples-conversation-card-game","luxury-black-leather-duffle-bag-nova-form","crelavo-sunset-soda-spot","crelavo-lip-balm-glow","wireless-earbuds-modern-neon-studio"];
+const FEATURED_COUNT=16;
+function rank(film:ShowcaseFilm){const index=featuredIds.indexOf(film.href.split("/").pop()??"");return /\b(cat|kitten|feline)\b/i.test(film.title+" "+film.kicker)?0.5:index>=0?index:film.video.startsWith("/showcase/uploads/")?100:film.poster?200:300;}
 function FilmCard({film}:{film:ShowcaseFilm}){
  const root=useRef<HTMLDivElement>(null),video=useRef<HTMLVideoElement>(null);
  const [near,setNear]=useState(false),[ready,setReady]=useState(false),[failed,setFailed]=useState(false),[posterFailed,setPosterFailed]=useState(false),[activated,setActivated]=useState(false);
@@ -21,6 +22,6 @@ function FilmCard({film}:{film:ShowcaseFilm}){
 }
 export function HomeShowcaseGrid({films}:{films:ShowcaseFilm[]}){
  const preferred=[...films].sort((a,b)=>rank(a)-rank(b));
- const featured=preferred.slice(0,8),remaining=preferred.slice(8);
- return <><div className={styles.showcase}>{featured.map(film=><FilmCard key={film.href} film={film}/>)}</div>{remaining.length>0&&<details className={styles.moreFilms}><summary>See all {films.length} published examples</summary><div className={styles.showcase}>{remaining.map(film=><FilmCard key={film.href} film={film}/>)}</div></details>}</>;
+ const featured=preferred.slice(0,FEATURED_COUNT),remaining=preferred.slice(FEATURED_COUNT);
+ return <><div className={styles.showcase} data-home-featured>{featured.map(film=><FilmCard key={film.href} film={film}/>)}</div>{remaining.length>0&&<details className={styles.moreFilms}><summary>See all {films.length} published examples</summary><div className={styles.showcase}>{remaining.map(film=><FilmCard key={film.href} film={film}/>)}</div></details>}</>;
 }

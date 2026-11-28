@@ -73,7 +73,7 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
   // Public page consistency: verify shared surface and horizontal bounds after navigation.
   for(const width of [1440,1024,390]){
     await resize(width);
-    for(const path of ["/tools","/pricing","/free-tools","/free-tools/ad-reference-analyzer","/blog","/contact","/products/image-to-video","/products/seedance-2-video","/products/music-video-mv"]){
+    for(const path of ["/tools","/pricing","/free-tools","/free-tools/ad-reference-analyzer","/blog","/contact","/products/image-to-video","/products/seedance-2-video","/products/music-video-mv","/terms","/privacy","/refund-policy","/cookie-policy"]){
       await nav(path,"location.pathname==="+JSON.stringify(path)+" && document.readyState==='complete' && !!document.querySelector('main')");
       assert(await ev("!!document.querySelector('main h1')"),"public heading "+path);
       assert(await ev("(()=>{const n=document.querySelector('main');return n.scrollWidth<=n.clientWidth+2})()"),"public page overflow "+path+" "+width);

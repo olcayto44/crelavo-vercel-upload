@@ -18,3 +18,13 @@
 .filmMedia img{color:transparent;background:var(--cr-surface);transition:opacity .15s ease}.filmMedia[data-orientation=landscape] img{object-fit:contain}.filmFallback{justify-content:flex-start;padding:20px 14px}.filmFallback strong{max-width:100%;overflow-wrap:anywhere}.filmFallback span{line-height:1.4}.filmMedia .playIcon{flex-shrink:0}
 
 .filmMedia video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#0a0c13;z-index:1}.filmMedia .filmPlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:3;border:1px solid #d8cbff80;border-radius:50%;width:50px;height:50px;display:grid;place-items:center;background:#0a0c13d9;color:#fff;cursor:pointer}.filmPlay:hover,.filmPlay:focus-visible{background:var(--cr-primary)}.filmMedia .filmPlay svg{width:21px;height:21px}.filmText>a{color:var(--cr-accent);text-decoration:none;font-size:13px;display:inline-flex;min-height:36px;align-items:center}.filmText>a:hover{text-decoration:underline}.filmMedia img{z-index:0}.filmMedia[data-orientation=portrait] video{object-fit:cover}.filmMedia .filmUnavailable{position:absolute;bottom:0;left:0;right:0;z-index:2;padding:8px;background:#0a0c13e8;color:var(--cr-text);font-size:12px;text-align:center}.filmMedia[data-playing=true] video{object-fit:contain}
+
+/* Gallery: full-bleed portrait previews; full original framing remains on the example detail page. */
+.showcase{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.filmMedia{aspect-ratio:9/16;background:var(--cr-surface)}
+.filmMedia img,.filmMedia video,.filmMedia[data-orientation=landscape] img,.filmMedia[data-orientation=portrait] video,.filmMedia[data-playing=true] video{object-fit:cover;object-position:center}
+.filmMedia video{background:transparent}
+.filmText{display:flex;flex-direction:column;gap:4px;min-height:116px}.filmText>a{margin-top:auto}
+@media(max-width:1080px){.showcase{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.showcase{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.filmText{padding:10px;min-height:114px}.filmText h3{font-size:14px}}
+@media(max-width:340px){.showcase{grid-template-columns:1fr}}
