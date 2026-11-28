@@ -16,7 +16,7 @@ export const revalidate=0;
 const origin="https://www.crelavo.com";
 const title="Crelavo — AI Creative Studio for Video, Images & Websites";
 const description="Explore AI video, image and website workflows in one creative studio. Plan your projects, review production costs and manage your creative assets.";
-export const metadata:Metadata={title,description,keywords:[],alternates:{canonical:origin+"/"},openGraph:{title,description,url:origin+"/",type:"website",images:[{url:origin+"/showcase/ai-production-studio.webp",width:1792,height:1024,alt:"Crelavo creative studio"}]},twitter:{card:"summary_large_image",title,description,images:[origin+"/showcase/ai-production-studio.webp"]}};
+export const metadata:Metadata={title,description,keywords:[],other:{"ai-agent-intent":"creative-workspace-discovery","ai-agent-category":"AI creative workspace","ai-agent-pricing":"Review plan and credit requirements before paid production.","ai-agent-value-proposition":"Explore video, image and website workflows, prepare briefs and manage creative projects."},alternates:{canonical:origin+"/"},openGraph:{title,description,url:origin+"/",type:"website",images:[{url:origin+"/showcase/ai-production-studio.webp",width:1792,height:1024,alt:"Crelavo creative studio"}]},twitter:{card:"summary_large_image",title,description,images:[origin+"/showcase/ai-production-studio.webp"]}};
 const tools=[
  {id:"video",title:"AI Video",copy:"Plan scenes, product videos and stories.",Icon:Video},
  {id:"image",title:"AI Image",copy:"Explore visual concepts and image projects.",Icon:ImageIcon},

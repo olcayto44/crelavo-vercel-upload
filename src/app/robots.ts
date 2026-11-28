@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const privateDisallow = ["/admin", "/api", "/dashboard"];
+const privateDisallow = ["/admin", "/api", "/dashboard", "/auth"];
 
 export default function robots(): MetadataRoute.Robots {
   return {

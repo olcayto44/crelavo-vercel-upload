@@ -1,3 +1,5 @@
+import type {Metadata} from "next";
+export const metadata:Metadata={title:"Sign in | Crelavo",description:"Sign in securely to your Crelavo workspace."};
 import {Header} from "@/components/Header";
 import {AuthEntry} from "@/components/auth/AuthEntry";
 import {postAuthPath} from "@/lib/crelavo/redirects";
