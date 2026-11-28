@@ -69,3 +69,27 @@ body:has(main.cr-public-page) .public-side-rail,body:has(main.cr-public-page) .a
 @media(max-width:760px){.cr-public-page>section.card.admin-wide-card,.cr-public-page>article.card.admin-wide-card,.cr-public-page .service-seo-article{padding-block:24px!important}}
 
 main.cr-public-showcase{background:var(--cr-bg)!important;color:var(--cr-text)!important}main.cr-public-showcase a.btn,main.cr-public-showcase .btn{background:var(--cr-primary)!important;color:white!important;border-color:var(--cr-line)!important;box-shadow:none!important;border-radius:10px!important}main.cr-public-showcase .btn.secondary{background:var(--cr-raised)!important;color:var(--cr-text)!important}
+
+/* Continuous public information sections, not private workspaces or checkout controls. */
+.cr-public-page :is(.service-seo-article,.free-tool-keyword-cluster,.service-category-links,.free-tool-category-links){min-width:0;overflow-wrap:anywhere}
+.cr-public-page :is(.service-page-detail,.tools-page){min-width:0}
+.cr-public-page :is(.service-three-col,.service-info-grid){gap:24px!important}
+.cr-public-page .service-three-col>.card,.cr-public-page .service-info-grid>div{background:transparent!important;border:0!important;border-top:1px solid var(--cr-line)!important;border-radius:0!important;box-shadow:none!important;padding:20px 0!important;min-width:0}
+.cr-public-page .free-tool-keyword-cluster .admin-category-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))!important;gap:0 24px!important}
+.cr-public-page .free-tool-keyword-cluster .admin-category-card{background:transparent!important;border:0!important;border-bottom:1px solid var(--cr-line)!important;border-radius:0!important;padding:14px 0!important;min-width:0}
+.cr-public-page .free-tool-keyword-cluster .admin-category-card h3{font-size:15px;overflow-wrap:anywhere}
+.cr-public-page :is(.service-category-links,.free-tool-category-links) .plan-feature-groups{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))!important;gap:0 24px!important}
+.cr-public-page :is(.service-page-detail,.free-tool-detail-page,.free-tools-page) .plan-feature-groups{min-width:0}
+.cr-public-page .plan-feature-groups>a{display:flex!important;flex-direction:column;gap:5px;min-width:0;padding:14px 0!important;background:transparent!important;border:0!important;border-bottom:1px solid var(--cr-line)!important;border-radius:0!important;box-shadow:none!important;white-space:normal;text-decoration:none;overflow-wrap:anywhere;color:var(--cr-text)!important}
+.cr-public-page .plan-feature-groups>a small{color:var(--cr-muted)!important;font-size:13px;line-height:1.5}
+.cr-public-page .plan-feature-groups>a:hover b{color:var(--cr-accent);text-decoration:underline;text-underline-offset:3px}
+.cr-public-page .cr-editorial-faq{display:block!important}
+.cr-public-page .cr-editorial-faq>div{display:block!important;background:transparent!important;border:0!important;border-bottom:1px solid var(--cr-line)!important;border-radius:0!important;box-shadow:none!important;padding:16px 0!important;min-width:0}
+.cr-public-page .cr-editorial-faq>div h3,.cr-public-page .cr-editorial-faq>div b{color:var(--cr-text)!important;font-size:16px;line-height:1.45}
+.cr-public-page .cr-editorial-faq>div p,.cr-public-page .cr-editorial-faq>div small{display:block;font-size:14px!important;line-height:1.7;color:var(--cr-muted)!important;margin:8px 0 0}
+.cr-public-page :is(.service-grid,.admin-category-grid)>a{min-width:0;overflow-wrap:anywhere}
+.cr-public-page .feature-link-card{background:var(--cr-surface)!important;border:1px solid var(--cr-line)!important;border-radius:var(--cr-radius)!important;box-shadow:none!important;color:var(--cr-text)!important}
+.cr-public-page .feature-link-card:hover,.cr-public-page a.admin-category-card:hover{border-color:var(--cr-accent)!important}
+.cr-public-page [id]{scroll-margin-top:90px}
+.cr-menu-group a:focus-visible,.cr-menu-all:focus-visible{outline-offset:-2px!important}
+@media(max-width:760px){.cr-public-page :is(.service-three-col,.service-info-grid){grid-template-columns:minmax(0,1fr)!important;gap:8px!important}.cr-public-page :is(.service-category-links,.free-tool-category-links) .plan-feature-groups{grid-template-columns:minmax(0,1fr)!important}}
