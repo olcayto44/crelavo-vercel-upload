@@ -82,3 +82,19 @@ assert.equal(readKieStatus({code:200,data:{taskId:"test-task",state:"success",re
 assert.throws(()=>readKieStatus({code:200,data:{taskId:"other",state:"success"}},"test-task"));
 assert.throws(()=>requireKieCommercialActivation());
 console.log("PASS Kie task contract, provider response validation, no live generation or settlement");
+
+// Read-only credential check limited to the integration preview; never logs API keys or raw responses.
+async function checkKiePreviewConnection(){
+ if(process.env.VERCEL_ENV!=="preview"||process.env.VERCEL_GIT_COMMIT_REF!=="feat/crelavo-premium-v3-20261128")return;
+ const key=process.env.KIE_API_KEY?.trim();
+ if(!key){console.log("KIE connection check: KEY_MISSING");return}
+ try{
+ const res=await fetch("https://api.kie.ai/api/v1/chat/credit",{method:"GET",headers:{Authorization:"Bearer "+key,Accept:"application/json"},redirect:"error",cache:"no-store",signal:AbortSignal.timeout(8000)});
+ if(!res.ok){console.log("KIE connection check: HTTP_REJECTED "+res.status);return}
+ const d=await res.json();
+ if(d.code!==200){console.log("KIE connection check: API_REJECTED "+([401,402,404,429,455,500].includes(d.code)?d.code:"other"));return}
+ if(typeof d.data!=="number"||!Number.isFinite(d.data)||d.data<0){console.log("KIE connection check: INVALID_RESPONSE");return}
+ console.log("KIE connection check: AUTHENTICATED; balance="+(d.data>0?"positive":"zero")+"; generation=disabled");
+ }catch{console.log("KIE connection check: UNREACHABLE")}
+}
+void checkKiePreviewConnection();
