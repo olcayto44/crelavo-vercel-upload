@@ -9,5 +9,5 @@ export const metadata: Metadata = { title: "Crelavo Pricing", description: "Pric
 export default async function PricingPage() {
   const siteContent = await getConfiguredSiteContentConfig();
   return <><Header navLinks={siteContent.navLinks} />
-      <InnerMobileNav /><main><PricingPageBody /></main></>;
+      <InnerMobileNav /><main className="cr-public-page"><PricingPageBody /></main></>;
 }

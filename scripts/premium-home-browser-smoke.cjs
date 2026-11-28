@@ -39,6 +39,35 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
     assert(await ev("(()=>{const b=[...document.querySelectorAll('main button')].find(b=>b.textContent==='Play reel');if(!b)return false;const r=b.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b;})()"),"reel control must be reachable "+width);
     console.log("PASS public homepage "+width+"px");
   }
+  await resize(1440);
+  await nav("/","!!document.querySelector('.cr-menu-trigger')");
+  await wait("(()=>{const b=document.querySelector('.cr-menu-trigger');return !!b&&Object.keys(b).some(k=>k.startsWith('__reactProps$'));})()","menu hydrated");
+  const point=async(sel)=>ev("(()=>{const r=document.querySelector("+JSON.stringify(sel)+").getBoundingClientRect();return {x:r.x+r.width/2,y:r.y+r.height/2}})()");
+  for(const [id,path] of [["create","/ai-website-builder"],["tools","/tools/video-editor"]]){
+    await nav("/","!!document.querySelector('.cr-menu-trigger')");
+    await wait("(()=>{const b=document.querySelector('button[aria-controls=cr-menu-"+id+"]');return !!b&&Object.keys(b).some(k=>k.startsWith('__reactProps$'));})()","menu hydrated "+id);
+    const p=await point("button[aria-controls=cr-menu-"+id+"]");
+    await cdp("Input.dispatchMouseEvent",{type:"mouseMoved",...p});
+    await wait("document.querySelector('button[aria-controls=cr-menu-"+id+"]').getAttribute('aria-expanded')==='true'","hover opens "+id);
+    const q=await point("#cr-menu-"+id+" a[href='"+path+"']");
+    await cdp("Input.dispatchMouseEvent",{type:"mouseMoved",x:p.x,y:p.y+24});
+    await cdp("Input.dispatchMouseEvent",{type:"mouseMoved",...q});
+    await sleep(280);
+    assert(await ev("(()=>{const el=document.elementFromPoint("+q.x+","+q.y+");return !!el?.closest('a[href=\""+path+"\"]')})()"),"menu link reachable "+id);
+    await cdp("Input.dispatchMouseEvent",{type:"mousePressed",button:"left",clickCount:1,...q});
+    await cdp("Input.dispatchMouseEvent",{type:"mouseReleased",button:"left",clickCount:1,...q});
+    await wait("location.pathname==="+JSON.stringify(path),"menu link navigates "+id);
+    console.log("PASS desktop hover and pointer click "+id);
+  }
+  await nav("/","!!document.querySelector('.cr-menu-trigger')");
+  await wait("(()=>{const b=document.querySelector('.cr-menu-trigger');return !!b&&Object.keys(b).some(k=>k.startsWith('__reactProps$'));})()","keyboard hydration");
+  await ev("document.querySelector('.cr-menu-trigger').focus();true");
+  await cdp("Input.dispatchKeyEvent",{type:"keyDown",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});
+  await cdp("Input.dispatchKeyEvent",{type:"keyUp",key:"Enter",code:"Enter",windowsVirtualKeyCode:13});
+  await wait("document.querySelector('.cr-menu-trigger').getAttribute('aria-expanded')==='true'","keyboard opens menu");
+  await cdp("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});
+  await cdp("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});
+  await wait("document.querySelector('.cr-menu-trigger').getAttribute('aria-expanded')==='false'","keyboard closes menu");
   await resize(390);
   await wait("(()=>{const d=document.querySelector('#crelavo-mobile-menu');if(!d)return false;if(!d.open)document.querySelector('button[aria-controls=crelavo-mobile-menu]').click();return d.open;})()","mobile menu opens");
   await ev("document.querySelector('#crelavo-mobile-menu a[href^=\"/auth/login\"]').click();true");

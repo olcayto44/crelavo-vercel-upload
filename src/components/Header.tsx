@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SiteBrandLogo } from "@/components/SiteBrandLogo";
 import { HeaderCreditPill } from "@/components/HeaderCreditPill";
+import {PublicMegaMenu} from "@/components/PublicMegaMenu";
 import { LocalizedNavLink } from "@/components/LocalizedNavLink";
 import { AuthHeaderControls } from "@/components/auth/AuthHeaderControls";
 import { LanguagePageLinks } from "@/components/LanguagePageLinks";
@@ -54,7 +55,7 @@ const createGroups = [
   { title: "Grow", links: [{ label: "Brand Kit", href: "/ai-brand-kit-builder" }, { label: "Ad Performance", href: "/ai-ad-performance-score-checker" }, { label: "Growth Intelligence", href: "/growth-intelligence" }, { label: "Live Sales", href: "/live-sales-credits" }, { label: "Drone", href: "/drone-credits" }] }
 ];
 
-export function Header({ navLinks = defaultPublicNavLinks, languageOverride, premium = false }: HeaderProps) {
+export function Header({ navLinks = defaultPublicNavLinks, languageOverride, premium = true }: HeaderProps) {
   const activeNavLinks = navLinks
     .filter((item) => item.active)
     .sort((a, b) => a.order - b.order)
@@ -73,42 +74,9 @@ export function Header({ navLinks = defaultPublicNavLinks, languageOverride, pre
       <Link className="logo" href="/">
         <SiteBrandLogo />
       </Link>
-      <nav className="nav-links primary-nav-links" aria-label="Primary navigation">
-        <div className="tools-mega-wrap create-mega-wrap">
-          <LocalizedNavLink className="tools-mega-trigger" href="/categories" label="Create" languageOverride={languageOverride} />
-          <div className="tools-mega-menu create-mega-menu">
-            {createGroups.map((group) => (
-              <div className="tools-mega-group" key={group.title}>
-                <strong>{group.title}</strong>
-                {group.links.map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
-              </div>
-            ))}
-            <div className="tools-mega-group">
-              <strong>Studio & editors</strong>
-              <Link href="/studio">Crelavo Studio</Link>
-              <Link href="/tools/video-editor">Video Editor</Link>
-              <Link href="/tools/image-editor">Image Editor</Link>
-              <Link href="/tools/media-library">Media Library</Link>
-              <Link href="/categories">All production categories</Link>
-              <Link href="/dashboard/studio">New project</Link>
-              <Link href="/dashboard/productions">My projects</Link>
-            </div>
-          </div>
-        </div>
-        {activeNavLinks.map((item) => item.label === "Tools" ? (
-          <div className="tools-mega-wrap" key={`${item.href}-${item.label}`}>
-            <LocalizedNavLink className="tools-mega-trigger" href="/tools" label="Tools" languageOverride={languageOverride} />
-            <div className="tools-mega-menu">
-              <div className="tools-mega-group"><strong>Studio tools</strong><Link href="/studio">Crelavo Studio</Link><Link href="/tools/video-editor">Video Editor</Link><Link href="/tools/image-editor">Image Editor</Link><Link href="/tools/media-library">Media Library</Link></div>
-              {footerGroups.slice(0, 3).map((group) => (
-                <div className="tools-mega-group" key={group.title}>
-                  <strong>{group.title}</strong>
-                  {group.links.slice(0, 4).map((link) => <Link href={link.href} key={`${group.title}-${link.label}`}>{link.label}</Link>)}
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : <LocalizedNavLink href={item.href} key={`${item.href}-${item.label}`} label={item.label} languageOverride={languageOverride} />)}
+      <nav className="cr-primary-nav" aria-label="Primary navigation">
+        <PublicMegaMenu id="create" label="Create" href="/categories" groups={[...createGroups,{title:"Studio & editors",links:[{label:"Crelavo Studio",href:"/studio"},{label:"Video Editor",href:"/tools/video-editor"},{label:"Image Editor",href:"/tools/image-editor"},{label:"Media Library",href:"/tools/media-library"},{label:"My projects",href:"/dashboard/productions"}]}]}/>
+        {activeNavLinks.map(item=>item.label==="Tools"?<PublicMegaMenu key="tools" id="tools" label="Tools" href="/tools" groups={[{title:"Studio tools",links:[{label:"Crelavo Studio",href:"/studio"},{label:"Video Editor",href:"/tools/video-editor"},{label:"Image Editor",href:"/tools/image-editor"},{label:"Media Library",href:"/tools/media-library"}]},...footerGroups.slice(0,3).map(g=>({title:g.title,links:g.links.slice(0,4)}))]}/>:<LocalizedNavLink href={item.href} key={item.href+"-"+item.label} label={item.label} languageOverride={languageOverride}/>)}
       </nav>
       <div className="nav-session-bar" aria-label="Account and credits">
         <div className="header-language-links" aria-label="Language pages">

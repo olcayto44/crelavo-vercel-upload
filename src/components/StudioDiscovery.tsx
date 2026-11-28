@@ -2,7 +2,7 @@ import Link from "next/link";
 import { studioSurfaces } from "@/lib/studio-surfaces";
 
 export function StudioDiscovery({ privateWorkspace = false }: { privateWorkspace?: boolean }) {
- return <section className="production-hero-card clean-feed-section" style={{ marginTop: 24 }} aria-label="Crelavo Studio tools">
+ return <section className={privateWorkspace?"production-hero-card clean-feed-section":"production-hero-card clean-feed-section cr-studio-discovery"} style={{ marginTop: 24 }} aria-label="Crelavo Studio tools">
   <h2>Studio & editing tools</h2>
   <p>Plan a production or work directly with your own media.</p>
   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(220px,100%),1fr))", gap: 14, marginTop: 16 }}>

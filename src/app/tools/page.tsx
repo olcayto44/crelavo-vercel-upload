@@ -34,7 +34,7 @@ export const metadata: Metadata = {
 
 const featuredToolCopy: Record<string, string> = {
   "ai-ad-performance-score-checker": "Score hooks, CTA clarity, and platform fit before you spend credits on a final render.",
-  "ai-virtual-model-studio": "Generate model-ready product visuals for fashion, jewelry, beauty, and accessories.",
+  "ai-virtual-model-studio": "Plan model-led product visuals for fashion, jewelry, beauty, and accessories.",
   "ai-cultural-localization": "Adapt messaging, tone, visuals, and CTA by market. More than translation.",
   "ai-campaign-calendar": "Plan Black Friday, Ramadan, New Year, back-to-school, and launch campaigns before the deadline.",
   "crelavo-academy": "Short lessons on product videos, UGC ads, hooks, and landing pages.",
@@ -47,13 +47,13 @@ export default async function ToolsPage() {
   return (
     <>
       <Header navLinks={siteContent.navLinks} /><InnerMobileNav />
-      <main className="container section tools-page tools-catalog-page public-funnel-page">
+      <main className="container section tools-page tools-catalog-page public-funnel-page cr-public-page">
         <section className="production-hero-card admin-overview-hero">
           <span className="badge">Tools</span>
           <h1>Crelavo tools</h1>
           <p>Score ads, plan campaigns, localize creative, and open production from here. Full production types stay on Categories.</p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 16 }}>
-            <Link className="btn" href="/join">Start production</Link>
+            <Link className="btn" href="/dashboard/studio">Open Studio</Link>
             <Link className="btn secondary" href="/categories">Open categories</Link>
             <Link className="btn secondary" href="/pricing">View credits</Link>
           </div>
@@ -61,8 +61,8 @@ export default async function ToolsPage() {
 
         <section id="feature-paths" className="production-hero-card clean-feed-section" style={{ marginTop: 18 }}>
           <span className="badge">Featured tools</span>
-          <h2>Six tools next to production</h2>
-          <p>Validate an ad, prepare market-specific creative, plan a campaign, or open a sample. Then continue in the assistant.</p>
+          <h2>Featured creative workflows</h2>
+          <p>Review advertising, virtual model and localization workflows before opening the matching Studio.</p>
           <div className="admin-category-grid" style={{ marginTop: 16 }}>
             {phaseOneFeaturePages.map((page) => (
               <Link className="card admin-category-card production-pricing-card" href={`/${page.slug}`} key={page.slug}>

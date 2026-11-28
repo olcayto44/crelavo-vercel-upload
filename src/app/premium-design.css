@@ -25,3 +25,35 @@ html body .nav.site-main-nav.cr-premium-nav a:focus-visible,html body .nav.site-
 .crelavo-auth-backdrop .crelavo-auth-eyebrow,.crelavo-auth-backdrop .crelavo-auth-switch{color:var(--cr-accent)}
 .crelavo-auth-backdrop .crelavo-auth-email{background:var(--cr-primary);color:white;min-height:46px;border-radius:10px}
 .crelavo-auth-backdrop :focus-visible{outline:2px solid var(--cr-accent);outline-offset:3px}
+
+/* One public navigation, independent from the retired hover-only mega menu rules. */
+html body header.nav.site-main-nav.cr-premium-nav{position:sticky!important;top:0!important;z-index:400!important;display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;align-items:center!important;gap:18px!important;width:100%!important;max-width:none!important;margin:0!important;padding:8px var(--cr-space)!important;min-height:66px!important;overflow:visible!important;background:var(--cr-bg)!important}
+.cr-primary-nav{display:flex;align-items:center;justify-content:flex-start;gap:4px;min-width:0;overflow:visible}
+.cr-primary-nav>a,.cr-menu-trigger{min-height:42px;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:8px 10px;border:0;background:transparent;color:var(--cr-text);border-radius:8px;white-space:nowrap;font:600 13px/1.25 Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer}
+.cr-primary-nav>a:hover,.cr-menu-trigger:hover,.cr-menu-trigger[aria-expanded=true]{background:var(--cr-surface);color:var(--cr-accent)}
+.cr-menu-root{position:static;display:flex;align-items:center;flex:0 0 auto}
+.cr-menu-bridge[hidden]{display:none!important}.cr-menu-bridge{position:absolute;top:calc(100% - 1px);left:var(--cr-space);right:var(--cr-space);padding-top:6px;z-index:450}
+.cr-menu-panel{width:min(960px,100%);margin:auto;max-height:calc(100dvh - 86px);overflow:auto;overscroll-behavior:contain;border:1px solid var(--cr-line);background:var(--cr-surface);border-radius:14px;padding:20px;box-shadow:0 20px 60px #0009}
+.cr-menu-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;align-items:start}
+.cr-menu-group{min-width:0;display:flex;flex-direction:column;align-items:stretch;gap:3px}
+.cr-menu-group h3{color:var(--cr-accent);font-size:12px;line-height:1.4;font-weight:700;margin:0 0 8px}
+.cr-menu-group a,.cr-menu-all{display:block;min-height:36px;padding:9px 10px;color:var(--cr-text);white-space:normal;overflow-wrap:anywhere;text-decoration:none;font-size:13px;line-height:1.35;border-radius:7px}
+.cr-menu-group a:hover,.cr-menu-all:hover{background:var(--cr-raised);color:var(--cr-accent)}.cr-menu-all{margin-top:14px;border-top:1px solid var(--cr-line);color:var(--cr-accent)}
+html body header.nav.site-main-nav.cr-premium-nav .nav-session-bar{gap:10px!important;flex-wrap:wrap!important;justify-content:flex-end!important}
+@media(min-width:981px) and (max-width:1200px){html body header.nav.site-main-nav.cr-premium-nav{gap:8px!important;padding-inline:12px!important}.cr-primary-nav{gap:0}.cr-primary-nav>a,.cr-menu-trigger{padding-inline:6px;font-size:12px}.cr-menu-panel{width:100%}.cr-menu-grid{gap:12px}}
+@media(max-width:980px){html body header.nav.site-main-nav.cr-premium-nav{display:none!important}}
+/* Shared public surfaces. Never apply these rules to dashboard, admin or editor shells. */
+body:has(> header.cr-premium-nav) {background:var(--cr-bg)}
+.cr-public-page,.cr-public-page.public-funnel-page{width:100%;max-width:1280px;margin-inline:auto;padding:clamp(24px,4vw,48px) var(--cr-space) 56px;background:var(--cr-bg);color:var(--cr-text)}
+.cr-public-page h1,.cr-public-page h2,.cr-public-page h3{color:var(--cr-text)!important;letter-spacing:-.025em}
+.cr-public-page p{color:var(--cr-muted)!important;line-height:1.65}
+.cr-public-page .production-hero-card,.cr-public-page .clean-feed-section,.cr-public-page .admin-overview-hero{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:30px 0!important;margin:0!important;border-bottom:1px solid var(--cr-line)!important}
+.cr-public-page .card{background:var(--cr-surface)!important;border:1px solid var(--cr-line)!important;border-radius:var(--cr-radius)!important;box-shadow:none!important;color:var(--cr-text)!important}
+.cr-public-page .btn,.cr-public-page .clp-cta{display:inline-flex;min-height:46px;align-items:center;justify-content:center;padding:11px 17px!important;border:1px solid #aa91f9!important;border-radius:10px!important;background:var(--cr-primary)!important;color:#fff!important;text-align:center;white-space:normal;box-shadow:none!important;font-size:14px!important;font-weight:650!important;line-height:1.35!important;text-decoration:none!important}
+.cr-public-page .btn.secondary{background:var(--cr-raised)!important;border-color:var(--cr-line)!important;color:var(--cr-text)!important}
+.cr-public-page .badge{background:transparent!important;border:0!important;color:var(--cr-accent)!important;padding:0!important;box-shadow:none!important}
+.cr-public-page :focus-visible{outline:2px solid var(--cr-accent);outline-offset:3px}
+body:has(main.cr-public-page) .page-with-rails{padding-inline:0!important}
+body:has(main.cr-public-page) .public-side-rail,body:has(main.cr-public-page) .ad-rail,body:has(main.cr-public-page) .ad-rail-right{display:none!important}
+
+.cr-public-page .clp-card{background:var(--cr-surface)!important;border-color:var(--cr-line)!important;box-shadow:none!important;border-radius:16px!important}.cr-public-page .clp-price b{color:var(--cr-accent)!important}.cr-public-page .clp-sec{background:transparent!important;border:0!important;box-shadow:none!important;border-top:1px solid var(--cr-line)!important}.cr-public-page .clp-card.is-popular{border-color:var(--cr-accent)!important}.cr-public-page .clp-cta:hover{filter:brightness(1.08)}
