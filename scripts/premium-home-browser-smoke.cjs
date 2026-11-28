@@ -68,6 +68,20 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
   await cdp("Input.dispatchKeyEvent",{type:"keyDown",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});
   await cdp("Input.dispatchKeyEvent",{type:"keyUp",key:"Escape",code:"Escape",windowsVirtualKeyCode:27});
   await wait("document.querySelector('.cr-menu-trigger').getAttribute('aria-expanded')==='false'","keyboard closes menu");
+  // Public page consistency: verify shared surface and horizontal bounds after navigation.
+  for(const width of [1440,1024,390]){
+    await resize(width);
+    for(const path of ["/tools","/pricing","/free-tools","/free-tools/ad-reference-analyzer","/blog","/contact"]){
+      await nav(path,"location.pathname==="+JSON.stringify(path)+" && document.readyState==='complete' && !!document.querySelector('main')");
+      assert(await ev("!!document.querySelector('main h1')"),"public heading "+path);
+      assert(await ev("(()=>{const n=document.querySelector('main');return n.scrollWidth<=n.clientWidth+2})()"),"public page overflow "+path+" "+width);
+      if(path==="/free-tools/ad-reference-analyzer"){
+        assert(await ev("(()=>{const n=document.querySelector('.cr-editorial-faq>div');return !!n&&getComputedStyle(n).borderTopWidth==='0px'&&getComputedStyle(n).boxShadow==='none'})()"),"FAQ must be continuous, not nested cards");
+      }
+      console.log("PASS public layout "+path+" "+width+"px");
+    }
+  }
+  await nav("/","location.pathname==='/' && !!document.querySelector('#home-brief')");
   await resize(390);
   await wait("(()=>{const d=document.querySelector('#crelavo-mobile-menu');if(!d)return false;if(!d.open)document.querySelector('button[aria-controls=crelavo-mobile-menu]').click();return d.open;})()","mobile menu opens");
   await ev("document.querySelector('#crelavo-mobile-menu a[href^=\"/auth/login\"]').click();true");
