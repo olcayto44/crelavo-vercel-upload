@@ -37,6 +37,8 @@ const owner="owner@example.test",password="fixture-only-admin-2026";
     await wait("innerWidth==="+width,"resize");
     assert(await ev("document.querySelector('main').scrollWidth<=document.querySelector('main').clientWidth+2"),"homepage content overflow "+width);
     assert(await ev("(()=>{const b=[...document.querySelectorAll('main button')].find(b=>b.textContent==='Play reel');if(!b)return false;const r=b.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+r.height/2)===b;})()"),"reel control must be reachable "+width);
+    assert(await ev("(()=>{const e=document.querySelector('#home-brief');const r=e.getBoundingClientRect();return document.elementFromPoint(r.x+r.width/2,r.y+12)===e})()"),"hero brief must not be covered by media "+width);
+    assert(await ev("(()=>{const v=document.querySelector('main video'),h=document.querySelector('main h1');return Number(getComputedStyle(v).zIndex)===0&&Number(getComputedStyle(h.parentElement).zIndex)===2})()"),"hero visual layer order "+width);
     console.log("PASS public homepage "+width+"px");
   }
   await resize(1440);

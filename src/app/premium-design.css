@@ -111,3 +111,7 @@ html body main.cr-legacy-product .admin-category-card{background:var(--cr-surfac
 html body main.cr-legacy-product .btn{background-image:none!important;min-height:46px!important}
 html body main.cr-legacy-product .btn.secondary{background:var(--cr-raised)!important}
 @media(max-width:760px){html body main.cr-legacy-product .admin-info-grid{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
+
+/* Scoped signed-out dashboard presentation, with no changes to authentication. */
+html body .crelavo-auth-gate.cr-account-gate{min-height:100dvh;display:grid!important;place-items:center;padding:24px;background:var(--cr-bg)!important;color:var(--cr-text)!important;text-align:center}
+.cr-account-gate-panel{width:min(100%,460px);box-sizing:border-box;padding:32px;background:var(--cr-surface);border:1px solid var(--cr-line);border-radius:16px;box-shadow:0 16px 48px #0003}.cr-account-gate-kicker{font-size:12px;letter-spacing:.12em;font-weight:700;color:var(--cr-accent)}.cr-account-gate-panel h1{font-size:28px;line-height:1.2;margin:12px 0;color:var(--cr-text)}.cr-account-gate-panel p{color:var(--cr-muted);font-size:15px;line-height:1.65}.cr-account-gate-panel button{display:block!important;width:100%;min-height:46px;margin:20px 0 0!important;border:1px solid var(--cr-accent)!important;border-radius:10px!important;background:var(--cr-primary)!important;color:white!important;font:650 14px Inter,system-ui,sans-serif!important;cursor:pointer}.cr-account-gate-back{display:inline-block;margin-top:16px;color:var(--cr-accent)!important;font-size:14px}
