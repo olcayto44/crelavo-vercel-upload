@@ -43,7 +43,7 @@ export function MobileSiteHeader() {
         <div className={styles.credits}><HeaderCreditPill /></div>
         <nav className={styles.links} aria-label="Mobile menu">{mobileNavigationLinks.map(link => <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined} onClick={closeMenu}>{link.label}</Link>)}</nav>
         <div className={styles.languages} aria-label="Language pages"><LanguagePageLinks /></div>
-        <div className={styles.drawerAccount}><AuthHeaderControls /></div>
+        <div className={styles.drawerAccount}>{user?<AuthHeaderControls />:<><Link className="btn secondary" href={"/auth/login?next="+encodeURIComponent(pathname||"/dashboard")} onClick={closeMenu}>Sign in</Link><Link className="btn" href="/pricing" onClick={closeMenu}>View plans</Link></>}</div>
       </div>
     </dialog>
   </>;
