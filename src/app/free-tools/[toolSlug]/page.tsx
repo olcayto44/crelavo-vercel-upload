@@ -281,7 +281,7 @@ export default async function FreeToolPage({ params }: { params: Promise<{ toolS
         <section className="card admin-wide-card" style={{ marginTop: 18 }}>
           <span className="badge">FAQ</span>
           <h2>{tool.title} questions</h2>
-          <div className="plan-feature-groups">
+          <div className="plan-feature-groups cr-editorial-faq">
             {freeToolFaqItems.map((item) => <div key={item.question}><b>{item.question}</b><small>{item.answer}</small></div>)}
           </div>
         </section>
