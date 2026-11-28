@@ -1,6 +1,7 @@
 "use strict";
 const {createHash}=require("node:crypto");
 const {execFileSync}=require("node:child_process");
+const fs=require("node:fs"),os=require("node:os"),path=require("node:path");
 const TEST_ORIGIN="https://bwzxdxqgrgbsvndinmrv.supabase.co";
 const BUCKET="model-original-quarantine";
 const MAX=3000000;
@@ -11,7 +12,12 @@ const digest=b=>createHash("sha256").update(b).digest("hex");
 function checkIdentity(row,owner){
  if(!uuid.test(owner)||!uuid.test(row.id)||row.user_id!==owner||row.model_id!=="magi-2"||row.state!=="quarantined"||row.object_key!==owner+"/"+row.id+"/original"||!Number.isInteger(row.bytes)||row.bytes<1||row.bytes>MAX||!/^[0-9a-f]{64}$/.test(row.sha256??""))throw Error("invalid_asset_identity");
 }
-function tool(name,args,bytes){return execFileSync(name,args,{input:bytes,timeout:12000,maxBuffer:512000,stdio:["pipe","pipe","pipe"],env:{PATH:process.env.PATH??"/usr/bin:/bin",LANG:"C"}})}
+function tool(name,args,bytes){
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"model-media-"));let fd;
+ try{const file=path.join(dir,"input");fs.writeFileSync(file,bytes,{mode:0o600});fd=fs.openSync(file,"r");
+ return execFileSync(name,args,{timeout:12000,maxBuffer:512000,stdio:[fd,"pipe","pipe"],env:{PATH:process.env.PATH??"/usr/bin:/bin",LANG:"C"}})}
+ finally{if(fd!==undefined)fs.closeSync(fd);fs.rmSync(dir,{recursive:true,force:true})}
+}
 async function inspect(row,bytes,owner){
  checkIdentity(row,owner);
  if(!Buffer.isBuffer(bytes)||bytes.length!==row.bytes||digest(bytes)!==row.sha256)throw Error("integrity_mismatch");
@@ -25,9 +31,9 @@ async function inspect(row,bytes,owner){
  }
  const format=formats[row.mime];
  if(!format||!(row.kind==="video"&&format==="mov"||row.kind==="audio"&&format!=="mov"))throw Error("invalid_format");
- // Pipe-only input prevents network and local-file access from embedded references.
- const common=["-v","error","-max_alloc","67108864","-protocol_whitelist","pipe","-f",format];
- const meta=JSON.parse(tool("ffprobe",[...common,"-show_entries","format=duration:stream=codec_type,codec_name,width,height,duration,sample_rate,channels","-of","json","pipe:0"],bytes).toString("utf8"));
+ // Seekable stdin descriptor only; network and arbitrary filesystem protocols disabled.
+ const common=["-v","error","-max_alloc","67108864","-protocol_whitelist","fd","-f",format];
+ const meta=JSON.parse(tool("ffprobe",[...common,"-show_entries","format=duration:stream=codec_type,codec_name,width,height,duration,sample_rate,channels","-of","json","fd:"],bytes).toString("utf8"));
  const streams=meta.streams??[],video=streams.filter(s=>s.codec_type==="video"),audio=streams.filter(s=>s.codec_type==="audio");
  if(streams.length!==video.length+audio.length||audio.length>1||video.length>(row.kind==="video"?1:0)||row.kind==="video"&&video.length!==1||row.kind==="audio"&&audio.length!==1)throw Error("unsupported_streams");
  if(video.some(s=>!["h264","hevc","av1","vp9","mpeg4"].includes(s.codec_name)||!Number.isInteger(s.width)||!Number.isInteger(s.height)||s.width<1||s.height<1||s.width*s.height>8294400))throw Error("unsupported_video");
@@ -36,8 +42,10 @@ async function inspect(row,bytes,owner){
  if(!candidates.length)throw Error("duration_unavailable");
  const ms=Math.round(Math.max(...candidates)*1000);
  if(ms<2000||ms>30000)throw Error("invalid_duration");
- // Bounded decode check. Non-streamable containers remain quarantined/rejected.
- tool("ffmpeg",["-nostdin","-xerror","-threads","1",...common,"-i","pipe:0","-map","0:v?","-map","0:a?","-t","30.001","-threads","1","-f","null","-"],bytes);
+ // Compare bounded decoding progress against declared duration.
+ const progress=tool("ffmpeg",["-nostdin","-xerror","-threads","1",...common,"-i","fd:","-map","0:v?","-map","0:a?","-t","31","-threads","1","-progress","pipe:1","-f","null","-"],bytes).toString("utf8");
+ const measured=Math.max(0,...Array.from(progress.matchAll(/out_time_us=(\\d+)/g),m=>Number(m[1])))/1000;
+ if(!progress.includes("progress=end")||measured<1950||measured>30050||Math.abs(measured-ms)>500)throw Error("decode_duration_mismatch");
  return {duration_ms:ms};
 }
 function enabled(env=process.env){return env.MODEL_MEDIA_WORKER_ENABLED==="true"&&env.MODEL_MEDIA_TEST_DATABASE_URL===TEST_ORIGIN&&env.MODEL_MEDIA_TEST_DATABASE_ORIGIN===TEST_ORIGIN&&env.VERCEL_ENV!=="production"&&uuid.test(env.MODEL_MEDIA_PILOT_USER_ID??"")&&!!env.MODEL_MEDIA_TEST_SERVICE_KEY}
