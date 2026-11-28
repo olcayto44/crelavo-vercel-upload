@@ -93,3 +93,21 @@ main.cr-public-showcase{background:var(--cr-bg)!important;color:var(--cr-text)!i
 .cr-public-page [id]{scroll-margin-top:90px}
 .cr-menu-group a:focus-visible,.cr-menu-all:focus-visible{outline-offset:-2px!important}
 @media(max-width:760px){.cr-public-page :is(.service-three-col,.service-info-grid){grid-template-columns:minmax(0,1fr)!important;gap:8px!important}.cr-public-page :is(.service-category-links,.free-tool-category-links) .plan-feature-groups{grid-template-columns:minmax(0,1fr)!important}}
+
+/* Public navigation actions: shared sizes; account/session behavior stays untouched. */
+html body header.nav.site-main-nav.cr-premium-nav .crelavo-auth-controls{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important}
+html body header.nav.site-main-nav.cr-premium-nav :is(.crelavo-auth-join,.crelavo-auth-signin){display:inline-flex!important;align-items:center!important;justify-content:center!important;min-height:40px!important;height:40px!important;min-width:78px!important;padding:0 13px!important;margin:0!important;border-radius:10px!important;box-shadow:none!important;font:650 13px/1.25 Inter,system-ui,sans-serif!important;white-space:nowrap!important;text-decoration:none!important}
+html body header.nav.site-main-nav.cr-premium-nav .crelavo-auth-join{background:var(--cr-primary)!important;color:#fff!important;border:1px solid #aa91f9!important}
+html body header.nav.site-main-nav.cr-premium-nav .crelavo-auth-signin{background:var(--cr-raised)!important;color:var(--cr-text)!important;border:1px solid var(--cr-line)!important}
+html body header.nav.site-main-nav.cr-premium-nav :is(.crelavo-auth-join,.crelavo-auth-signin):hover{border-color:var(--cr-accent)!important;filter:brightness(1.1)}
+/* Retire the previous gradient shell for legacy public product detail routes. */
+html body main.cr-legacy-product{background:var(--cr-bg)!important;background-image:none!important;box-shadow:none!important;border:0!important;border-radius:0!important;min-height:60vh!important}
+html body main.cr-legacy-product .production-hero-card,html body main.cr-legacy-product>section.card.admin-wide-card{background:transparent!important;background-image:none!important;box-shadow:none!important}
+html body main.cr-legacy-product .admin-info-grid{gap:24px!important}
+html body main.cr-legacy-product .admin-info-grid>div,html body main.cr-legacy-product .plan-feature-groups>div{background:transparent!important;background-image:none!important;border:0!important;border-top:1px solid var(--cr-line)!important;border-radius:0!important;box-shadow:none!important;padding:16px 0!important;min-width:0}
+html body main.cr-legacy-product .admin-info-grid :is(strong,span,b),html body main.cr-legacy-product .plan-feature-groups b{color:var(--cr-text)!important}
+html body main.cr-legacy-product .admin-info-grid small,html body main.cr-legacy-product .plan-feature-groups small{color:var(--cr-muted)!important;font-size:13px!important;line-height:1.6}
+html body main.cr-legacy-product .admin-category-card{background:var(--cr-surface)!important;background-image:none!important;min-width:0}
+html body main.cr-legacy-product .btn{background-image:none!important;min-height:46px!important}
+html body main.cr-legacy-product .btn.secondary{background:var(--cr-raised)!important}
+@media(max-width:760px){html body main.cr-legacy-product .admin-info-grid{grid-template-columns:minmax(0,1fr)!important;gap:8px!important}}
