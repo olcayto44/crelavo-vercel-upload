@@ -1,0 +1,9 @@
+FROM node:24-trixie-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
+COPY scripts/model-rehearsal-worker.cjs scripts/model-rehearsal-smoke.cjs ./scripts/
+USER node
+RUN node scripts/model-rehearsal-smoke.cjs && MODEL_REHEARSAL_WORKER_ENABLED=false node scripts/model-rehearsal-worker.cjs
+CMD ["node","scripts/model-rehearsal-worker.cjs"]
