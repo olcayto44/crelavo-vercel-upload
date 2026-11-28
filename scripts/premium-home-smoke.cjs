@@ -130,3 +130,8 @@ const trialRoute=read("src/app/api/admin/kie-internal-trial/route.ts");
 assert(trialRoute.includes('MODEL_KIE_PILOT_ENABLED!=="true"')&&trialRoute.includes("session?.email===owner")&&trialRoute.includes("MAGI2_TRIAL_4S_70_4")&&trialRoute.includes("bwzxdxqgrgbsvndinmrv.supabase.co")&&trialRoute.indexOf('rpc("kie_claim_internal_trial"')<trialRoute.indexOf('fetch(task.url'));
 assert(!trialRoute.includes("credit_balances")&&!trialRoute.includes("credit_events"));
 console.log("PASS isolated Kie one-shot trial guards and video reference validation (offline)");
+
+const internalTrialUI=read("src/components/models/KieTaskUsagePanel.tsx");
+assert(internalTrialUI.includes("<KieInternalTrialPanel/>")&&internalTrialUI.includes('!enabled||!confirm||busy||trial')&&internalTrialUI.includes('confirm:"MAGI2_TRIAL_4S_70_4"')&&internalTrialUI.includes('method:"POST"'));
+assert(internalTrialUI.includes("Gerçek deneme kapalı")&&internalTrialUI.includes("kesin harcama limiti değildir")&&internalTrialUI.includes("Tekrar üretim kapalı"));
+console.log("PASS Kie admin trial explicit-consent UI and repeat-dispatch prevention (static)");
